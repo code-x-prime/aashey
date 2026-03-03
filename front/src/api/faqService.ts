@@ -105,7 +105,6 @@ export const updateFaqOrder = async (
   allFaqs?: FAQ[]
 ) => {
   try {
-    console.log("Preparing to update FAQ order");
 
     // First, we need to get all FAQs if not provided
     let faqsData: FAQ[] = allFaqs || [];

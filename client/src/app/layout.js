@@ -73,7 +73,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             <Navbar />
-            <main className="min-h-screen">{children}</main>
+            <main className="min-h-screen ">{children}</main>
             <Footer />
           </CartProvider>
         </AuthProvider>
