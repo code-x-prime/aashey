@@ -30,8 +30,8 @@ export const getVerificationTemplate = (
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #2563eb, #1e40af);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
         }
@@ -61,8 +61,8 @@ export const getVerificationTemplate = (
         .button {
             display: inline-block;
             padding: 15px 35px;
-            background-color: #2563eb;
-            color: #ffffff !important;
+            background-color: #C9933A;
+            color: #3F1F00 !important;
             text-decoration: none;
             border-radius: 50px;
             font-weight: bold;
@@ -86,7 +86,7 @@ export const getVerificationTemplate = (
             content: '✓';
             position: absolute;
             left: 0;
-            color: #2563eb;
+            color: #C9933A;
             font-weight: bold;
         }
         .footer {
@@ -117,10 +117,10 @@ export const getVerificationTemplate = (
             
             <div class="features">
                 <h3>What you can do after verification:</h3>
-                <div class="feature-item">Shop for premium quality supplements</div>
+                <div class="feature-item">Shop for pure A2 Bilona ghee</div>
                 <div class="feature-item">Track your orders easily</div>
                 <div class="feature-item">Receive exclusive offers and updates</div>
-                <div class="feature-item">Manage your subscription preferences</div>
+                <div class="feature-item">Manage your account and addresses</div>
             </div>
         </div>
         <div class="footer">
@@ -150,11 +150,11 @@ export const getEmailOtpTemplate = (
     <style>
         body { font-family: 'Arial', sans-serif; background: #f5f5f5; margin:0; padding:0; color:#1a1a1a; }
         .container { max-width: 600px; margin: 24px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
-        .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff; text-align: center; padding: 32px; }
+        .header { background: linear-gradient(135deg, #3F1F00, #5C2E00); color: #FDF6E3; text-align: center; padding: 32px; }
         .content { padding: 32px; }
         h1 { margin: 0; font-size: 24px; font-weight: 700; }
         p { margin: 0 0 16px; font-size: 16px; color: #333; }
-        .otp { font-size: 32px; letter-spacing: 8px; font-weight: 700; color: #1e3a8a; background: #eef2ff; padding: 12px 16px; border-radius: 8px; text-align:center; display:inline-block; }
+        .otp { font-size: 32px; letter-spacing: 8px; font-weight: 700; color: #3F1F00; background: #FDF6E3; padding: 12px 16px; border-radius: 8px; text-align:center; display:inline-block; }
         .note { font-size: 14px; color: #666; }
         .footer { text-align:center; padding: 16px; font-size: 13px; color:#666; background:#f8f8f8; }
     </style>
@@ -192,7 +192,7 @@ export const getDeleteTemplate = (deletionLink, storeConfig = null) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Deletion Request - Bansuri Vidya Mandir</title>
+    <title>Account Deletion Request - ${store.storeName}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -292,33 +292,33 @@ export const getDeleteTemplate = (deletionLink, storeConfig = null) => {
 <body>
     <div class="container">
         <div class="header">
-            <h1>We Value Your Musical Journey</h1>
+            <h1>Account Deletion Request</h1>
         </div>
         <div class="content">
-            <h2>Account Deletion Request</h2>
-            <p>Dear Valued Student,</p>
-            <p>We've received a request to delete your Bansuri Vidya Mandir account. Before proceeding, we want to ensure this is your intended action, as it will affect your access to classes, learning materials, and progress records.</p>
+            <h2>Confirm Account Deletion</h2>
+            <p>Dear Valued Customer,</p>
+            <p>We've received a request to delete your ${store.storeName} account. Before proceeding, we want to ensure this is your intended action, as it will permanently remove your order history, saved addresses, and account data.</p>
             <p>If you're certain about deleting your account, please click the button below:</p>
             <a href="${deletionLink}" class="button">Confirm Account Deletion</a>
             <div class="warning">
-                <strong>Warning:</strong> This action is irreversible. Once deleted, all your learning history, course progress, and personal data will be permanently removed from our systems.
+                <strong>Warning:</strong> This action is irreversible. Once deleted, all your order history, wishlist, and personal data will be permanently removed from our systems.
             </div>
             <div class="alternatives">
                 <h3>Consider these alternatives:</h3>
                 <div class="alternative-item">
-                    Temporarily pause your learning journey
+                    Keep your account and simply log out
                 </div>
                 <div class="alternative-item">
-                    Discuss options with your Guru or instructor
+                    Update your profile or email instead
                 </div>
                 <div class="alternative-item">
                     Contact our support team for assistance
                 </div>
             </div>
-            <p>If you didn't request this deletion, please contact our support team immediately at bansurividya@gmail.com.</p>
+            <p>If you didn't request this deletion, please contact our support team immediately at ${store.supportEmail || store.storeEmail}.</p>
         </div>
         <div class="footer">
-            © ${new Date().getFullYear()} Bansuri Vidya Mandir | Indian Classical Music Institute<br>
+            © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
             This is an automated message. Please do not reply to this email.
         </div>
     </div>
@@ -354,8 +354,8 @@ export const getResetTemplate = (resetLink, storeConfig = null) => {
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #2563eb, #1e40af);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
         }
@@ -381,8 +381,8 @@ export const getResetTemplate = (resetLink, storeConfig = null) => {
         .button {
             display: inline-block;
             padding: 15px 35px;
-            background: linear-gradient(135deg, #2563eb, #1e40af);
-            color: #ffffff;
+            background: linear-gradient(135deg, #C9933A, #B8842F);
+            color: #3F1F00;
             text-decoration: none;
             border-radius: 50px;
             font-weight: bold;
@@ -1203,8 +1203,8 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 30px;
         }
@@ -1255,8 +1255,8 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             margin: 20px 0;
         }
         .order-items th {
-            background-color: #f97316;
-            color: #fff;
+            background-color: #3F1F00;
+            color: #FDF6E3;
             padding: 12px 10px;
             text-align: left;
             font-size: 13px;
@@ -1316,7 +1316,7 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             color: #1a1a1a;
         }
         .total-row .summary-value {
-            color: #f97316;
+            color: #C9933A;
         }
         .coupon-badge {
             display: inline-block;
@@ -1348,8 +1348,8 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
         .button {
             display: inline-block;
             padding: 12px 25px;
-            background-color: #f97316;
-            color: #ffffff !important;
+            background-color: #C9933A;
+            color: #3F1F00 !important;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
@@ -1484,7 +1484,7 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
         </div>
         <div class="footer">
             © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
-            Questions? Contact our customer support at ${store.supportEmail || store.storeEmail}
+            Questions? Email ${store.supportEmail || store.storeEmail} or WhatsApp +91 89990 46484
         </div>
     </div>
 </body>

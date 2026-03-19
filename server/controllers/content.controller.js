@@ -379,9 +379,10 @@ const getContactInfo = asyncHandler(async (req, res) => {
 
     // Default fallback contact info
     const contactInfo = {
-      address: "89/2 Sector 39, Gurugram, Haryana",
-      phone: "+91 8053210008",
-      email: "connect.aashey@gmail.com",
+      address: "Village — Takali, Shiv Shakti Nagar, Chalisgaon, Dist — Jalgaon, Maharashtra — 424102",
+      phone: "+91 89990 46484",
+      whatsapp: "https://wa.me/918999046484",
+      email: "info@aashey.com",
       hours: "Monday - Saturday: 10:00 AM - 7:00 PM",
       mapCoordinates: {
         lat: 19.076,

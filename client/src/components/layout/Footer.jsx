@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Phone, Mail, Instagram, Facebook, Youtube, CheckCircle, ArrowUpRight } from "lucide-react";
+import { MapPin, MessageCircle, Mail, Instagram, Facebook, Youtube, CheckCircle, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 
 const socialLinks = [
@@ -155,8 +155,8 @@ export const Footer = () => {
                   <div>
                     <p className="font-sans text-xs font-semibold text-[#FDF6E3]/40 uppercase tracking-wider mb-1">Address</p>
                     <p className="font-sans text-sm text-[#FDF6E3]/65 leading-relaxed">
-                      Strinvaterth Nagar, Bhatgaon Road,<br />
-                      Charlegaon, Jalgaon,<br />
+                      Village — Takali, Shiv Shakti Nagar,<br />
+                      Chalisgaon, Dist — Jalgaon,<br />
                       Maharashtra — 424102
                     </p>
                   </div>
@@ -164,15 +164,17 @@ export const Footer = () => {
 
                 <li className="flex gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#C9933A]/10 border border-[#C9933A]/20 flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-3.5 h-3.5 text-[#C9933A]" />
+                    <MessageCircle className="w-3.5 h-3.5 text-[#C9933A]" />
                   </div>
                   <div>
-                    <p className="font-sans text-xs font-semibold text-[#FDF6E3]/40 uppercase tracking-wider mb-1">Phone</p>
+                    <p className="font-sans text-xs font-semibold text-[#FDF6E3]/40 uppercase tracking-wider mb-1">WhatsApp</p>
                     <a
-                      href="tel:+919959067733"
+                      href="https://wa.me/918999046484"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="font-sans text-sm text-[#FDF6E3]/65 hover:text-[#C9933A] transition-colors"
                     >
-                      +91 99590 67733
+                      +91 89990 46484
                     </a>
                   </div>
                 </li>
@@ -184,10 +186,10 @@ export const Footer = () => {
                   <div>
                     <p className="font-sans text-xs font-semibold text-[#FDF6E3]/40 uppercase tracking-wider mb-1">Email</p>
                     <a
-                      href="mailto:hello@aashey.com"
+                      href="mailto:info@aashey.com"
                       className="font-sans text-sm text-[#FDF6E3]/65 hover:text-[#C9933A] transition-colors"
                     >
-                      hello@aashey.com
+                      info@aashey.com
                     </a>
                   </div>
                 </li>

@@ -7,32 +7,33 @@
 export const getStoreConfig = () => {
   return {
     // Store Information
-    storeName: process.env.STORE_NAME || "D fix",
-    storeEmail: process.env.STORE_EMAIL || "store@example.com",
-    storePhone: process.env.STORE_PHONE || "+1234567890",
+    storeName: process.env.STORE_NAME || "Aashey",
+    storeEmail: process.env.STORE_EMAIL || "info@aashey.com",
+    storePhone: process.env.STORE_PHONE || "+91 89990 46484",
     storeAddress:
-      process.env.STORE_ADDRESS || "123 Store Street, City, Country",
+      process.env.STORE_ADDRESS ||
+      "Village — Takali, Shiv Shakti Nagar, Chalisgaon, Dist — Jalgaon, Maharashtra — 424102",
 
     // Store Description/Tagline
-    storeTagline: process.env.STORE_TAGLINE || "Premium Quality Products",
+    storeTagline: process.env.STORE_TAGLINE || "Pure A2 Bilona Ghee",
     storeDescription:
       process.env.STORE_DESCRIPTION ||
-      "Your trusted source for premium quality products",
+      "Your trusted source for pure A2 Bilona ghee",
 
     // Email Configuration
-    fromName: process.env.FROM_NAME || process.env.STORE_NAME || "D fix",
+    fromName: process.env.FROM_NAME || process.env.STORE_NAME || "Aashey",
     fromEmail:
       process.env.FROM_EMAIL ||
       process.env.STORE_EMAIL ||
       process.env.SMTP_USER ||
-      "store@example.com",
+      "info@aashey.com",
 
     // Website Information
-    websiteUrl: process.env.WEBSITE_URL || "https://yourstore.com",
+    websiteUrl: process.env.WEBSITE_URL || "https://aashey.com",
     supportEmail:
       process.env.SUPPORT_EMAIL ||
       process.env.STORE_EMAIL ||
-      "aashey@gmail.com",
+      "info@aashey.com",
 
     // Social Media (optional)
     socialFacebook: process.env.SOCIAL_FACEBOOK || "",

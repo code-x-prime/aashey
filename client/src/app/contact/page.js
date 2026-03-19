@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { MapPin, Phone, Mail, Clock, Send, Loader2, MessageSquare, Headphones, ArrowRight } from "lucide-react";
+import { MapPin, MessageCircle, Mail, Clock, Send, Loader2, MessageSquare, Headphones, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { fetchApi } from "@/lib/utils";
@@ -59,61 +59,31 @@ export default function ContactPage() {
                 </div>
             </section>
 
-            {/* Quick contact + Outlets */}
+            {/* Quick contact */}
             <section className="section-container -mt-8 pb-12">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-12">
-                    <a href="mailto:info@jainfoods.com" className="card-premium p-6 text-center hover:border-[#C9933A]/40 group transition-all">
+                    <a href="mailto:info@aashey.com" className="card-premium p-6 text-center hover:border-[#C9933A]/40 group transition-all">
                         <div className="w-14 h-14 bg-[#C9933A]/15 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-[#C9933A] transition-colors">
                             <Mail className="h-7 w-7 text-[#C9933A] group-hover:text-[#3F1F00]" />
                         </div>
                         <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Email</h3>
-                        <p className="text-[#C9933A] font-semibold text-sm break-all">info@jainfoods.com</p>
+                        <p className="text-[#C9933A] font-semibold text-sm break-all">info@aashey.com</p>
                     </a>
-                    <a href="tel:+919959067733" className="card-premium p-6 text-center hover:border-[#C9933A]/40 group transition-all">
-                        <div className="w-14 h-14 bg-[#1A7F37]/15 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-[#1A7F37] transition-colors">
-                            <Phone className="h-7 w-7 text-[#1A7F37] group-hover:text-white" />
+                    <a href="https://wa.me/918999046484" target="_blank" rel="noopener noreferrer" className="card-premium p-6 text-center hover:border-[#C9933A]/40 group transition-all">
+                        <div className="w-14 h-14 bg-[#25D366]/15 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-[#25D366] transition-colors">
+                            <MessageCircle className="h-7 w-7 text-[#25D366] group-hover:text-white" />
                         </div>
-                        <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Call</h3>
-                        <p className="text-[#1A7F37] font-semibold text-sm">+91 99590 67733</p>
+                        <h3 className="font-bold text-[#3F1F00] text-lg mb-1">WhatsApp</h3>
+                        <p className="text-[#25D366] font-semibold text-sm">+91 89990 46484</p>
                     </a>
                     <div className="card-premium p-6 text-center border-[#C9933A]/20">
                         <div className="w-14 h-14 bg-[#3F1F00]/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                             <MapPin className="h-7 w-7 text-[#3F1F00]" />
                         </div>
-                        <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Hyderabad</h3>
-                        <p className="text-[#3F1F00] text-sm">3 outlets · See below</p>
-                    </div>
-                </div>
-
-                {/* Factory Outlets - clean cards */}
-                <div className="border-t border-[#C9933A]/20 pt-10">
-                    <h2 className="text-xl font-bold text-[#3F1F00] mb-1 font-cormorant">Factory Outlets</h2>
-                    <p className="text-[#5C3A1E] text-sm mb-6">Visit us at any of our locations</p>
-                    <div className="grid md:grid-cols-3 gap-5">
-                        <div className="bg-[#FDF6E3] rounded-lg p-5 border border-[#C9933A]/20 hover:border-[#C9933A]/40 transition-colors">
-                            <span className="inline-block px-2.5 py-1 bg-[#C9933A]/15 text-[#3F1F00] text-xs font-bold rounded uppercase mb-3">Outlet 1</span>
-                            <p className="text-[#3F1F00] font-semibold mb-1">Begam Bazar</p>
-                            <p className="text-[#1A0A00] text-sm leading-relaxed mb-3"># 15-7-401, Byj Complex, Begam Bazar, Hyderabad - 500012</p>
-                            <div className="flex flex-wrap gap-x-2 gap-y-1">
-                                <a href="tel:+919959067733" className="text-[#C9933A] font-medium text-sm hover:underline">99590 67733</a>
-                                <a href="tel:+919392544607" className="text-[#C9933A] font-medium text-sm hover:underline">93925 44607</a>
-                            </div>
-                        </div>
-                        <div className="bg-[#FDF6E3] rounded-lg p-5 border border-[#C9933A]/20 hover:border-[#C9933A]/40 transition-colors">
-                            <span className="inline-block px-2.5 py-1 bg-[#C9933A]/15 text-[#3F1F00] text-xs font-bold rounded uppercase mb-3">Outlet 2</span>
-                            <p className="text-[#3F1F00] font-semibold mb-1">Secunderabad</p>
-                            <p className="text-[#1A0A00] text-sm leading-relaxed mb-3"># 7-1-670/A/B, Near Rajeshwari Talkies, Market Street, Secunderabad - 500003</p>
-                            <div className="flex flex-wrap gap-x-2 gap-y-1">
-                                <a href="tel:+919059815214" className="text-[#C9933A] font-medium text-sm hover:underline">90598 15214</a>
-                                <a href="tel:+919059738214" className="text-[#C9933A] font-medium text-sm hover:underline">90597 38214</a>
-                            </div>
-                        </div>
-                        <div className="bg-[#FDF6E3] rounded-lg p-5 border border-[#C9933A]/20 hover:border-[#C9933A]/40 transition-colors">
-                            <span className="inline-block px-2.5 py-1 bg-[#3F1F00]/10 text-[#3F1F00] text-xs font-bold rounded uppercase mb-3">Factory Unit</span>
-                            <p className="text-[#3F1F00] font-semibold mb-1">Rajenderanagar</p>
-                            <p className="text-[#1A0A00] text-sm leading-relaxed mb-3"># 6-5-26/2, Babul Reddy Nagar, Shivarampally, Rajenderanagar, Hyderabad - 500077</p>
-                            <a href="tel:+919392976760" className="text-[#C9933A] font-medium text-sm hover:underline">+91 93929 76760</a>
-                        </div>
+                        <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Address</h3>
+                        <p className="text-[#3F1F00] text-sm leading-relaxed">
+                            Village — Takali, Shiv Shakti Nagar, Chalisgaon, Dist — Jalgaon, Maharashtra — 424102
+                        </p>
                     </div>
                 </div>
             </section>
@@ -208,7 +178,7 @@ export default function ContactPage() {
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div>
                             <h2 className="text-2xl md:text-3xl font-bold text-[#FDF6E3] mb-2">Ready to explore our products?</h2>
-                            <p className="text-[#FDF6E3]/75 text-lg">Discover our collection of authentic Indian namkeen and snacks</p>
+                            <p className="text-[#FDF6E3]/75 text-lg">Discover our collection of pure A2 Bilona ghee</p>
                         </div>
                         <Link href="/products">
                             <Button size="lg" className="bg-[#C9933A] hover:bg-[#B8842F] text-[#3F1F00] font-bold h-14 px-10 rounded-lg gap-3 shadow-xl text-lg">

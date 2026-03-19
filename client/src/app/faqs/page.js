@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { fetchApi } from "@/lib/utils";
@@ -228,7 +228,7 @@ export default function FAQsPage() {
                                 Contact Us <ArrowRight className="w-4 h-4" />
                             </Link>
                             <a
-                                href="mailto:support@aashey.com"
+                                href="mailto:info@aashey.com"
                                 className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-[#C9933A]/40 text-[#FDF6E3] rounded-lg font-sans font-semibold hover:bg-[#C9933A]/10 transition-colors text-sm"
                             >
                                 <Mail className="w-4 h-4" /> Email Support
