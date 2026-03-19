@@ -211,8 +211,8 @@ export const getDeleteTemplate = (deletionLink, storeConfig = null) => {
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
         }
@@ -238,8 +238,8 @@ export const getDeleteTemplate = (deletionLink, storeConfig = null) => {
         .button {
             display: inline-block;
             padding: 15px 35px;
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #C9933A, #B8842F);
+            color: #3F1F00;
             text-decoration: none;
             border-radius: 50px;
             font-weight: bold;
@@ -278,7 +278,7 @@ export const getDeleteTemplate = (deletionLink, storeConfig = null) => {
             content: '➤';
             position: absolute;
             left: 0;
-            color: #ff0000;
+            color: #C9933A;
         }
         .footer {
             text-align: center;
@@ -430,13 +430,15 @@ export const getResetTemplate = (resetLink, storeConfig = null) => {
 `;
 };
 
-export const getFeeReceiptTemplate = (data) => `
+export const getFeeReceiptTemplate = (data) => {
+    const store = getStoreConfig();
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fee Payment Receipt - Bansuri Vidya Mandir</title>
+    <title>Payment Receipt - ${store.storeName}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -455,8 +457,8 @@ export const getFeeReceiptTemplate = (data) => `
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
         }
@@ -482,8 +484,8 @@ export const getFeeReceiptTemplate = (data) => `
         .button {
             display: inline-block;
             padding: 15px 35px;
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #C9933A, #B8842F);
+            color: #3F1F00;
             text-decoration: none;
             border-radius: 50px;
             font-weight: bold;
@@ -511,9 +513,9 @@ export const getFeeReceiptTemplate = (data) => `
             <h1>Payment Confirmation</h1>
         </div>
         <div class="content">
-            <h2>Fee Payment Receipt</h2>
+            <h2>Payment Receipt</h2>
             <p>Dear ${data.userName},</p>
-            <p>Thank you for your payment. Your transaction for music education fees was successful.</p>
+            <p>Thank you for your payment. Your transaction was successful.</p>
             <div class="payment-details">
                 <p><strong>Amount Paid:</strong> ₹${data.amount}</p>
                 <p><strong>Payment ID:</strong> ${data.paymentId}</p>
@@ -521,24 +523,27 @@ export const getFeeReceiptTemplate = (data) => `
     data.date
 ).toLocaleDateString()}</p>
             </div>
-            <p>Please find your receipt attached to this email. We look forward to continuing your musical journey with us.</p>
+            <p>Please find your receipt attached to this email. We look forward to serving you.</p>
         </div>
         <div class="footer">
-            © ${new Date().getFullYear()} Bansuri Vidya Mandir | Indian Classical Music Institute<br>
+            © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
             This is an automated message. Please do not reply.
         </div>
     </div>
 </body>
 </html>
 `;
+};
 
-export const getFeeNotificationTemplate = (data) => `
+export const getFeeNotificationTemplate = (data) => {
+    const store = getStoreConfig();
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Fee Assignment - Bansuri Vidya Mandir</title>
+    <title>New Fee Assignment - ${store.storeName}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -555,8 +560,8 @@ export const getFeeNotificationTemplate = (data) => `
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 30px;
             border-radius: 10px 10px 0 0;
@@ -578,14 +583,14 @@ export const getFeeNotificationTemplate = (data) => `
             border-bottom: 1px solid #eee;
         }
         .important {
-            color: #cc0000;
+            color: #5C2E00;
             font-weight: bold;
         }
         .btn {
             display: inline-block;
             padding: 12px 25px;
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #C9933A, #B8842F);
+            color: #3F1F00;
             text-decoration: none;
             border-radius: 5px;
             margin-top: 20px;
@@ -651,26 +656,29 @@ export const getFeeNotificationTemplate = (data) => `
         : ""
     }
             </div>
-            <p>Please ensure timely payment to continue your uninterrupted musical education with us.</p>
+            <p>Please ensure timely payment.</p>
             <a href="${process.env.FRONTEND_URL
     }/dashboard/fees" class="btn">View Fee Details</a>
         </div>
         <div class="footer">
-            <p>© ${new Date().getFullYear()} Bansuri Vidya Mandir | Indian Classical Music Institute</p>
+            <p>© ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}</p>
             <p>This is an automated message. Please do not reply to this email.</p>
         </div>
     </div>
 </body>
 </html>
 `;
+};
 
-export const getPaymentSuccessTemplate = (data) => `
+export const getPaymentSuccessTemplate = (data) => {
+    const store = getStoreConfig();
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Successful - Bansuri Vidya Mandir</title>
+    <title>Payment Successful - ${store.storeName}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -689,8 +697,8 @@ export const getPaymentSuccessTemplate = (data) => `
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
         }
@@ -702,8 +710,8 @@ export const getPaymentSuccessTemplate = (data) => `
             padding: 40px;
         }
         .payment-details {
-            background-color: #f0fdf4;
-            border: 1px solid #dcfce7;
+            background-color: #FDF6E3;
+            border: 1px solid #C9933A;
             border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
@@ -712,14 +720,14 @@ export const getPaymentSuccessTemplate = (data) => `
             display: flex;
             justify-content: space-between;
             padding: 10px 0;
-            border-bottom: 1px solid #dcfce7;
+            border-bottom: 1px solid #C9933A;
         }
         .detail-row:last-child {
             border-bottom: none;
         }
         .amount {
             font-size: 24px;
-            color: #16a34a;
+            color: #5C2E00;
             font-weight: bold;
         }
         .footer {
@@ -739,7 +747,7 @@ export const getPaymentSuccessTemplate = (data) => `
         </div>
         <div class="content">
             <p>Dear ${data.userName},</p>
-            <p>Your payment for music education fees has been successfully processed. Here are your transaction details:</p>
+            <p>Your payment has been successfully processed. Here are your transaction details:</p>
             
             <div class="payment-details">
                 <div class="detail-row">
@@ -771,24 +779,27 @@ export const getPaymentSuccessTemplate = (data) => `
             </div>
 
             <p>Your payment receipt has been attached to this email for your records.</p>
-            <p>Thank you for your prompt payment! We look forward to continuing our musical journey together.</p>
+            <p>Thank you for your payment! We look forward to serving you.</p>
         </div>
         <div class="footer">
-            <p>© ${new Date().getFullYear()} Bansuri Vidya Mandir | Indian Classical Music Institute</p>
-            <p>For any queries, please contact our support team at bansurividya@gmail.com</p>
+            <p>© ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}</p>
+            <p>For any queries, contact us at ${store.supportEmail || store.storeEmail}</p>
         </div>
     </div>
 </body>
 </html>
 `;
+};
 
-export const getPaymentFailureTemplate = (data) => `
+export const getPaymentFailureTemplate = (data) => {
+    const store = getStoreConfig();
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Failed - Bansuri Vidya Mandir</title>
+    <title>Payment Failed - ${store.storeName}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -852,7 +863,7 @@ export const getPaymentFailureTemplate = (data) => `
         </div>
         <div class="content">
             <p>Dear ${data.userName},</p>
-            <p>We're sorry, but your recent payment attempt for music education fees was unsuccessful.</p>
+            <p>We're sorry, but your recent payment attempt was unsuccessful.</p>
             
             <div class="error-box">
                 <h3>Transaction Details:</h3>
@@ -881,13 +892,14 @@ export const getPaymentFailureTemplate = (data) => `
             </a>
         </div>
         <div class="footer">
-            <p>© ${new Date().getFullYear()} Bansuri Vidya Mandir | Indian Classical Music Institute</p>
-            <p>Need help? Contact our support team at bansurividya@gmail.com</p>
+            <p>© ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}</p>
+            <p>Need help? Contact us at ${store.supportEmail || store.storeEmail}</p>
         </div>
     </div>
 </body>
 </html>
 `;
+};
 
 export const getFeeUpdateTemplate = ({
     name,
@@ -897,17 +909,19 @@ export const getFeeUpdateTemplate = ({
     oldDate,
     newDate,
     reason,
-}) => `
+}) => {
+    const store = getStoreConfig();
+    return `
 <!DOCTYPE html>
 <html>
 <head>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #EF4444; color: white; padding: 20px; text-align: center; }
+        .header { background: linear-gradient(135deg, #3F1F00, #5C2E00); color: #FDF6E3; padding: 20px; text-align: center; }
         .content { padding: 20px; background: #f9fafb; }
         .footer { text-align: center; padding: 20px; color: #666; }
-        .amount { font-size: 18px; font-weight: bold; color: #EF4444; }
+        .amount { font-size: 18px; font-weight: bold; color: #5C2E00; }
         .details { margin: 20px 0; padding: 15px; background: white; border-radius: 5px; }
     </style>
 </head>
@@ -918,7 +932,7 @@ export const getFeeUpdateTemplate = ({
         </div>
         <div class="content">
             <p>Dear ${name},</p>
-            <p>This is to inform you that there has been an update to your music education fee: <strong>${feeTitle}</strong></p>
+            <p>This is to inform you that there has been an update to your fee: <strong>${feeTitle}</strong></p>
             
             <div class="details">
                 <h3>Update Details:</h3>
@@ -927,24 +941,27 @@ export const getFeeUpdateTemplate = ({
                 <p><strong>Reason:</strong> ${reason}</p>
             </div>
 
-            <p>If you have any questions about this update, please contact our support team.</p>
+            <p>If you have any questions about this update, please contact our support team at ${store.supportEmail || store.storeEmail}.</p>
         </div>
         <div class="footer">
-            <p>Bansuri Vidya Mandir | Indian Classical Music Institute</p>
+            <p>${store.storeName} | ${store.storeTagline}</p>
             <small>This is an automated message, please do not reply.</small>
         </div>
     </div>
 </body>
 </html>
 `;
+};
 
-export const getCertificateGeneratedTemplate = (data) => `
+export const getCertificateGeneratedTemplate = (data) => {
+    const store = getStoreConfig();
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Generated - Bansuri Vidya Mandir</title>
+    <title>Certificate Generated - ${store.storeName}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -963,8 +980,8 @@ export const getCertificateGeneratedTemplate = (data) => `
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
         }
@@ -1004,8 +1021,8 @@ export const getCertificateGeneratedTemplate = (data) => `
         .button {
             display: inline-block;
             padding: 15px 35px;
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #C9933A, #B8842F);
+            color: #3F1F00;
             text-decoration: none;
             border-radius: 50px;
             font-weight: bold;
@@ -1034,16 +1051,16 @@ export const getCertificateGeneratedTemplate = (data) => `
             <h1>Congratulations!</h1>
         </div>
         <div class="content">
-            <h2>Musical Achievement Accomplished</h2>
+            <h2>Achievement Accomplished</h2>
             <p>Dear ${data.userName},</p>
-            <p>We are delighted to inform you that you have successfully completed the course:</p>
-            <h3 style="color: #cc0000;">${data.courseName}</h3>
+            <p>We are delighted to inform you that you have successfully completed:</p>
+            <h3 style="color: #5C2E00;">${data.courseName}</h3>
             
             <div class="certificate-info">
-                <p><strong>Your certificate of musical excellence has been generated!</strong></p>
+                <p><strong>Your certificate has been generated!</strong></p>
                 <p>Certificate ID: <span class="certificate-id">${data.certificateId
     }</span></p>
-                <p>You can now access and download your certificate from your profile. This marks an important milestone in your musical journey with us.</p>
+                <p>You can now access and download your certificate from your profile.</p>
             </div>
 
             <center>
@@ -1051,24 +1068,27 @@ export const getCertificateGeneratedTemplate = (data) => `
     }/user-profile" class="button">View Certificate</a>
             </center>
 
-            <p>This certificate validates your dedication to Indian classical music and your commitment to learning. Continue on the path of musical excellence!</p>
+            <p>Thank you for your commitment. We look forward to serving you!</p>
         </div>
         <div class="footer">
-            © ${new Date().getFullYear()} Bansuri Vidya Mandir | Indian Classical Music Institute<br>
+            © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
             This is an automated message. Please do not reply to this email.
         </div>
     </div>
 </body>
 </html>
 `;
+};
 
-export const getContactFormTemplate = (data) => `
+export const getContactFormTemplate = (data) => {
+    const store = getStoreConfig();
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Contact Form Submission - Bansuri Vidya Mandir</title>
+    <title>New Contact Form Submission - ${store.storeName}</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -1087,8 +1107,8 @@ export const getContactFormTemplate = (data) => `
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 30px;
         }
@@ -1138,10 +1158,10 @@ export const getContactFormTemplate = (data) => `
 <body>
     <div class="container">
         <div class="header">
-            <h1>New Music Inquiry</h1>
+            <h1>New Contact Inquiry</h1>
         </div>
         <div class="content">
-            <h2>${data.subject || "Inquiry About Music Education"}</h2>
+            <h2>${data.subject || "General Inquiry"}</h2>
             
             <div class="message-box">
                 <p>${data.message}</p>
@@ -1162,16 +1182,17 @@ export const getContactFormTemplate = (data) => `
                 </div>
             </div>
             
-            <p>Please respond to this inquiry about our music programs at your earliest convenience.</p>
+            <p>Please respond to this inquiry at your earliest convenience.</p>
         </div>
         <div class="footer">
-            © ${new Date().getFullYear()} Bansuri Vidya Mandir | Indian Classical Music Institute<br>
+            © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
             This is an automated message from your website contact form.
         </div>
     </div>
 </body>
 </html>
 `;
+};
 
 export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
     const store = storeConfig || getStoreConfig();
@@ -1281,7 +1302,7 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             font-size: 12px;
         }
         .sale-price {
-            color: #16a34a;
+            color: #5C2E00;
             font-weight: 600;
         }
         .summary-row {
@@ -1300,10 +1321,10 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             font-weight: 500;
         }
         .discount-row {
-            color: #16a34a;
+            color: #5C2E00;
         }
         .discount-row .summary-value {
-            color: #16a34a;
+            color: #5C2E00;
         }
         .total-row {
             font-size: 18px;
@@ -1320,8 +1341,8 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
         }
         .coupon-badge {
             display: inline-block;
-            background-color: #dcfce7;
-            color: #16a34a;
+            background-color: #FDF6E3;
+            color: #5C2E00;
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 12px;
@@ -1329,15 +1350,15 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             margin-left: 8px;
         }
         .savings-box {
-            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-            border: 1px solid #86efac;
+            background: linear-gradient(135deg, #FDF6E3, #f5e6c8);
+            border: 1px solid #C9933A;
             border-radius: 8px;
             padding: 15px;
             margin: 15px 0;
             text-align: center;
         }
         .savings-text {
-            color: #16a34a;
+            color: #5C2E00;
             font-weight: 600;
             font-size: 16px;
         }
@@ -1519,8 +1540,8 @@ export const getPartnerResetTemplate = (resetLink, storeConfig = null) => {
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #DE7A3E, #ef4444);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
         }
@@ -1546,8 +1567,8 @@ export const getPartnerResetTemplate = (resetLink, storeConfig = null) => {
         .button {
             display: inline-block;
             padding: 15px 35px;
-            background: linear-gradient(135deg, #DE7A3E, #ef4444);
-            color: #ffffff;
+            background: linear-gradient(135deg, #C9933A, #B8842F);
+            color: #3F1F00;
             text-decoration: none;
             border-radius: 50px;
             font-weight: bold;
