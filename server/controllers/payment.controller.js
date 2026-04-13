@@ -731,6 +731,7 @@ export const paymentVerification = asyncHandler(async (req, res) => {
             productId: variant.product.id,
             variantId: variant.id,
             price,
+            originalPrice: variant.price,
             quantity: item.quantity,
             subtotal,
             ...(flashSaleInfo || {}),

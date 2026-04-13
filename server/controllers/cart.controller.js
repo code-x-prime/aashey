@@ -201,7 +201,7 @@ export const getUserCart = asyncHandler(async (req, res) => {
         id: item.id,
         quantity: item.quantity,
         price: effectivePrice, // Use effective price (from slab if applicable)
-        originalPrice: parseFloat(variant.salePrice || variant.price), // Original price before slab
+        originalPrice: parseFloat(variant.price), // True base price for strike-through
         subtotal: itemTotal,
         moq: effectiveMOQ,
         moqSource,
@@ -663,7 +663,7 @@ export const updateCartItem = asyncHandler(async (req, res) => {
     id: updatedCartItem.id,
     quantity: updatedCartItem.quantity,
     price: effectivePrice,
-    originalPrice: parseFloat(variant.salePrice || variant.price),
+    originalPrice: parseFloat(variant.price),
     subtotal: itemTotal,
     priceSource,
     appliedSlab,

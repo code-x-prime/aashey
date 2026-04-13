@@ -11,7 +11,7 @@ export default function ProductsLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <div className="px-2 md:px-4 py-4">
+            <div>
                 <div className="flex gap-2 md:gap-8">
                     {/* Right Side - Main Content */}
                     <div

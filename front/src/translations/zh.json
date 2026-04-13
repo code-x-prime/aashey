@@ -1478,19 +1478,19 @@
         },
         "desktop_image": {
             "title": "桌面图片",
-            "description": "上传大屏幕图片（建议：1920x1080像素或更大）",
+            "description": "上传大屏幕图片（建议：1920x600像素）",
             "preview_alt": "桌面预览",
             "replace_hint": "点击或拖拽以替换图片",
             "upload_title": "将桌面图片拖放到此处，或点击选择",
-            "upload_hint": "建议：1920x1080像素或更大"
+            "upload_hint": "建议：1920x600像素"
         },
         "mobile_image": {
             "title": "移动端图片",
-            "description": "上传小屏幕图片（建议：1080x1920像素或类似竖版比例）",
+            "description": "上传小屏幕图片（建议：800x800像素）",
             "preview_alt": "移动端预览",
             "replace_hint": "点击或拖拽以替换图片",
             "upload_title": "将移动端图片拖放到此处，或点击选择",
-            "upload_hint": "建议：1080x1920像素或类似竖版比例"
+            "upload_hint": "建议：800x800像素（正方形）"
         },
         "danger_zone": {
             "title": "危险区域",

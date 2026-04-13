@@ -171,7 +171,7 @@ export const ProductCard = ({ product }) => {
 
   useEffect(() => {
     if (!isHovered || getAllProductImages.length <= 1) { setCurrentImageIndex(0); return; }
-    const interval = setInterval(() => setCurrentImageIndex((p) => (p + 1) % getAllProductImages.length), 2500);
+    const interval = setInterval(() => setCurrentImageIndex((p) => (p + 1) % getAllProductImages.length), 1200);
     return () => clearInterval(interval);
   }, [isHovered, getAllProductImages.length]);
 

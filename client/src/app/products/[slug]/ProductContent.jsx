@@ -44,21 +44,40 @@ export default function ProductContent({ slug }) {
   const getEffectivePrice = (variant, qty) => {
     if (!variant) return null;
 
-    const baseSalePrice = variant.salePrice ? (typeof variant.salePrice === 'string' ? parseFloat(variant.salePrice) : variant.salePrice) : null;
     const basePrice = variant.price ? (typeof variant.price === 'string' ? parseFloat(variant.price) : variant.price) : 0;
-    const originalPrice = baseSalePrice || basePrice;
+    const baseSalePrice = variant.salePrice ? (typeof variant.salePrice === 'string' ? parseFloat(variant.salePrice) : variant.salePrice) : null;
+    
+    // originalPrice should always be the true base price (non-discounted)
+    const originalPrice = basePrice;
+    
+    // Default price is sale price if it exists, otherwise base price
+    let currentPrice = baseSalePrice || basePrice;
+
+    // Apply flash sale discount if active
+    if (product?.flashSale?.isActive) {
+      const discountPercentage = product.flashSale.discountPercentage || 0;
+      const discountAmount = (currentPrice * discountPercentage) / 100;
+      currentPrice = Math.round((currentPrice - discountAmount) * 100) / 100;
+    }
 
     if (variant.pricingSlabs && variant.pricingSlabs.length > 0) {
       const sortedSlabs = [...variant.pricingSlabs].sort((a, b) => b.minQty - a.minQty);
 
       for (const slab of sortedSlabs) {
         if (qty >= slab.minQty && (slab.maxQty === null || qty <= slab.maxQty)) {
-          return { price: slab.price, originalPrice: originalPrice, source: 'SLAB', slab: slab };
+          let slabPrice = parseFloat(slab.price);
+          // Apply flash sale to slab price too
+          if (product?.flashSale?.isActive) {
+            const discountPercentage = product.flashSale.discountPercentage || 0;
+            const discountAmount = (slabPrice * discountPercentage) / 100;
+            slabPrice = Math.round((slabPrice - discountAmount) * 100) / 100;
+          }
+          return { price: slabPrice, originalPrice: originalPrice, source: 'SLAB', slab: slab };
         }
       }
     }
 
-    return { price: originalPrice, originalPrice: originalPrice, source: 'DEFAULT', slab: null };
+    return { price: currentPrice, originalPrice: originalPrice, source: 'DEFAULT', slab: null };
   };
 
   // Fetch product details
@@ -416,6 +435,7 @@ export default function ProductContent({ slug }) {
       const effectivePrice = priceInfo.price;
       const originalPrice = priceInfo.originalPrice;
       const isSlabPrice = priceInfo.source === 'SLAB';
+      const isFlashSale = product?.flashSale?.isActive;
       const discount = originalPrice > effectivePrice ? calculateDiscount(originalPrice, effectivePrice) : 0;
 
       if (priceVisibilitySettings?.hidePricesForGuests && !isAuthenticated) {
@@ -434,10 +454,15 @@ export default function ProductContent({ slug }) {
             {originalPrice > effectivePrice && (
               <>
                 <span className="font-playfair text-2xl font-semibold text-[#8B6040] line-through">{formatCurrency(originalPrice)}</span>
-                {discount > 0 && <span className="bg-green-600 text-white text-xs font-sans font-bold px-2.5 py-1 rounded-full">{discount}% OFF</span>}
+                {discount > 0 && (
+                  <span className={`${isFlashSale ? "bg-[#3F1F00] text-[#C9933A]" : "bg-green-600 text-white"} text-xs font-sans font-bold px-2.5 py-1 rounded-full flex items-center gap-1`}>
+                    {isFlashSale && <Zap className="w-3 h-3" />} {discount}% OFF
+                  </span>
+                )}
               </>
             )}
           </div>
+          {isFlashSale && <p className="font-sans text-xs text-[#7A4E2D] font-medium flex items-center gap-1.5"><Zap className="w-3 h-3 text-[#C9933A]" /> Flash Sale Price Applied</p>}
           {isSlabPrice && <p className="font-sans text-xs text-green-600 font-medium">Bulk pricing applied for {quantity} units</p>}
           <p className="font-sans text-xs text-[#7A4E2D]">Inclusive of all taxes</p>
         </div>
@@ -653,24 +678,7 @@ export default function ProductContent({ slug }) {
 
             {/* Price */}
             <div>
-              {product.flashSale?.isActive ? (
-                <div className="space-y-1.5">
-                  <div className="flex items-baseline gap-3 flex-wrap">
-                    <span className="font-playfair text-5xl font-bold text-[#C9933A] leading-none">
-                      {formatCurrency(product.flashSale.flashSalePrice)}
-                    </span>
-                    <span className="font-playfair text-2xl font-semibold text-[#8B6040] line-through">
-                      {formatCurrency(product.basePrice)}
-                    </span>
-                    <span className="bg-green-600 text-white text-xs font-sans font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> {product.flashSale.discountPercentage}% OFF
-                    </span>
-                  </div>
-                  <p className="font-sans text-xs text-[#7A4E2D]">Inclusive of all taxes · Flash Sale Price</p>
-                </div>
-              ) : (
-                getPriceDisplay()
-              )}
+              {getPriceDisplay()}
             </div>
 
             {/* Short Description */}
@@ -748,7 +756,7 @@ export default function ProductContent({ slug }) {
                 {(selectedVariant.stock > 0 || selectedVariant.quantity > 0) ? (
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="font-sans text-sm text-green-700">In Stock ({selectedVariant.stock || selectedVariant.quantity} available)</span>
+                    <span className="font-sans text-sm text-green-700">In Stock</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">

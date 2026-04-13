@@ -279,9 +279,9 @@ export default function OrderDetailPage() {
                                             <div className="flex items-center justify-between mt-2">
                                                 <span className="text-sm text-[#6B4423]">Qty: {item.quantity}</span>
                                                 <div className="text-right">
-                                                    {item.flashSale?.originalPrice && (
+                                                    {item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price) && (
                                                         <span className="text-xs text-[#7A4E2D] line-through mr-2">
-                                                            {formatCurrency(item.flashSale.originalPrice * item.quantity)}
+                                                            {formatCurrency(parseFloat(item.originalPrice) * item.quantity)}
                                                         </span>
                                                     )}
                                                     <span className="font-semibold text-[#1A0A00]">{formatCurrency(item.subtotal)}</span>

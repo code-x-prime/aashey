@@ -58,7 +58,11 @@ export const metadata = {
     description:
       "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method.",
   },
+  verification: {
+    google: "aLdiwKXl0n9Cq8bqfU_CbBlN8mjCLLV0Wz5y0EGHYjk",
+  },
 };
+
 
 export default function RootLayout({ children }) {
   return (

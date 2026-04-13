@@ -17,7 +17,7 @@ export default function Home() {
         {/* Hero Section with prominent CTA */}
         <HeroSection />
 
-        <CategoriesCarousel />
+        {/* <CategoriesCarousel /> */}
 
         {/* Flash Sale - If active */}
         <FlashSaleSection />

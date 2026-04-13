@@ -150,7 +150,7 @@ const CartItem = React.memo(
                             </span>
                         ) : (
                             <>
-                                {item.originalPrice && item.originalPrice !== item.price && (
+                                {item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price) && (
                                     <span className="font-sans text-xs text-[#7A4E2D] line-through">
                                         {formatCurrency(item.originalPrice)}
                                     </span>

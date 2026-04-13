@@ -33,7 +33,7 @@ export function ShopByCategory() {
             <div className="h-4 w-24 bg-white/10 rounded skeleton mx-auto mb-3" />
             <div className="h-10 w-56 bg-white/10 rounded skeleton mx-auto" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="h-56 md:h-72 rounded-xl bg-white/10 skeleton" />
             ))}
@@ -61,7 +61,7 @@ export function ShopByCategory() {
         </div>
 
         {/* Categories Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
           {categories.slice(0, 8).map((category) => (
             <Link
               key={category.id}

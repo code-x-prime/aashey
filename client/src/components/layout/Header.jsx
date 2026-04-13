@@ -252,7 +252,7 @@ export function Navbar() {
                             <Link href={`/category/${cat.slug}`} className="block py-2 font-playfair font-semibold text-sm text-[#3F1F00] hover:text-[#C9933A] transition-colors border-b border-[#C9933A]/20 mb-3 pb-3">
                               {cat.name}
                             </Link>
-                            {cat.subCategories?.length > 0 ? (
+                            {cat.subCategories?.length > 0 && (
                               <ul className="space-y-2">
                                 {cat.subCategories.map((sub) => (
                                   <li key={sub.id}>
@@ -262,8 +262,6 @@ export function Navbar() {
                                   </li>
                                 ))}
                               </ul>
-                            ) : (
-                              <Link href={`/category/${cat.slug}`} className="block py-1 font-sans text-xs text-[#6B4423] hover:text-[#C9933A] transition-colors">View all</Link>
                             )}
                           </div>
                         ))}

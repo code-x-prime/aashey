@@ -1489,19 +1489,19 @@
         },
         "desktop_image": {
             "title": "Desktop-Bild",
-            "description": "Bild für große Bildschirme hochladen (empfohlen: 1920x1080px oder größer)",
+            "description": "Bild für große Bildschirme hochladen (empfohlen: 1920x600px)",
             "preview_alt": "Desktop-Vorschau",
             "replace_hint": "Klicken oder ziehen, um das Bild zu ersetzen",
             "upload_title": "Desktop-Bild hierher ziehen oder klicken zum Auswählen",
-            "upload_hint": "Empfohlen: 1920x1080px oder größer"
+            "upload_hint": "Empfohlen: 1920x600px"
         },
         "mobile_image": {
             "title": "Mobiles Bild",
-            "description": "Bild für kleine Bildschirme hochladen (empfohlen: 1080x1920px oder ähnliches Hochformat)",
+            "description": "Bild für kleine Bildschirme hochladen (empfohlen: 800x800px)",
             "preview_alt": "Mobile Vorschau",
             "replace_hint": "Klicken oder ziehen, um das Bild zu ersetzen",
             "upload_title": "Mobiles Bild hierher ziehen oder klicken zum Auswählen",
-            "upload_hint": "Empfohlen: 1080x1920px oder ähnliches Hochformat"
+            "upload_hint": "Empfohlen: 800x800px (Quadratisch)"
         },
         "danger_zone": {
             "title": "Gefahrenzone",

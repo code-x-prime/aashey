@@ -76,6 +76,7 @@ export const addToGuestCart = async (productVariantId, quantity = 1) => {
                 variantName: `${variant.flavor?.name || ""} ${variant.weight?.display || ""
                     }`.trim(),
                 price: variant.salePrice || variant.price,
+                originalPrice: variant.price, // Store the base price for strike-through
                 quantity: quantity,
                 subtotal: ((variant.salePrice || variant.price) * quantity).toFixed(2),
                 image: variant.images?.[0]?.url || variant.product.image,

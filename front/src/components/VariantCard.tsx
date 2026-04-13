@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Edit,
   Layers,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { products, moq, pricingSlabs } from "@/api/adminService";
@@ -77,6 +78,7 @@ interface VariantCardProps {
   onImagesChange: (index: number, images: ImageData[]) => void;
   isEditMode?: boolean;
   shiprocketEnabled?: boolean;
+  baseSku?: string;
 }
 
 export default function VariantCard({
@@ -87,6 +89,7 @@ export default function VariantCard({
   onImagesChange,
   isEditMode = false,
   shiprocketEnabled = false,
+  baseSku = "",
 }: VariantCardProps) {
   const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(true); // Default expanded so user can see images
@@ -155,6 +158,19 @@ export default function VariantCard({
 
   const handleInputChange = (field: string, value: string) => {
     onUpdate(index, field, value);
+  };
+
+  const handleGenerateSku = () => {
+    const skuBase = baseSku || "SKU";
+    const attrSuffix = (variant.attributes || [])
+      .map((attr: any) =>
+        attr.value?.replace(/\s+/g, "").substring(0, 3).toUpperCase() || ""
+      )
+      .join("-");
+
+    const newSku = attrSuffix ? `${skuBase}-${attrSuffix}` : skuBase;
+    onUpdate(index, "sku", newSku);
+    toast.success("Variant SKU generated");
   };
 
   // Check if variant has a real ID (saved to database)
@@ -913,14 +929,26 @@ export default function VariantCard({
               <Label htmlFor={`sku-${index}`} className="text-xs">
                 SKU *
               </Label>
-              <Input
-                id={`sku-${index}`}
-                value={variant.sku}
-                onChange={(e) => handleInputChange("sku", e.target.value)}
-                className="h-8"
-                required
-                placeholder="Auto-generated, editable"
-              />
+              <div className="flex items-center gap-1">
+                <Input
+                  id={`sku-${index}`}
+                  value={variant.sku}
+                  onChange={(e) => handleInputChange("sku", e.target.value)}
+                  className="h-8 flex-1"
+                  required
+                  placeholder="Auto-generated, editable"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleGenerateSku}
+                  title="Generate SKU"
+                  className="h-8 w-8 shrink-0"
+                >
+                  <Wand2 className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-1">

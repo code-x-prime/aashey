@@ -1610,19 +1610,19 @@
         },
         "desktop_image": {
             "title": "Image Bureau",
-            "description": "Télécharger une image pour grands écrans (recommandé: 1920x1080px ou plus)",
+            "description": "Télécharger une image pour grands écrans (recommandé: 1920x600px)",
             "preview_alt": "Aperçu bureau",
             "replace_hint": "Cliquez ou glissez pour remplacer l'image",
             "upload_title": "Glissez-déposez l'image bureau ici, ou cliquez pour sélectionner",
-            "upload_hint": "Recommandé: 1920x1080px ou plus"
+            "upload_hint": "Recommandé: 1920x600px"
         },
         "mobile_image": {
             "title": "Image Mobile",
-            "description": "Télécharger une image pour petits écrans (recommandé: 1080x1920px ou ratio portrait similaire)",
+            "description": "Télécharger une image pour petits écrans (recommandé: 800x800px)",
             "preview_alt": "Aperçu mobile",
             "replace_hint": "Cliquez ou glissez pour remplacer l'image",
             "upload_title": "Glissez-déposez l'image mobile ici, ou cliquez pour sélectionner",
-            "upload_hint": "Recommandé: 1080x1920px ou ratio portrait similaire"
+            "upload_hint": "Recommandé: 800x800px (Carré)"
         },
         "danger_zone": {
             "title": "Zone de Danger",

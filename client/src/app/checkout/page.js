@@ -1028,7 +1028,7 @@ export default function CheckoutPage() {
                                                     )}
                                                 <p className="text-xs text-[#6B4423]">
                                                     {item.quantity} × {formatCurrency(item.price)}
-                                                    {item.originalPrice && item.originalPrice !== item.price && (
+                                                    {item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price) && (
                                                         <span className="line-through text-[#7A4E2D] ml-1">
                                                             {formatCurrency(item.originalPrice)}
                                                         </span>

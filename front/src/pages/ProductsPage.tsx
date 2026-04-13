@@ -34,6 +34,7 @@ import {
   X,
   MoreVertical,
   Info,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -581,7 +582,6 @@ export function ProductForm({
             setProduct({
               name: productData.name || "",
               description: productData.description || "",
-              // Prefill brandId if available
               brandId: productData.brand?.id || productData.brandId || "",
               categoryId: primaryCategory?.id || "",
               categoryIds: productCategories.map((c: any) => c.id),
@@ -627,24 +627,31 @@ export function ProductForm({
                   })()
                   : [],
               isActive:
-                productData.isActive !== undefined
-                  ? productData.isActive
-                  : true,
-              // SEO fields
+                productData.isActive !== undefined ? productData.isActive : true,
               metaTitle: productData.metaTitle || "",
               metaDescription: productData.metaDescription || "",
               keywords: productData.keywords || "",
               tags: productData.tags || [],
-              // (mark SEO as edited to prevent auto-fill overwriting existing values)
               topBrandIds: productData.topBrandIds || [],
               newBrandIds: productData.newBrandIds || [],
               hotBrandIds: productData.hotBrandIds || [],
-              // Shipping dimensions (from first variant if no variants)
+              // Shipping dimensions
               shippingLength: productData.variants?.[0]?.shippingLength?.toString() || "",
               shippingBreadth: productData.variants?.[0]?.shippingBreadth?.toString() || "",
               shippingHeight: productData.variants?.[0]?.shippingHeight?.toString() || "",
               shippingWeight: productData.variants?.[0]?.shippingWeight?.toString() || "",
             });
+
+
+            // If SKU is already present, mark it as manually edited to prevent auto-filler from overwriting it
+            const initialSku = productData.variants?.length === 1 &&
+              (!productData.variants[0].attributes ||
+                productData.variants[0].attributes.length === 0)
+              ? productData.variants[0].sku
+              : "";
+            if (initialSku) {
+              setSkuManuallyEdited(true);
+            }
 
             // Mark SEO fields as already-set so auto-fill doesn't overwrite them
             if (productData.metaTitle) seoEditedRef.current.metaTitle = true;
@@ -884,9 +891,9 @@ export function ProductForm({
         return;
       }
 
-      const skuBase = product.sku || "";
+      const skuBase = product.sku || product.name.substring(0, 3).toUpperCase() || "SKU";
       const skuSuffix = combination
-        .map((c) => c.value?.value?.substring(0, 3).toUpperCase() || "")
+        .map((c) => c.value?.value?.replace(/\s+/g, "").substring(0, 3).toUpperCase() || "")
         .join("-");
       const variantSku = skuSuffix ? `${skuBase}-${skuSuffix}` : skuBase;
 
@@ -1470,19 +1477,65 @@ export function ProductForm({
     );
   };
 
+  const handleGenerateSku = () => {
+    if (!product.name) {
+      toast.error("Please enter a product name first");
+      return;
+    }
+
+    const categoryName = categories.find((c) => c.id === product.categoryIds[0] || c.id === product.primaryCategoryId)?.name || "";
+    const namePart = product.name
+      .replace(/\s+/g, "")
+      .substring(0, 3)
+      .toUpperCase();
+    const pricePart = product.price ? Math.floor(parseFloat(product.price)).toString() : "0";
+    const categoryPart = categoryName
+      .replace(/\s+/g, "")
+      .substring(0, 3)
+      .toUpperCase();
+
+    const generatedSku = `${namePart}${pricePart}${categoryPart}`;
+    setProduct((prev) => ({ ...prev, sku: generatedSku }));
+    setSkuManuallyEdited(true); // Don't let the passive effect override it now
+    toast.success("SKU generated");
+  };
+
+  const handleRegenerateAllVariantSkus = () => {
+    if (variants.length === 0) return;
+
+    const baseSku = product.sku || product.name.substring(0, 3).toUpperCase() || "SKU";
+
+    setVariants((prev) => 
+      prev.map((variant) => {
+        const attrSuffix = (variant.attributes || [])
+          .map((attr: any) => attr.value?.replace(/\s+/g, "").substring(0, 3).toUpperCase() || "")
+          .join("-");
+        
+        return {
+          ...variant,
+          sku: attrSuffix ? `${baseSku}-${attrSuffix}` : baseSku
+        };
+      })
+    );
+    toast.success("All variant SKUs regenerated");
+  };
+
   // Track if user has manually edited the SKU
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
 
   useEffect(() => {
     // Auto-generate SKU when not using variants and SKU hasn't been manually edited
-    if (
-      !hasVariants &&
-      !skuManuallyEdited &&
-      product.name &&
-      product.price &&
-      categories.length > 0 &&
-      product.categoryIds.length > 0
-    ) {
+    // In EDIT mode, we ONLY auto-generate if the SKU is currently empty
+    const shouldAutoGenerate = 
+      !hasVariants && 
+      !skuManuallyEdited && 
+      product.name && 
+      product.price && 
+      categories.length > 0 && 
+      product.categoryIds.length > 0 &&
+      (mode === "create" || !product.sku);
+
+    if (shouldAutoGenerate) {
       const categoryName =
         categories.find((c) => c.id === product.categoryIds[0])?.name || "";
       // Create SKU from first 3 chars of name + price + first 3 chars of category
@@ -1510,7 +1563,10 @@ export function ProductForm({
     product.categoryIds,
     categories,
     skuManuallyEdited,
+    mode,
+    product.sku
   ]);
+
 
   // ... inside ProductForm, after brands state:
   // const [brands, setBrands] = useState<{ label: string; value: string }[]>([]); // Removed unused brands state
@@ -1970,19 +2026,32 @@ export function ProductForm({
                     ? t("products.form.placeholders.sku_auto")
                     : "Base SKU (Auto-generated)"}
                 </Label>
-                <Input
-                  id="sku"
-                  name="sku"
-                  value={product.sku}
-                  onChange={(e) => {
-                    handleChange(e);
-                    setSkuManuallyEdited(true); // Mark as manually edited
-                  }}
-                  placeholder={t("products.form.placeholders.sku_auto_hint")}
-                  required
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="sku"
+                    name="sku"
+                    value={product.sku}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setSkuManuallyEdited(true); // Mark as manually edited
+                    }}
+                    placeholder={t("products.form.placeholders.sku_auto_hint")}
+                    className="flex-1"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleGenerateSku}
+                    title={t("products.form.buttons.generate_sku")}
+                    className="shrink-0"
+                  >
+                    <Wand2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  SKU is auto-generated but you can edit it if needed
+                  {t("products.form.placeholders.sku_auto_hint")}
                 </p>
               </div>
 
@@ -2370,18 +2439,31 @@ export function ProductForm({
                   )}
                 </div>
 
-                <Button
-                  type="button"
-                  onClick={generateVariants}
-                  disabled={
-                    !Object.values(selectedAttributes).some(
-                      (values) => values.length > 0
-                    ) || isLoading
-                  }
-                  className="w-full"
-                >
-                  {t("products.form.variants.generate_variants_button")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={generateVariants}
+                    disabled={
+                      !Object.values(selectedAttributes).some(
+                        (values) => values.length > 0
+                      ) || isLoading
+                    }
+                    className="flex-1"
+                  >
+                    {t("products.form.variants.generate_variants_button")}
+                  </Button>
+                  {variants.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleRegenerateAllVariantSkus}
+                      title={t("products.form.buttons.regenerate_all_skus")}
+                    >
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      {t("products.form.buttons.regenerate_all_skus")}
+                    </Button>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
@@ -2403,6 +2485,7 @@ export function ProductForm({
                           onImagesChange={handleVariantImagesChange}
                           isEditMode={mode === "edit"}
                           shiprocketEnabled={shiprocketEnabled}
+                          baseSku={product.sku}
                         />
                       ))}
                     </div>

@@ -921,19 +921,19 @@
         },
         "desktop_image": {
             "title": "Desktop Image",
-            "description": "Upload image for large screens (recommended: 1920x1080px or larger)",
+            "description": "Upload image for large screens (recommended: 1920x600px)",
             "preview_alt": "Desktop preview",
             "replace_hint": "Click or drag to replace image",
             "upload_title": "Drag & drop desktop image here, or click to select",
-            "upload_hint": "Recommended: 1920x1080px or larger"
+            "upload_hint": "Recommended: 1920x600px"
         },
         "mobile_image": {
             "title": "Mobile Image",
-            "description": "Upload image for small screens (recommended: 1080x1920px or similar portrait ratio)",
+            "description": "Upload image for small screens (recommended: 800x800px)",
             "preview_alt": "Mobile preview",
             "replace_hint": "Click or drag to replace image",
             "upload_title": "Drag & drop mobile image here, or click to select",
-            "upload_hint": "Recommended: 1080x1920px or similar portrait ratio"
+            "upload_hint": "Recommended: 800x800px (Square)"
         },
         "danger_zone": {
             "title": "Danger Zone",
@@ -1918,7 +1918,8 @@
                 "enter_meta_title": "SEO Title",
                 "enter_meta_desc": "SEO Description",
                 "sku_auto": "SKU (Auto-generated)",
-                "sku_auto_hint": "Auto-generated from name, price and category"
+                "sku_auto_hint": "Auto-generated from name, price and category",
+                "sku_help": "Click to automatically generate a unique SKU"
             },
             "buttons": {
                 "create": "Create Product",
@@ -1927,7 +1928,9 @@
                 "creating": "Creating...",
                 "updating": "Updating...",
                 "generate_variants": "Generate Variants",
-                "add_variant": "Add Variant"
+                "add_variant": "Add Variant",
+                "generate_sku": "Generate SKU",
+                "regenerate_all_skus": "Regenerate All SKUs"
             },
             "seo": {
                 "title_label": "Meta Title",

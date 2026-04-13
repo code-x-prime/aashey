@@ -1610,19 +1610,19 @@
         },
         "desktop_image": {
             "title": "Imagen de Escritorio",
-            "description": "Subir imagen para pantallas grandes (recomendado: 1920x1080px o mayor)",
+            "description": "Subir imagen para pantallas grandes (recomendado: 1920x600px)",
             "preview_alt": "Vista previa de escritorio",
             "replace_hint": "Haga clic o arrastre para reemplazar la imagen",
             "upload_title": "Arrastre y suelte la imagen de escritorio aquí, o haga clic para seleccionar",
-            "upload_hint": "Recomendado: 1920x1080px o mayor"
+            "upload_hint": "Recomendado: 1920x600px"
         },
         "mobile_image": {
             "title": "Imagen Móvil",
-            "description": "Subir imagen para pantallas pequeñas (recomendado: 1080x1920px o similar proporción vertical)",
+            "description": "Subir imagen para pantallas pequeñas (recomendado: 800x800px)",
             "preview_alt": "Vista previa móvil",
             "replace_hint": "Haga clic o arrastre para reemplazar la imagen",
             "upload_title": "Arrastre y suelte la imagen móvil aquí, o haga clic para seleccionar",
-            "upload_hint": "Recomendado: 1080x1920px o similar proporción vertical"
+            "upload_hint": "Recomendado: 800x800px (Cuadrado)"
         },
         "danger_zone": {
             "title": "Zona de Peligro",
