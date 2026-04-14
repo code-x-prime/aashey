@@ -3,20 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/products/ProductCard";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
+
+import { RiArrowRightLine, RiArrowLeftLine, RiArrowRightSLine, RiSparklingLine } from "react-icons/ri";
 
 export function NewArrivals() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [slidesPerView, setSlidesPerView] = useState(4);
 
+  /* ── Fetch ─────────────────────────────────── */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -31,12 +28,39 @@ export function NewArrivals() {
     fetchProducts();
   }, []);
 
+  /* ── Responsive slides-per-view ────────────── */
+  useEffect(() => {
+    const update = () => setSlidesPerView(window.innerWidth < 768 ? 2 : 4);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => { setCurrentIndex(0); }, [slidesPerView]);
+
+  const maxIndex  = Math.max(0, products.length - slidesPerView);
+  const canPrev   = currentIndex > 0;
+  const canNext   = currentIndex < maxIndex;
+  const totalDots = maxIndex + 1;
+
+  const prev = () => setCurrentIndex((i) => Math.max(0, i - 1));
+  const next = () => setCurrentIndex((i) => Math.min(maxIndex, i + 1));
+
+  /* ── Arrow style — inverted for dark bg ─────── */
+  const arrowCls = (enabled) =>
+    `rounded-full border flex items-center justify-center transition-all duration-200 ${
+      enabled
+        ? "border-[#C9933A] text-[#C9933A] hover:bg-[#C9933A] hover:text-[#3F1F00]"
+        : "border-[#C9933A]/20 text-[#C9933A]/25 cursor-not-allowed"
+    }`;
+
+  /* ── Loading skeleton ───────────────────────── */
   if (loading) {
     return (
       <section className="py-12 md:py-16 bg-[#092D15]">
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-[#C9933A]/10 rounded-2xl h-80 skeleton border border-[#C9933A]/20" />
             ))}
           </div>
@@ -47,14 +71,17 @@ export function NewArrivals() {
 
   if (!products.length) return null;
 
+  const gap = slidesPerView === 2 ? 12 : 20;
+
   return (
-    <section className="py-12 md:py-16 bg-[#092D15]">
+    <section className="py-12 md:py-16 bg-[#092D15] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
-        {/* Header */}
+
+        {/* ── Header ────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12 md:mb-14">
           <div>
-            <span className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-[#C9933A]/80 block mb-2">
-              Just Dropped
+            <span className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-[#C9933A]/80 flex items-center gap-1.5 mb-2">
+              <RiSparklingLine className="w-3.5 h-3.5" /> Just Dropped
             </span>
             <h2 className="font-cormorant text-4xl md:text-5xl font-semibold text-[#FDF6E3] leading-tight">
               New Arrivals
@@ -64,36 +91,85 @@ export function NewArrivals() {
             </p>
             <div className="w-12 h-0.5 bg-gradient-to-r from-[#C9933A]/60 to-transparent mt-4" />
           </div>
-          <Link href="/products?sort=newest" className="shrink-0">
-            <button className="btn-gold gap-2 text-sm">
-              View All New Arrivals <ArrowRight className="w-4 h-4" />
-            </button>
-          </Link>
+
+          {/* Desktop: arrows + view all */}
+          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <button onClick={prev} disabled={!canPrev} aria-label="Previous" className={`w-9 h-9 ${arrowCls(canPrev)}`}>
+                <RiArrowLeftLine className="w-4 h-4" />
+              </button>
+              <button onClick={next} disabled={!canNext} aria-label="Next" className={`w-9 h-9 ${arrowCls(canNext)}`}>
+                <RiArrowRightLine className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="w-px h-6 bg-[#C9933A]/20" />
+            <Link href="/products?sort=newest">
+              <button className="btn-gold gap-1.5 text-sm">
+                View All New Arrivals <RiArrowRightSLine className="w-4 h-4" />
+              </button>
+            </Link>
+          </div>
         </div>
 
-        {/* Products Carousel */}
+        {/* ── Carousel Track ────────────────────── */}
         <div className="relative">
-          <Carousel opts={{ align: "start", loop: true }} className="w-full">
-            <CarouselContent className="-ml-4">
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+              style={{
+                gap: `${gap}px`,
+                transform: `translateX(calc(-${currentIndex} * (100% / ${slidesPerView} + ${gap / slidesPerView}px)))`,
+              }}
+            >
               {products.map((product) => (
-                <CarouselItem key={product.id} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
+                <div
+                  key={product.id}
+                  className="flex-shrink-0"
+                  style={{ width: `calc(100% / ${slidesPerView} - ${gap * (slidesPerView - 1) / slidesPerView}px)` }}
+                >
                   <ProductCard product={product} />
-                </CarouselItem>
+                </div>
               ))}
-            </CarouselContent>
-            <CarouselPrevious className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 h-9 w-9 bg-[#3F1F00] hover:bg-[#C9933A] text-[#C9933A] hover:text-[#3F1F00] border-0 shadow-lg" />
-            <CarouselNext className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 h-9 w-9 bg-[#3F1F00] hover:bg-[#C9933A] text-[#C9933A] hover:text-[#3F1F00] border-0 shadow-lg" />
-          </Carousel>
+            </div>
+          </div>
+
+          {/* Right fade — dark bg */}
+          <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[#092D15] to-transparent md:hidden" />
         </div>
 
-        {/* View All */}
-        <div className="text-center mt-12">
+        {/* ── Mobile Bottom Controls ─────────────── */}
+        <div className="flex items-center justify-between mt-6 md:hidden">
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalDots }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === currentIndex ? "w-5 h-1.5 bg-[#C9933A]" : "w-1.5 h-1.5 bg-[#C9933A]/30"
+                }`}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={prev} disabled={!canPrev} aria-label="Previous" className={`w-8 h-8 ${arrowCls(canPrev)}`}>
+              <RiArrowLeftLine className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={next} disabled={!canNext} aria-label="Next" className={`w-8 h-8 ${arrowCls(canNext)}`}>
+              <RiArrowRightLine className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile + Desktop bottom: View All */}
+        <div className="text-center mt-10 md:mt-12">
           <Link href="/products?sort=newest">
-            <button className="btn-gold gap-2">
-              View All New Arrivals <ArrowRight className="w-4 h-4" />
+            <button className="btn-gold gap-1.5">
+              View All New Arrivals <RiArrowRightSLine className="w-4 h-4" />
             </button>
           </Link>
         </div>
+
       </div>
     </section>
   );
