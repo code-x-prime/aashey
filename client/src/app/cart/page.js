@@ -350,12 +350,6 @@ export default function CartPage() {
     const totals = useMemo(() => getCartTotals(), [cart, coupon]);
 
     const handleCheckout = useCallback(() => {
-        // If guest and prices hidden, force login
-        if (!isAuthenticated && hidePricesForGuests) {
-            router.push("/auth?redirect=checkout");
-            return;
-        }
-
         // Ensure minimum amount is 1
         const calculatedAmount = totals.subtotal - totals.discount;
         if (calculatedAmount < 1) {
@@ -363,12 +357,9 @@ export default function CartPage() {
             return;
         }
 
-        if (!isAuthenticated) {
-            router.push("/auth?redirect=checkout");
-        } else {
-            router.push("/checkout");
-        }
-    }, [isAuthenticated, router, totals, hidePricesForGuests]);
+        // Both guests and authenticated users go to checkout
+        router.push("/checkout");
+    }, [router, totals]);
 
     // Display loading state
     if (loading && (!cart.items || cart.items.length === 0)) {
@@ -419,63 +410,6 @@ export default function CartPage() {
 
     return (
         <div className="container mx-auto px-4 py-8 bg-[#FDF6E3] min-h-screen">
-            <div className="mb-8">
-                <h1 className="font-cormorant text-3xl md:text-4xl font-semibold text-[#3F1F00] mb-2">
-                    Your Cart
-                </h1>
-                <div className="w-20 h-1 bg-gradient-to-r from-[#C9933A] to-[#F0C96B]"></div>
-            </div>
-
-            {/* Guest cart notice */}
-            {!isAuthenticated && cart.items.length > 0 && (
-                <div className="bg-[#C9933A]/10 border-l-4 border-[#C9933A] p-6 rounded-md flex items-start mb-6 shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <div className="flex-shrink-0 mr-4">
-                        <div className="w-14 h-14 bg-[#C9933A] rounded-md flex items-center justify-center shadow-lg">
-                            <svg
-                                className="w-7 h-7 text-[#3F1F00]"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                />
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="flex-1">
-                        <h2 className="text-xl font-bold text-[#3F1F00] mb-2 flex items-center gap-2">
-                            Guest Shopping Cart
-                            <span className="text-xs font-normal bg-[#C9933A]/20 text-[#3F1F00] px-2 py-1 rounded-md">
-                                Login Required
-                            </span>
-                        </h2>
-                        <p className="font-sans text-[#3F1F00] mb-4 leading-relaxed">
-                            You&apos;re currently shopping as a guest. To complete your
-                            purchase and save your cart items for future visits, please log in
-                            to your account.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <Link href="/auth?redirect=cart">
-                                <Button className="bg-[#C9933A] hover:bg-[#B8842F] text-[#3F1F00] font-semibold px-6 py-3 rounded-md shadow-md hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
-                                    Log In to Continue
-                                </Button>
-                            </Link>
-                            <Link href="/auth?redirect=cart">
-                                <Button
-                                    variant="outline"
-                                    className="border-2 border-[#C9933A] hover:bg-[#C9933A] hover:text-[#3F1F00] text-[#3F1F00] font-semibold px-6 py-3 rounded-md transition-all duration-200"
-                                >
-                                    Create Account
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Show merge progress */}
             {mergeProgress && (

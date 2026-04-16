@@ -71,6 +71,7 @@ export default function ShiprocketSettingsPage() {
     const [pickupAddresses, setPickupAddresses] = useState<PickupAddress[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingAddress, setIsSavingAddress] = useState(false);
     const [isSavingDimensions, setIsSavingDimensions] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -265,7 +266,7 @@ export default function ShiprocketSettingsPage() {
         }
 
         try {
-            setIsSaving(true);
+            setIsSavingAddress(true);
             if (editingAddress) {
                 const response = await api.put(`/api/admin/shiprocket/pickup-addresses/${editingAddress.id}`, addressForm);
                 if (response.data.success) {
@@ -285,7 +286,7 @@ export default function ShiprocketSettingsPage() {
         } catch (error: any) {
             toast.error(error.response?.data?.message || t("shiprocket_settings.messages.address_error"));
         } finally {
-            setIsSaving(false);
+            setIsSavingAddress(false);
         }
     };
 
@@ -770,8 +771,8 @@ export default function ShiprocketSettingsPage() {
                                         <Button variant="outline" onClick={() => setIsAddressDialogOpen(false)}>
                                             {t("shiprocket_settings.buttons.cancel")}
                                         </Button>
-                                        <Button onClick={handleSaveAddress} disabled={isSaving}>
-                                            {isSaving ? (
+                                        <Button onClick={handleSaveAddress} disabled={isSavingAddress}>
+                                            {isSavingAddress ? (
                                                 <>
                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                                     {t("shiprocket_settings.buttons.saving")}

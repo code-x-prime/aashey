@@ -21,6 +21,8 @@ import {
     Wallet,
     Star,
     MessageSquare,
+    User,
+    LogIn,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -36,7 +38,7 @@ export default function CheckoutPage() {
     const { cart, coupon, getCartTotals, clearCart } = useCart();
     const [addresses, setAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState("");
-    const [loadingAddresses, setLoadingAddresses] = useState(true);
+    const [loadingAddresses, setLoadingAddresses] = useState(false);
     const [paymentSettings, setPaymentSettings] = useState({
         cashEnabled: true,
         razorpayEnabled: false,
@@ -55,22 +57,29 @@ export default function CheckoutPage() {
     const [redirectCountdown, setRedirectCountdown] = useState(2);
     const [confettiCannon, setConfettiCannon] = useState(false);
     const [orderItemsForReview, setOrderItemsForReview] = useState([]);
+    const [isGuestOrder, setIsGuestOrder] = useState(false);
+
+    // Guest address form state
+    const [guestAddress, setGuestAddress] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        street: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "India",
+    });
+    const [guestAddressErrors, setGuestAddressErrors] = useState({});
 
     const totals = getCartTotals();
 
-    // Redirect if not authenticated
-    useEffect(() => {
-        if (!isAuthenticated) {
-            router.push("/auth?redirect=checkout");
-        }
-    }, [isAuthenticated, router]);
-
     // Redirect if cart is empty (but not if order is already created)
     useEffect(() => {
-        if (isAuthenticated && cart.items?.length === 0 && !orderCreated) {
+        if (cart.items?.length === 0 && !orderCreated) {
             router.push("/cart");
         }
-    }, [isAuthenticated, cart, router, orderCreated]);
+    }, [cart, router, orderCreated]);
 
     // Fetch payment settings
     useEffect(() => {
@@ -85,7 +94,6 @@ export default function CheckoutPage() {
                         razorpayEnabled: response.data.razorpayEnabled ?? false,
                         codCharge: response.data.codCharge ?? 0,
                     });
-                    // Set default payment method based on settings (priority: Cash > Razorpay)
                     if (response.data.cashEnabled) {
                         setPaymentMethod("CASH");
                     } else if (response.data.razorpayEnabled) {
@@ -94,14 +102,13 @@ export default function CheckoutPage() {
                 }
             } catch (error) {
                 console.error("Error fetching payment settings:", error);
-                // Default to cash if fetch fails
                 setPaymentMethod("CASH");
             }
         };
         fetchPaymentSettings();
     }, []);
 
-    // Fetch addresses
+    // Fetch saved addresses (authenticated users only)
     const fetchAddresses = useCallback(async () => {
         if (!isAuthenticated) return;
 
@@ -114,7 +121,6 @@ export default function CheckoutPage() {
             if (response.success) {
                 setAddresses(response.data.addresses || []);
 
-                // Set the default address if available
                 if (response.data.addresses?.length > 0) {
                     const defaultAddress = response.data.addresses.find(
                         (addr) => addr.isDefault
@@ -138,7 +144,7 @@ export default function CheckoutPage() {
         fetchAddresses();
     }, [fetchAddresses]);
 
-    // Fetch Razorpay key
+    // Fetch Razorpay key for authenticated users
     useEffect(() => {
         const fetchRazorpayKey = async () => {
             try {
@@ -146,10 +152,7 @@ export default function CheckoutPage() {
                     credentials: "include",
                 });
                 if (response.success) {
-                    console.log("Razorpay key fetched successfully");
                     setRazorpayKey(response.data.key);
-                } else {
-                    console.error("Failed to fetch Razorpay key:", response);
                 }
             } catch (error) {
                 console.error("Error fetching Razorpay key:", error);
@@ -161,20 +164,40 @@ export default function CheckoutPage() {
         }
     }, [isAuthenticated]);
 
-    // Handle address selection
-    const handleAddressSelect = (id) => {
-        setSelectedAddressId(id);
-    };
+    const handleAddressSelect = (id) => setSelectedAddressId(id);
+    const handlePaymentMethodSelect = (method) => setPaymentMethod(method);
 
-    // Handle payment method selection
-    const handlePaymentMethodSelect = (method) => {
-        setPaymentMethod(method);
-    };
-
-    // Handle address form success
     const handleAddressFormSuccess = () => {
         setShowAddressForm(false);
         fetchAddresses();
+    };
+
+    // Guest address field change
+    const handleGuestAddressChange = (e) => {
+        const { name, value } = e.target;
+        setGuestAddress((prev) => ({ ...prev, [name]: value }));
+        if (guestAddressErrors[name]) {
+            setGuestAddressErrors((prev) => ({ ...prev, [name]: "" }));
+        }
+    };
+
+    // Validate guest address form
+    const validateGuestAddress = () => {
+        const errors = {};
+        if (!guestAddress.name || guestAddress.name.trim().length < 2)
+            errors.name = "Name must be at least 2 characters";
+        if (!guestAddress.email || !guestAddress.email.includes("@"))
+            errors.email = "Valid email is required";
+        if (!guestAddress.phone || !/^\d{10}$/.test(guestAddress.phone.replace(/\D/g, "")))
+            errors.phone = "Valid 10-digit phone number is required";
+        if (!guestAddress.street) errors.street = "Street address is required";
+        if (!guestAddress.city) errors.city = "City is required";
+        if (!guestAddress.state) errors.state = "State is required";
+        if (!guestAddress.postalCode || !/^\d{6}$/.test(guestAddress.postalCode))
+            errors.postalCode = "Valid 6-digit postal code is required";
+
+        setGuestAddressErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     // Add countdown for redirect
@@ -183,51 +206,44 @@ export default function CheckoutPage() {
             const timer = setTimeout(() => {
                 setRedirectCountdown(redirectCountdown - 1);
             }, 1000);
-
             return () => clearTimeout(timer);
         } else if (orderCreated && redirectCountdown === 0) {
-            router.push(`/account/orders`);
+            if (isGuestOrder) {
+                router.push("/");
+            } else {
+                router.push("/account/orders");
+            }
         }
-    }, [orderCreated, redirectCountdown, router]);
+    }, [orderCreated, redirectCountdown, router, isGuestOrder]);
 
     // Enhanced confetti effect when order is successful
     useEffect(() => {
         if (successAnimation) {
-            // Trigger the celebration confetti
             fireConfetti.celebration();
-
-            // Follow with just one more cannon after 1.5 seconds for lighter effect
             const timer = setTimeout(() => {
                 setConfettiCannon(true);
                 fireConfetti.sides();
             }, 1500);
-
             return () => clearTimeout(timer);
         }
     }, [successAnimation]);
 
-    // Update the payment handler with enhanced audio feedback
     const handleSuccessfulPayment = (
         paymentResponse = null,
-        orderData = null
+        orderData = null,
+        guestCheckout = false
     ) => {
-        // Handle Razorpay payment response
         if (paymentResponse?.razorpay_payment_id) {
             setPaymentId(paymentResponse.razorpay_payment_id);
         }
-
-        // Handle order data (from both cash and razorpay orders)
         if (orderData?.orderNumber) {
             setOrderNumber(orderData.orderNumber);
         }
 
-        // Start success animation
         setSuccessAnimation(true);
-
-        // Play a single success sound
+        setIsGuestOrder(guestCheckout);
         playSuccessSound();
 
-        // Store order items for "Review" CTA before clearing cart
         const items = cart.items?.map((item) => ({
             productId: item.productId || item.product?.id,
             productName: item.productName || item.product?.name,
@@ -235,336 +251,428 @@ export default function CheckoutPage() {
         }))?.filter((i) => i.productId && i.productSlug) || [];
         setOrderItemsForReview(items);
 
-        // Clear cart after successful order
         clearCart();
 
-        // Show enhanced success toast
         const orderNum = orderData?.orderNumber || orderNumber || "";
         toast.success("Order placed successfully!", {
             duration: 4000,
             icon: <PartyPopper className="h-5 w-5 text-green-500" />,
             description: orderNum
-                ? `Your order #${orderNum} has been confirmed. Redirecting to orders page...`
-                : "Your order has been confirmed. Redirecting to orders page...",
+                ? `Your order #${orderNum} has been confirmed. ${guestCheckout ? "Check your email for details." : "Redirecting to orders page..."}`
+                : "Your order has been confirmed.",
         });
 
-        // Set order created after a brief delay to ensure cart is cleared first
         setTimeout(() => {
             setOrderCreated(true);
         }, 100);
     };
 
+    // Build guest cart items payload for backend
+    const buildGuestCartItems = () => {
+        return cart.items.map((item) => ({
+            productVariantId: item.productVariantId || item.variant?.id,
+            quantity: item.quantity,
+        }));
+    };
+
     // Process checkout
     const handleCheckout = async () => {
-        if (!selectedAddressId) {
-            toast.error("Please select a shipping address");
-            return;
-        }
-
-        setProcessing(true);
-        setError("");
-
-        try {
-            // Get checkout amount
-            const calculatedAmount = totals.total;
-            // Fix: Keep 2 decimal places instead of rounding to preserve exact amount
-            const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
-
-            // Show warning if original amount was less than 1
-            if (calculatedAmount < 1) {
-                toast.info("Minimum order amount is ₹1. Your total has been adjusted.");
+        if (isAuthenticated) {
+            // ---------- AUTHENTICATED USER FLOW ----------
+            if (!selectedAddressId) {
+                toast.error("Please select a shipping address");
+                return;
             }
 
-            if (paymentMethod === "CASH") {
-                // Create Cash on Delivery order
-                toast.loading("Creating your order...", {
-                    id: "order-creation",
-                    duration: 10000,
-                });
+            setProcessing(true);
+            setError("");
 
-                const orderResponse = await fetchApi("/payment/cash-order", {
-                    method: "POST",
-                    credentials: "include",
-                    body: JSON.stringify({
-                        shippingAddressId: selectedAddressId,
-                        billingAddressSameAsShipping: true,
-                        couponCode: coupon?.code || null,
-                        couponId: coupon?.id || null,
-                        discountAmount: totals.discount || 0,
-                    }),
-                });
+            try {
+                const calculatedAmount = totals.total;
+                const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
 
-                toast.dismiss("order-creation");
-
-                if (!orderResponse.success) {
-                    throw new Error(orderResponse.message || "Failed to create order");
+                if (calculatedAmount < 1) {
+                    toast.info("Minimum order amount is ₹1. Your total has been adjusted.");
                 }
 
-                // Show success for cash order
-                const orderData = {
-                    orderNumber: orderResponse.data.orderNumber,
-                    orderId: orderResponse.data.orderId,
-                    paymentMethod: orderResponse.data.paymentMethod || "CASH",
-                };
-                setOrderNumber(orderResponse.data.orderNumber);
-                setOrderId(orderResponse.data.orderId || "");
-                handleSuccessfulPayment(null, orderData);
-                return;
-            } else if (paymentMethod === "RAZORPAY") {
-                // Ensure Razorpay key is available
-                if (!razorpayKey) {
-                    // Try to fetch it again
-                    try {
-                        const keyResponse = await fetchApi("/payment/razorpay-key", {
-                            method: "GET",
-                            credentials: "include",
-                        });
-                        if (keyResponse.success && keyResponse.data?.key) {
-                            setRazorpayKey(keyResponse.data.key);
-                        } else {
-                            throw new Error("Razorpay key not available. Please configure payment gateway settings.");
-                        }
-                    } catch (keyError) {
-                        throw new Error("Failed to fetch Razorpay key. Please configure payment gateway settings in admin panel.");
+                if (paymentMethod === "CASH") {
+                    toast.loading("Creating your order...", {
+                        id: "order-creation",
+                        duration: 10000,
+                    });
+
+                    const orderResponse = await fetchApi("/payment/cash-order", {
+                        method: "POST",
+                        credentials: "include",
+                        body: JSON.stringify({
+                            shippingAddressId: selectedAddressId,
+                            billingAddressSameAsShipping: true,
+                            couponCode: coupon?.code || null,
+                            couponId: coupon?.id || null,
+                            discountAmount: totals.discount || 0,
+                        }),
+                    });
+
+                    toast.dismiss("order-creation");
+
+                    if (!orderResponse.success) {
+                        throw new Error(orderResponse.message || "Failed to create order");
                     }
-                }
 
-                // Show loading toast for order creation
-                toast.loading("Creating your order...", {
-                    id: "order-creation",
-                    duration: 10000,
-                });
+                    const orderData = {
+                        orderNumber: orderResponse.data.orderNumber,
+                        orderId: orderResponse.data.orderId,
+                        paymentMethod: orderResponse.data.paymentMethod || "CASH",
+                    };
+                    setOrderNumber(orderResponse.data.orderNumber);
+                    setOrderId(orderResponse.data.orderId || "");
+                    handleSuccessfulPayment(null, orderData, false);
+                    return;
 
-                // Step 1: Create Razorpay order
-                const orderResponse = await fetchApi("/payment/checkout", {
-                    method: "POST",
-                    credentials: "include",
-                    body: JSON.stringify({
-                        amount,
-                        currency: "INR",
-                        paymentGateway: "RAZORPAY",
-                        // Include coupon information for proper tracking
-                        couponCode: coupon?.code || null,
-                        couponId: coupon?.id || null,
-                        discountAmount: totals.discount || 0,
-                    }),
-                });
-
-                // Dismiss order creation toast
-                toast.dismiss("order-creation");
-
-                if (!orderResponse.success) {
-                    throw new Error(orderResponse.message || "Failed to create order");
-                }
-
-                // Show success toast for order creation
-                toast.success("Order created! Opening payment gateway...", {
-                    duration: 2000,
-                });
-
-                const razorpayOrder = orderResponse.data;
-                setOrderId(razorpayOrder.id);
-
-                // Step 2: Load Razorpay script with loading indicator
-                toast.loading("Loading payment gateway...", {
-                    id: "payment-gateway",
-                    duration: 5000,
-                });
-
-                const loaded = await loadScript(
-                    "https://checkout.razorpay.com/v1/checkout.js"
-                );
-
-                toast.dismiss("payment-gateway");
-
-                if (!loaded) {
-                    throw new Error("Razorpay SDK failed to load");
-                }
-
-                // Get the current razorpayKey (ensure it's available)
-                let currentKey = razorpayKey;
-                if (!currentKey) {
-                    try {
-                        const keyResponse = await fetchApi("/payment/razorpay-key", {
-                            method: "GET",
-                            credentials: "include",
-                        });
-                        if (keyResponse.success && keyResponse.data?.key) {
-                            currentKey = keyResponse.data.key;
-                            setRazorpayKey(currentKey);
-                        }
-                    } catch (keyError) {
-                        console.error("Failed to fetch Razorpay key:", keyError);
-                    }
-                }
-
-                if (!currentKey) {
-                    throw new Error("Razorpay key is missing. Please configure payment gateway settings in admin panel.");
-                }
-
-                const options = {
-                    key: currentKey,
-                    amount: razorpayOrder.amount,
-                    currency: razorpayOrder.currency,
-                    name: "Aashey — Pure A2 Cow Ghee",
-                                    description:
-                                        "Traditional Bilona A2 Ghee — Pure, Natural, Authentic.",
-                    order_id: razorpayOrder.id,
-                    prefill: {
-                        name: user?.name || "",
-                        email: user?.email || "",
-                        contact: user?.phone || "",
-                    },
-                    handler: async function (response) {
-                        // Step 4: Verify payment - Show loading state during verification
-                        setProcessing(true);
-
-                        // Add a toast to show payment verification is in progress
-                        toast.loading("Verifying your payment...", {
-                            id: "payment-verification",
-                            duration: 10000,
-                        });
-
+                } else if (paymentMethod === "RAZORPAY") {
+                    let currentKey = razorpayKey;
+                    if (!currentKey) {
                         try {
-                            const verificationResponse = await fetchApi("/payment/verify", {
-                                method: "POST",
+                            const keyResponse = await fetchApi("/payment/razorpay-key", {
                                 credentials: "include",
-                                body: JSON.stringify({
-                                    // Send both formats to ensure compatibility
-                                    razorpay_order_id: response.razorpay_order_id,
-                                    razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature,
-                                    // Also send camelCase versions
-                                    razorpayOrderId: response.razorpay_order_id,
-                                    razorpayPaymentId: response.razorpay_payment_id,
-                                    razorpaySignature: response.razorpay_signature,
-                                    // Include shipping and coupon information
-                                    shippingAddressId: selectedAddressId,
-                                    billingAddressSameAsShipping: true,
-                                    // Also pass coupon information again to ensure it's included
-                                    couponCode: coupon?.code || null,
-                                    couponId: coupon?.id || null,
-                                    discountAmount: totals.discount || 0,
-                                    notes: "",
-                                }),
+                            });
+                            if (keyResponse.success && keyResponse.data?.key) {
+                                currentKey = keyResponse.data.key;
+                                setRazorpayKey(currentKey);
+                            } else {
+                                throw new Error("Razorpay key not available.");
+                            }
+                        } catch {
+                            throw new Error("Failed to fetch Razorpay key. Please configure payment gateway settings.");
+                        }
+                    }
+
+                    toast.loading("Creating your order...", {
+                        id: "order-creation",
+                        duration: 10000,
+                    });
+
+                    const orderResponse = await fetchApi("/payment/checkout", {
+                        method: "POST",
+                        credentials: "include",
+                        body: JSON.stringify({
+                            amount,
+                            currency: "INR",
+                            paymentGateway: "RAZORPAY",
+                            couponCode: coupon?.code || null,
+                            couponId: coupon?.id || null,
+                            discountAmount: totals.discount || 0,
+                        }),
+                    });
+
+                    toast.dismiss("order-creation");
+
+                    if (!orderResponse.success) {
+                        throw new Error(orderResponse.message || "Failed to create order");
+                    }
+
+                    toast.success("Order created! Opening payment gateway...", { duration: 2000 });
+
+                    const razorpayOrder = orderResponse.data;
+                    setOrderId(razorpayOrder.id);
+
+                    toast.loading("Loading payment gateway...", {
+                        id: "payment-gateway",
+                        duration: 5000,
+                    });
+
+                    const loaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+                    toast.dismiss("payment-gateway");
+
+                    if (!loaded) throw new Error("Razorpay SDK failed to load");
+
+                    const options = {
+                        key: currentKey,
+                        amount: razorpayOrder.amount,
+                        currency: razorpayOrder.currency,
+                        name: "Aashey — Pure A2 Cow Ghee",
+                        description: "Traditional Bilona A2 Ghee — Pure, Natural, Authentic.",
+                        order_id: razorpayOrder.id,
+                        prefill: {
+                            name: user?.name || "",
+                            email: user?.email || "",
+                            contact: user?.phone || "",
+                        },
+                        handler: async function (response) {
+                            setProcessing(true);
+                            toast.loading("Verifying your payment...", {
+                                id: "payment-verification",
+                                duration: 10000,
                             });
 
-                            // Dismiss the loading toast
-                            toast.dismiss("payment-verification");
-
-                            if (verificationResponse.success) {
-                                // Show success message
-                                toast.success("Payment verified successfully! 🎉", {
-                                    duration: 3000,
+                            try {
+                                const verificationResponse = await fetchApi("/payment/verify", {
+                                    method: "POST",
+                                    credentials: "include",
+                                    body: JSON.stringify({
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        razorpayOrderId: response.razorpay_order_id,
+                                        razorpayPaymentId: response.razorpay_payment_id,
+                                        razorpaySignature: response.razorpay_signature,
+                                        shippingAddressId: selectedAddressId,
+                                        billingAddressSameAsShipping: true,
+                                        couponCode: coupon?.code || null,
+                                        couponId: coupon?.id || null,
+                                        discountAmount: totals.discount || 0,
+                                        notes: "",
+                                    }),
                                 });
 
-                                setOrderId(verificationResponse.data.orderId);
-                                handleSuccessfulPayment(response, verificationResponse.data);
-                            } else {
-                                throw new Error(
-                                    verificationResponse.message || "Payment verification failed"
-                                );
+                                toast.dismiss("payment-verification");
+
+                                if (verificationResponse.success) {
+                                    toast.success("Payment verified successfully! 🎉", { duration: 3000 });
+                                    setOrderId(verificationResponse.data.orderId);
+                                    handleSuccessfulPayment(response, verificationResponse.data, false);
+                                } else {
+                                    throw new Error(verificationResponse.message || "Payment verification failed");
+                                }
+                            } catch (error) {
+                                console.error("Payment verification error:", error);
+                                toast.dismiss("payment-verification");
+
+                                if (error.message?.includes("previously cancelled")) {
+                                    setError("Your previous order was cancelled. Please refresh the page and try again.");
+                                    toast.error("Please refresh the page to start a new checkout", { duration: 6000 });
+                                } else {
+                                    setError(error.message || "Payment verification failed");
+                                    toast.error(error.message || "Payment verification failed. Please try again.", { duration: 5000 });
+                                }
+                                setProcessing(false);
                             }
-                        } catch (error) {
-                            console.error("Payment verification error:", error);
-
-                            // Dismiss the loading toast
-                            toast.dismiss("payment-verification");
-
-                            // If the error is about a previously cancelled order, guide the user
-                            if (
-                                error.message &&
-                                error.message.includes("previously cancelled")
-                            ) {
-                                setError(
-                                    "Your previous order was cancelled. Please refresh the page and try again."
-                                );
-                                toast.error("Please refresh the page to start a new checkout", {
-                                    duration: 6000,
-                                    style: {
-                                        backgroundColor: "#FEF3C7",
-                                        color: "#D97706",
-                                        border: "1px solid #FCD34D",
-                                    },
-                                });
-                            } else {
-                                setError(error.message || "Payment verification failed");
-                                toast.error(
-                                    error.message ||
-                                    "Payment verification failed. Please try again.",
-                                    {
-                                        duration: 5000,
-                                        style: {
-                                            backgroundColor: "#FEE2E2",
-                                            color: "#DC2626",
-                                            border: "1px solid #FECACA",
-                                        },
-                                    }
-                                );
-                            }
-
-                            setProcessing(false);
-                        }
-                    },
-                    theme: {
-                        color: "#FD5D0D", // Use primary color for Razorpay modal
-                    },
-                    modal: {
-                        ondismiss: function () {
-                            // When Razorpay modal is dismissed
-                            setProcessing(false);
                         },
-                    },
-                };
+                        theme: { color: "#FD5D0D" },
+                        modal: {
+                            ondismiss: function () {
+                                setProcessing(false);
+                            },
+                        },
+                    };
 
-                const razorpay = new window.Razorpay(options);
-                razorpay.open();
-            } else {
-                // No payment method selected or available
-                toast.error("Please select a payment method");
+                    const razorpay = new window.Razorpay(options);
+                    razorpay.open();
+                } else {
+                    toast.error("Please select a payment method");
+                }
+            } catch (error) {
+                console.error("Checkout error:", error);
+                toast.dismiss("order-creation");
+                toast.dismiss("payment-gateway");
+                toast.dismiss("payment-verification");
+
+                if (error.message?.includes("order was previously cancelled")) {
+                    setError("This order was previously cancelled. Please refresh the page to start a new checkout.");
+                    toast.error("Please refresh the page to start a new checkout", { duration: 6000 });
+                } else {
+                    setError(error.message || "Checkout failed");
+                    toast.error(error.message || "Checkout failed", { duration: 4000 });
+                }
+            } finally {
+                setProcessing(false);
+            }
+
+        } else {
+            // ---------- GUEST USER FLOW ----------
+            if (!validateGuestAddress()) {
+                toast.error("Please fill in all required address fields");
                 return;
             }
-        } catch (error) {
-            console.error("Checkout error:", error);
 
-            // Dismiss any pending loading toasts
-            toast.dismiss("order-creation");
-            toast.dismiss("payment-gateway");
-            toast.dismiss("payment-verification");
+            setProcessing(true);
+            setError("");
 
-            if (
-                error.message &&
-                error.message.includes("order was previously cancelled")
-            ) {
-                // Clear local state and guide the user
-                setError(
-                    "This order was previously cancelled. Please refresh the page to start a new checkout."
-                );
-                toast.error("Please refresh the page to start a new checkout", {
-                    duration: 6000,
-                    style: {
-                        backgroundColor: "#FEF3C7",
-                        color: "#D97706",
-                        border: "1px solid #FCD34D",
-                    },
-                });
-            } else {
-                setError(error.message || "Checkout failed");
-                toast.error(error.message || "Checkout failed", {
-                    duration: 4000,
-                    style: {
-                        backgroundColor: "#FEE2E2",
-                        color: "#DC2626",
-                        border: "1px solid #FECACA",
-                    },
-                });
+            const guestCartItems = buildGuestCartItems();
+
+            if (!guestCartItems.length) {
+                toast.error("Your cart is empty");
+                setProcessing(false);
+                return;
             }
-        } finally {
-            setProcessing(false);
+
+            try {
+                const calculatedAmount = totals.total;
+                const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
+
+                if (paymentMethod === "CASH") {
+                    toast.loading("Creating your order...", {
+                        id: "order-creation",
+                        duration: 10000,
+                    });
+
+                    const orderResponse = await fetchApi("/payment/guest/cash-order", {
+                        method: "POST",
+                        body: JSON.stringify({
+                            guestAddress,
+                            cartItems: guestCartItems,
+                            couponCode: coupon?.code || null,
+                            couponId: coupon?.id || null,
+                            discountAmount: totals.discount || 0,
+                        }),
+                    });
+
+                    toast.dismiss("order-creation");
+
+                    if (!orderResponse.success) {
+                        throw new Error(orderResponse.message || "Failed to create order");
+                    }
+
+                    const orderData = {
+                        orderNumber: orderResponse.data.orderNumber,
+                        orderId: orderResponse.data.orderId,
+                        paymentMethod: "CASH",
+                    };
+                    setOrderNumber(orderResponse.data.orderNumber);
+                    handleSuccessfulPayment(null, orderData, true);
+                    return;
+
+                } else if (paymentMethod === "RAZORPAY") {
+                    toast.loading("Creating your order...", {
+                        id: "order-creation",
+                        duration: 10000,
+                    });
+
+                    const orderResponse = await fetchApi("/payment/guest/checkout", {
+                        method: "POST",
+                        body: JSON.stringify({
+                            guestAddress,
+                            cartItems: guestCartItems,
+                            currency: "INR",
+                            couponCode: coupon?.code || null,
+                            couponId: coupon?.id || null,
+                            discountAmount: totals.discount || 0,
+                        }),
+                    });
+
+                    toast.dismiss("order-creation");
+
+                    if (!orderResponse.success) {
+                        throw new Error(orderResponse.message || "Failed to create order");
+                    }
+
+                    const razorpayOrder = orderResponse.data;
+                    const guestRazorpayKey = razorpayOrder.razorpayKey;
+                    setOrderId(razorpayOrder.id);
+
+                    toast.success("Order created! Opening payment gateway...", { duration: 2000 });
+                    toast.loading("Loading payment gateway...", {
+                        id: "payment-gateway",
+                        duration: 5000,
+                    });
+
+                    const loaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+                    toast.dismiss("payment-gateway");
+
+                    if (!loaded) throw new Error("Razorpay SDK failed to load");
+
+                    const options = {
+                        key: guestRazorpayKey,
+                        amount: razorpayOrder.amount,
+                        currency: razorpayOrder.currency,
+                        name: "Aashey — Pure A2 Cow Ghee",
+                        description: "Traditional Bilona A2 Ghee — Pure, Natural, Authentic.",
+                        order_id: razorpayOrder.id,
+                        prefill: {
+                            name: guestAddress.name,
+                            email: guestAddress.email,
+                            contact: guestAddress.phone,
+                        },
+                        handler: async function (response) {
+                            setProcessing(true);
+                            toast.loading("Verifying your payment...", {
+                                id: "payment-verification",
+                                duration: 10000,
+                            });
+
+                            try {
+                                const verificationResponse = await fetchApi("/payment/guest/verify", {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        guestAddress,
+                                        cartItems: guestCartItems,
+                                        couponCode: coupon?.code || null,
+                                        couponId: coupon?.id || null,
+                                        discountAmount: totals.discount || 0,
+                                    }),
+                                });
+
+                                toast.dismiss("payment-verification");
+
+                                if (verificationResponse.success) {
+                                    toast.success("Payment verified successfully! 🎉", { duration: 3000 });
+                                    setOrderId(verificationResponse.data.orderId);
+                                    handleSuccessfulPayment(response, verificationResponse.data, true);
+                                } else {
+                                    throw new Error(verificationResponse.message || "Payment verification failed");
+                                }
+                            } catch (error) {
+                                console.error("Guest payment verification error:", error);
+                                toast.dismiss("payment-verification");
+                                setError(error.message || "Payment verification failed");
+                                toast.error(error.message || "Payment verification failed. Please try again.", { duration: 5000 });
+                                setProcessing(false);
+                            }
+                        },
+                        theme: { color: "#FD5D0D" },
+                        modal: {
+                            ondismiss: function () {
+                                setProcessing(false);
+                            },
+                        },
+                    };
+
+                    const razorpay = new window.Razorpay(options);
+                    razorpay.open();
+                } else {
+                    toast.error("Please select a payment method");
+                }
+            } catch (error) {
+                console.error("Guest checkout error:", error);
+                toast.dismiss("order-creation");
+                toast.dismiss("payment-gateway");
+                toast.dismiss("payment-verification");
+
+                const isAccountExists =
+                    error.statusCode === 409 ||
+                    error.message?.toLowerCase().includes("already exists");
+
+                if (isAccountExists) {
+                    setError("An account with this email already exists. Please log in to continue.");
+                    toast.error("Account already exists. Please log in.", {
+                        duration: 6000,
+                    });
+                } else {
+                    setError(error.message || "Checkout failed");
+                    toast.error(error.message || "Checkout failed", { duration: 4000 });
+                }
+            } finally {
+                setProcessing(false);
+            }
         }
     };
 
-    if (!isAuthenticated || loadingAddresses) {
+    // Is checkout button disabled?
+    const isCheckoutDisabled = () => {
+        if (processing) return true;
+        if (!paymentMethod) return true;
+        if (isAuthenticated) {
+            return !selectedAddressId || addresses.length === 0;
+        }
+        // Guest: check required fields are non-empty
+        const { name, email, phone, street, city, state, postalCode } = guestAddress;
+        return !name || !email || !phone || !street || !city || !state || !postalCode;
+    };
+
+    if (loadingAddresses && isAuthenticated) {
         return (
             <div className="container mx-auto px-4 py-10">
                 <div className="flex justify-center items-center h-64">
@@ -579,20 +687,15 @@ export default function CheckoutPage() {
         return (
             <div className="container mx-auto px-4 py-12">
                 <div className="max-w-lg mx-auto bg-white p-8 rounded-lg border shadow-lg relative overflow-hidden">
-                    {/* Background pattern for festive feel */}
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent z-0"></div>
 
-                    {/* Celebration animation */}
                     <div className="relative z-10">
                         <div className="relative flex justify-center">
                             <div className="h-36 w-36 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
                                 <PartyPopper
-                                    className={`h-20 w-20 text-primary ${confettiCannon ? "animate-pulse" : ""
-                                        }`}
+                                    className={`h-20 w-20 text-primary ${confettiCannon ? "animate-pulse" : ""}`}
                                 />
                             </div>
-
-                            {/* Radiating circles animation */}
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <div className="animate-ping absolute h-40 w-40 rounded-full bg-primary opacity-20"></div>
                                 <div className="animate-ping absolute h-32 w-32 rounded-full bg-green-500 opacity-10 delay-150"></div>
@@ -604,7 +707,6 @@ export default function CheckoutPage() {
                             <h1 className="text-4xl font-bold mb-2 text-[#3F1F00] animate-pulse">
                                 Woohoo!
                             </h1>
-
                             <h2 className="text-2xl font-bold mb-2 text-[#3F1F00]">
                                 Order Confirmed!
                             </h2>
@@ -624,10 +726,32 @@ export default function CheckoutPage() {
                                 </p>
                             </div>
 
-                            <p className="text-[#5C3A1E] mb-6 max-w-md mx-auto">
+                            <p className="text-[#5C3A1E] mb-4 max-w-md mx-auto">
                                 Thank you for your purchase! Your order has been successfully
                                 placed and you&apos;ll receive an email confirmation shortly.
                             </p>
+
+                            {/* Guest account notice */}
+                            {isGuestOrder && (
+                                <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                                    <div className="flex items-start gap-2">
+                                        <User className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-blue-800 mb-1">
+                                                Account created for you
+                                            </p>
+                                            <p className="text-sm text-blue-700">
+                                                We created an account with your email. Use &quot;Forgot Password&quot; to set your password and track your orders anytime.
+                                            </p>
+                                            <Link href="/auth?tab=forgot">
+                                                <button className="text-blue-600 hover:text-blue-800 text-sm underline mt-1">
+                                                    Set my password →
+                                                </button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Review CTA - only purchasers can review */}
                             {orderItemsForReview.length > 0 && (
@@ -663,31 +787,58 @@ export default function CheckoutPage() {
                                 <div className="flex items-center justify-center space-x-2 mb-3">
                                     <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
                                     <p className="text-blue-700">
-                                        Redirecting to orders page in {redirectCountdown} seconds...
+                                        Redirecting in {redirectCountdown} seconds...
                                     </p>
                                 </div>
                                 <div className="text-center">
-                                    <Link href="/account/orders">
-                                        <button className="text-blue-600 hover:text-blue-800 text-sm underline">
-                                            Go to orders now →
-                                        </button>
-                                    </Link>
+                                    {isGuestOrder ? (
+                                        <Link href="/">
+                                            <button className="text-blue-600 hover:text-blue-800 text-sm underline">
+                                                Go to homepage →
+                                            </button>
+                                        </Link>
+                                    ) : (
+                                        <Link href="/account/orders">
+                                            <button className="text-blue-600 hover:text-blue-800 text-sm underline">
+                                                Go to orders now →
+                                            </button>
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
 
                             <div className="flex justify-center gap-4">
-                                <Link href="/account/orders">
-                                    <Button className="gap-2 bg-primary hover:bg-primary/90">
-                                        <ShoppingBag size={16} />
-                                        My Orders
-                                    </Button>
-                                </Link>
-                                <Link href="/products">
-                                    <Button variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/10">
-                                        <Gift size={16} />
-                                        Continue Shopping
-                                    </Button>
-                                </Link>
+                                {isGuestOrder ? (
+                                    <>
+                                        <Link href="/auth?tab=login">
+                                            <Button className="gap-2 bg-primary hover:bg-primary/90">
+                                                <LogIn size={16} />
+                                                Log In
+                                            </Button>
+                                        </Link>
+                                        <Link href="/products">
+                                            <Button variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/10">
+                                                <Gift size={16} />
+                                                Continue Shopping
+                                            </Button>
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link href="/account/orders">
+                                            <Button className="gap-2 bg-primary hover:bg-primary/90">
+                                                <ShoppingBag size={16} />
+                                                My Orders
+                                            </Button>
+                                        </Link>
+                                        <Link href="/products">
+                                            <Button variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/10">
+                                                <Gift size={16} />
+                                                Continue Shopping
+                                            </Button>
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -714,8 +865,6 @@ export default function CheckoutPage() {
                                 refresh or close this page.
                             </p>
                         </div>
-
-                        {/* Progress indicators */}
                         <div className="space-y-3">
                             <div className="flex items-center justify-center space-x-2">
                                 <div className="h-2 w-2 bg-primary rounded-full animate-bounce"></div>
@@ -736,103 +885,275 @@ export default function CheckoutPage() {
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
                     <AlertCircle className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
                     <div>
-                        <p className="text-red-700 font-semibold">Payment Failed</p>
+                        <p className="text-red-700 font-semibold">Error</p>
                         <p className="text-red-600">{error}</p>
+                        {error.includes("email already exists") && (
+                            <Link href="/auth?redirect=checkout">
+                                <button className="mt-2 text-red-700 underline text-sm font-medium hover:text-red-900">
+                                    Log in to your account →
+                                </button>
+                            </Link>
+                        )}
                     </div>
+                </div>
+            )}
+
+            {/* Guest login prompt banner */}
+            {!isAuthenticated && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-md flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <User className="h-5 w-5 text-amber-600" />
+                        <p className="text-amber-800 text-sm">
+                            Already have an account?{" "}
+                            <Link href="/auth?redirect=checkout" className="font-semibold underline hover:text-amber-900">
+                                Log in for faster checkout
+                            </Link>
+                        </p>
+                    </div>
+                    <Link href="/auth?redirect=checkout">
+                        <Button variant="outline" size="sm" className="border-amber-400 text-amber-800 hover:bg-amber-100 gap-1.5 flex-shrink-0">
+                            <LogIn className="h-4 w-4" />
+                            Log In
+                        </Button>
+                    </Link>
                 </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main checkout area */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Shipping Addresses */}
+                    {/* Shipping Address */}
                     <div className="bg-white rounded-lg shadow-sm border p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold flex items-center">
                                 <MapPin className="h-5 w-5 mr-2 text-primary" />
                                 Shipping Address
                             </h2>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-primary hover:text-primary/80 hover:bg-primary/10"
-                                onClick={() => setShowAddressForm(!showAddressForm)}
-                            >
-                                <Plus className="h-4 w-4 mr-1" />
-                                Add New
-                            </Button>
+                            {isAuthenticated && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-primary hover:text-primary/80 hover:bg-primary/10"
+                                    onClick={() => setShowAddressForm(!showAddressForm)}
+                                >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add New
+                                </Button>
+                            )}
                         </div>
 
-                        {showAddressForm && (
-                            <AddressForm
-                                onSuccess={handleAddressFormSuccess}
-                                onCancel={() => setShowAddressForm(false)}
-                                isInline={true}
-                            />
+                        {/* Authenticated: saved addresses */}
+                        {isAuthenticated && (
+                            <>
+                                {showAddressForm && (
+                                    <AddressForm
+                                        onSuccess={handleAddressFormSuccess}
+                                        onCancel={() => setShowAddressForm(false)}
+                                        isInline={true}
+                                    />
+                                )}
+
+                                {addresses.length === 0 && !showAddressForm ? (
+                                    <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
+                                        <span className="text-yellow-700">
+                                            You don&apos;t have any saved addresses.{" "}
+                                            <button
+                                                className="font-medium underline"
+                                                onClick={() => setShowAddressForm(true)}
+                                            >
+                                                Add an address
+                                            </button>{" "}
+                                            to continue.
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div
+                                        className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showAddressForm ? "mt-6" : ""}`}
+                                    >
+                                        {addresses.map((address) => (
+                                            <div
+                                                key={address.id}
+                                                className={`border rounded-md p-4 cursor-pointer transition-all ${selectedAddressId === address.id
+                                                    ? "border-primary bg-primary/5"
+                                                    : "hover:border-gray-400"
+                                                    }`}
+                                                onClick={() => handleAddressSelect(address.id)}
+                                            >
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="font-medium">{address.name}</span>
+                                                    {address.isDefault && (
+                                                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                                            Default
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm text-[#5C3A1E]">
+                                                    <p>{address.street}</p>
+                                                    <p>
+                                                        {address.city}, {address.state} {address.postalCode}
+                                                    </p>
+                                                    <p>{address.country}</p>
+                                                    <p className="mt-1">
+                                                        Phone: {address.phone || "Not provided"}
+                                                    </p>
+                                                </div>
+                                                <div className="mt-3 flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        name="addressSelection"
+                                                        checked={selectedAddressId === address.id}
+                                                        onChange={() => handleAddressSelect(address.id)}
+                                                        className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+                                                    />
+                                                    <label className="ml-2 text-sm font-medium">
+                                                        Ship to this address
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
                         )}
 
-                        {addresses.length === 0 && !showAddressForm ? (
-                            <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
-                                <span className="text-yellow-700">
-                                    You don&apos;t have any saved addresses.{" "}
-                                    <button
-                                        className="font-medium underline"
-                                        onClick={() => setShowAddressForm(true)}
-                                    >
-                                        Add an address
-                                    </button>{" "}
-                                    to continue.
-                                </span>
-                            </div>
-                        ) : (
-                            <div
-                                className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showAddressForm ? "mt-6" : ""
-                                    }`}
-                            >
-                                {addresses.map((address) => (
-                                    <div
-                                        key={address.id}
-                                        className={`border rounded-md p-4 cursor-pointer transition-all ${selectedAddressId === address.id
-                                            ? "border-primary bg-primary/5"
-                                            : "hover:border-gray-400"
-                                            }`}
-                                        onClick={() => handleAddressSelect(address.id)}
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-medium">{address.name}</span>
-                                            {address.isDefault && (
-                                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                                    Default
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="text-sm text-[#5C3A1E]">
-                                            <p>{address.street}</p>
-                                            <p>
-                                                {address.city}, {address.state} {address.postalCode}
-                                            </p>
-                                            <p>{address.country}</p>
-                                            <p className="mt-1">
-                                                Phone: {address.phone || "Not provided"}
-                                            </p>
-                                        </div>
-                                        <div className="mt-3 flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="addressSelection"
-                                                checked={selectedAddressId === address.id}
-                                                onChange={() => handleAddressSelect(address.id)}
-                                                className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                            />
-                                            <label
-                                                htmlFor={`address-${address.id}`}
-                                                className="ml-2 text-sm font-medium"
-                                            >
-                                                Ship to this address
-                                            </label>
-                                        </div>
+                        {/* Guest: inline address form */}
+                        {!isAuthenticated && (
+                            <div className="space-y-4">
+                                <p className="text-sm text-[#5C3A1E]">
+                                    Enter your delivery details below.
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Name */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-[#3F1F00] mb-1">
+                                            Full Name <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={guestAddress.name}
+                                            onChange={handleGuestAddressChange}
+                                            placeholder="John Doe"
+                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.name ? "border-red-400" : "border-gray-300"}`}
+                                        />
+                                        {guestAddressErrors.name && (
+                                            <p className="text-red-500 text-xs mt-1">{guestAddressErrors.name}</p>
+                                        )}
                                     </div>
-                                ))}
+
+                                    {/* Email */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-[#3F1F00] mb-1">
+                                            Email <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={guestAddress.email}
+                                            onChange={handleGuestAddressChange}
+                                            placeholder="john@example.com"
+                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.email ? "border-red-400" : "border-gray-300"}`}
+                                        />
+                                        {guestAddressErrors.email && (
+                                            <p className="text-red-500 text-xs mt-1">{guestAddressErrors.email}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Phone */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-[#3F1F00] mb-1">
+                                            Phone <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            value={guestAddress.phone}
+                                            onChange={handleGuestAddressChange}
+                                            placeholder="9876543210"
+                                            maxLength={10}
+                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.phone ? "border-red-400" : "border-gray-300"}`}
+                                        />
+                                        {guestAddressErrors.phone && (
+                                            <p className="text-red-500 text-xs mt-1">{guestAddressErrors.phone}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Postal Code */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-[#3F1F00] mb-1">
+                                            Postal Code <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="postalCode"
+                                            value={guestAddress.postalCode}
+                                            onChange={handleGuestAddressChange}
+                                            placeholder="400001"
+                                            maxLength={6}
+                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.postalCode ? "border-red-400" : "border-gray-300"}`}
+                                        />
+                                        {guestAddressErrors.postalCode && (
+                                            <p className="text-red-500 text-xs mt-1">{guestAddressErrors.postalCode}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Street */}
+                                <div>
+                                    <label className="block text-sm font-medium text-[#3F1F00] mb-1">
+                                        Street Address <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="street"
+                                        value={guestAddress.street}
+                                        onChange={handleGuestAddressChange}
+                                        placeholder="123 Main Street, Apartment 4B"
+                                        className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.street ? "border-red-400" : "border-gray-300"}`}
+                                    />
+                                    {guestAddressErrors.street && (
+                                        <p className="text-red-500 text-xs mt-1">{guestAddressErrors.street}</p>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* City */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-[#3F1F00] mb-1">
+                                            City <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="city"
+                                            value={guestAddress.city}
+                                            onChange={handleGuestAddressChange}
+                                            placeholder="Mumbai"
+                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.city ? "border-red-400" : "border-gray-300"}`}
+                                        />
+                                        {guestAddressErrors.city && (
+                                            <p className="text-red-500 text-xs mt-1">{guestAddressErrors.city}</p>
+                                        )}
+                                    </div>
+
+                                    {/* State */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-[#3F1F00] mb-1">
+                                            State <span className="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="state"
+                                            value={guestAddress.state}
+                                            onChange={handleGuestAddressChange}
+                                            placeholder="Maharashtra"
+                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.state ? "border-red-400" : "border-gray-300"}`}
+                                        />
+                                        {guestAddressErrors.state && (
+                                            <p className="text-red-500 text-xs mt-1">{guestAddressErrors.state}</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -852,16 +1173,13 @@ export default function CheckoutPage() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {/* Cash on Delivery Option - Only show if enabled */}
                                 {paymentSettings.cashEnabled && (
                                     <div
                                         className={`border rounded-md p-4 transition-all ${paymentMethod === "CASH"
                                             ? "border-primary bg-primary/5 cursor-pointer"
                                             : "hover:border-gray-400 cursor-pointer"
                                             }`}
-                                        onClick={() => {
-                                            handlePaymentMethodSelect("CASH");
-                                        }}
+                                        onClick={() => handlePaymentMethodSelect("CASH")}
                                     >
                                         <div className="flex items-center">
                                             <input
@@ -869,15 +1187,10 @@ export default function CheckoutPage() {
                                                 id="cash"
                                                 name="paymentMethod"
                                                 checked={paymentMethod === "CASH"}
-                                                onChange={() => {
-                                                    handlePaymentMethodSelect("CASH");
-                                                }}
+                                                onChange={() => handlePaymentMethodSelect("CASH")}
                                                 className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
                                             />
-                                            <label
-                                                htmlFor="cash"
-                                                className="ml-2 flex items-center flex-1"
-                                            >
+                                            <label htmlFor="cash" className="ml-2 flex items-center flex-1">
                                                 <span className="font-medium">Cash on Delivery (COD)</span>
                                                 {paymentMethod === "CASH" && (
                                                     <span className="ml-2 text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">
@@ -885,9 +1198,7 @@ export default function CheckoutPage() {
                                                     </span>
                                                 )}
                                             </label>
-                                            <span className="flex items-center">
-                                                <Wallet className="h-4 w-4 text-green-600" />
-                                            </span>
+                                            <Wallet className="h-4 w-4 text-green-600" />
                                         </div>
                                         <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
                                             Pay with cash when your order is delivered
@@ -900,16 +1211,13 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
-                                {/* Razorpay Option */}
                                 {paymentSettings.razorpayEnabled && (
                                     <div
                                         className={`border rounded-md p-4 transition-all ${paymentMethod === "RAZORPAY"
                                             ? "border-primary bg-primary/5 cursor-pointer"
                                             : "hover:border-gray-400 cursor-pointer"
                                             }`}
-                                        onClick={() => {
-                                            handlePaymentMethodSelect("RAZORPAY");
-                                        }}
+                                        onClick={() => handlePaymentMethodSelect("RAZORPAY")}
                                     >
                                         <div className="flex items-center">
                                             <input
@@ -917,15 +1225,10 @@ export default function CheckoutPage() {
                                                 id="razorpay"
                                                 name="paymentMethod"
                                                 checked={paymentMethod === "RAZORPAY"}
-                                                onChange={() => {
-                                                    handlePaymentMethodSelect("RAZORPAY");
-                                                }}
+                                                onChange={() => handlePaymentMethodSelect("RAZORPAY")}
                                                 className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
                                             />
-                                            <label
-                                                htmlFor="razorpay"
-                                                className="ml-2 flex items-center flex-1"
-                                            >
+                                            <label htmlFor="razorpay" className="ml-2 flex items-center flex-1">
                                                 <span className="font-medium">Pay Online (Razorpay)</span>
                                                 {paymentMethod === "RAZORPAY" && (
                                                     <span className="ml-2 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
@@ -933,16 +1236,13 @@ export default function CheckoutPage() {
                                                     </span>
                                                 )}
                                             </label>
-                                            <span className="flex items-center">
-                                                <IndianRupee className="h-4 w-4 text-primary" />
-                                            </span>
+                                            <IndianRupee className="h-4 w-4 text-primary" />
                                         </div>
                                         <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
                                             Pay securely with Credit/Debit Card, UPI, NetBanking, etc.
                                         </p>
                                     </div>
                                 )}
-
                             </div>
                         )}
                     </div>
@@ -956,99 +1256,51 @@ export default function CheckoutPage() {
                         <div className="divide-y">
                             <div className="pb-4">
                                 <p className="text-sm font-medium mb-2">
-                                    {cart.totalQuantity} Items in Cart
+                                    {cart.totalQuantity || cart.items?.length} Items in Cart
                                 </p>
                                 <div className="max-h-52 overflow-y-auto space-y-3">
                                     {cart.items?.map((item) => {
                                         const imgUrl = (item.variant?.images?.length > 0
                                             ? (item.variant.images.find((i) => i.isPrimary)?.url || item.variant.images[0]?.url)
-                                            : item.product?.images?.[0]?.url || item.product?.image) || null;
+                                            : item.product?.images?.[0]?.url || item.product?.image || item.image) || null;
+                                        const productName = item.product?.name || item.productName || "Product";
                                         return (
-                                        <div key={item.id} className="flex items-center gap-3">
-                                            <div className="h-10 w-10 bg-gray-100 rounded flex-shrink-0 relative overflow-hidden">
-                                                {imgUrl ? (
-                                                    <Image
-                                                        src={getImageUrl(imgUrl)}
-                                                        alt={item.product?.name || "Product"}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                ) : null}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium truncate">
-                                                    {item.product.name}
-                                                </p>
-                                                {(item.variant?.attributes?.length > 0 ||
-                                                    item.variant?.color ||
-                                                    item.variant?.size) && (
-                                                        <p className="text-xs text-[#6B4423] flex items-center gap-1">
-                                                            {item.variant?.attributes &&
-                                                                item.variant.attributes.length > 0 ? (
-                                                                <span>
-                                                                    {item.variant.attributes.map((attr, idx) => (
-                                                                        <span key={attr.attributeValueId}>
-                                                                            {attr.attribute}: {attr.value}
-                                                                            {idx < item.variant.attributes.length - 1 &&
-                                                                                " • "}
-                                                                        </span>
-                                                                    ))}
+                                            <div key={item.id} className="flex items-center gap-3">
+                                                <div className="h-10 w-10 bg-gray-100 rounded flex-shrink-0 relative overflow-hidden">
+                                                    {imgUrl ? (
+                                                        <Image
+                                                            src={getImageUrl(imgUrl)}
+                                                            alt={productName}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : null}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium truncate">
+                                                        {productName}
+                                                    </p>
+                                                    {item.variant?.attributes?.length > 0 && (
+                                                        <p className="text-xs text-[#6B4423]">
+                                                            {item.variant.attributes.map((attr, idx) => (
+                                                                <span key={attr.attributeValueId}>
+                                                                    {attr.attribute}: {attr.value}
+                                                                    {idx < item.variant.attributes.length - 1 && " • "}
                                                                 </span>
-                                                            ) : (
-                                                                <>
-                                                                    {item.variant?.color && (
-                                                                        <>
-                                                                            {item.variant.color?.hexCode && (
-                                                                                <div
-                                                                                    className="w-3 h-3 rounded-full border"
-                                                                                    style={{
-                                                                                        backgroundColor:
-                                                                                            item.variant.color.hexCode,
-                                                                                    }}
-                                                                                />
-                                                                            )}
-                                                                            <span>
-                                                                                {item.variant.color?.name ||
-                                                                                    item.variant.color}
-                                                                            </span>
-                                                                        </>
-                                                                    )}
-                                                                    {item.variant?.color && item.variant?.size && (
-                                                                        <span> • </span>
-                                                                    )}
-                                                                    {item.variant?.size && (
-                                                                        <span>
-                                                                            {item.variant.size?.name ||
-                                                                                item.variant.size}
-                                                                        </span>
-                                                                    )}
-                                                                </>
-                                                            )}
+                                                            ))}
                                                         </p>
                                                     )}
-                                                <p className="text-xs text-[#6B4423]">
-                                                    {item.quantity} × {formatCurrency(item.price)}
-                                                    {item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price) && (
-                                                        <span className="line-through text-[#7A4E2D] ml-1">
-                                                            {formatCurrency(item.originalPrice)}
-                                                        </span>
+                                                    {item.variantName && !item.variant?.attributes?.length && (
+                                                        <p className="text-xs text-[#6B4423]">{item.variantName}</p>
                                                     )}
+                                                    <p className="text-xs text-[#6B4423]">
+                                                        {item.quantity} × {formatCurrency(item.price)}
+                                                    </p>
+                                                </div>
+                                                <p className="font-medium text-sm">
+                                                    {formatCurrency(item.subtotal)}
                                                 </p>
-                                                {item.priceSource && item.priceSource !== "DEFAULT" && (
-                                                    <p className="text-xs text-green-600 font-medium mt-1">
-                                                        Bulk pricing applied
-                                                    </p>
-                                                )}
-                                                {item.moq && item.moq > 1 && (
-                                                    <p className="text-xs text-blue-600 mt-1">
-                                                        Min. Order: {item.moq} units
-                                                    </p>
-                                                )}
                                             </div>
-                                            <p className="font-medium text-sm">
-                                                {formatCurrency(item.subtotal)}
-                                            </p>
-                                        </div>
                                         );
                                     })}
                                 </div>
@@ -1062,7 +1314,7 @@ export default function CheckoutPage() {
 
                                 {coupon && (
                                     <div className="flex justify-between text-green-600">
-                                        <span>Discount</span>
+                                        <span>Discount ({coupon.code})</span>
                                         <span>-{formatCurrency(totals.discount)}</span>
                                     </div>
                                 )}
@@ -1076,7 +1328,6 @@ export default function CheckoutPage() {
                                     )}
                                 </div>
 
-                                {/* COD Charge */}
                                 {paymentMethod === "CASH" && paymentSettings.codCharge > 0 && (
                                     <div className="flex justify-between text-[#5C3A1E]">
                                         <span>COD Surcharge</span>
@@ -1084,15 +1335,11 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
-                                {/* Tax removed */}
-
-                                {/* Free shipping progress message */}
                                 {totals.shipping > 0 && cart.freeShippingThreshold > 0 && (
                                     <div className="mt-3 text-xs text-amber-700 bg-amber-50 p-2 rounded text-center font-medium border border-amber-200">
                                         Add <strong>{formatCurrency(cart.freeShippingThreshold - totals.subtotal)}</strong> more for <span className="text-green-600 font-bold">FREE shipping!</span>
                                     </div>
                                 )}
-
 
                                 <div className="pt-4">
                                     <div className="flex justify-between font-bold text-lg">
@@ -1107,16 +1354,10 @@ export default function CheckoutPage() {
                             </div>
 
                             <Button
-                                className={`w-full mt-6 bg-primary hover:bg-primary/90 text-white transition-all duration-200 ${processing ? "shadow-lg" : "hover:shadow-lg"
-                                    }`}
+                                className={`w-full mt-6 bg-primary hover:bg-primary/90 text-white transition-all duration-200 ${processing ? "shadow-lg" : "hover:shadow-lg"}`}
                                 size="lg"
                                 onClick={handleCheckout}
-                                disabled={
-                                    processing ||
-                                    !selectedAddressId ||
-                                    !paymentMethod ||
-                                    addresses.length === 0
-                                }
+                                disabled={isCheckoutDisabled()}
                             >
                                 {processing ? (
                                     <span className="flex items-center">

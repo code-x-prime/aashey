@@ -134,10 +134,10 @@ export function CartProvider({ children }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthenticated, mounted]);
 
-    // Re-verify coupon when cart changes
+    // Re-verify coupon when cart changes (works for both guests and authenticated users)
     useEffect(() => {
         const reVerifyCoupon = async () => {
-            if (!coupon || !isAuthenticated || !cart.items || cart.items.length === 0) {
+            if (!coupon || !cart.items || cart.items.length === 0) {
                 // If no coupon applied or cart is empty, clear coupon
                 if (coupon && cart.items.length === 0) {
                     setCoupon(null);
@@ -148,8 +148,8 @@ export function CartProvider({ children }) {
             try {
                 const cartTotal = parseFloat(cart.subtotal || 0).toFixed(2);
                 const cartItemsPayload = (cart.items || []).map((item) => ({
-                    productId: item?.product?.id,
-                    productVariantId: item?.variant?.id,
+                    productId: item?.product?.id || item?.productId,
+                    productVariantId: item?.variant?.id || item?.productVariantId,
                     brandId: item?.product?.brandId || item?.product?.brand?.id || null,
                     categoryIds: Array.isArray(item?.product?.categories)
                         ? item.product.categories
@@ -394,21 +394,15 @@ export function CartProvider({ children }) {
         }
     };
 
-    // Apply coupon (only for authenticated users)
+    // Apply coupon — works for both guests and authenticated users
     const applyCoupon = async (code) => {
-        if (!isAuthenticated) {
-            toast.error("Please log in to apply coupons");
-            return;
-        }
-
         setCouponLoading(true);
         setError(null);
         try {
-            // First verify if the coupon is valid with our cart total
             const cartTotal = parseFloat(cart.subtotal || 0).toFixed(2);
             const cartItemsPayload = (cart.items || []).map((item) => ({
-                productId: item?.product?.id,
-                productVariantId: item?.variant?.id,
+                productId: item?.product?.id || item?.productId,
+                productVariantId: item?.variant?.id || item?.productVariantId,
                 brandId: item?.product?.brandId || item?.product?.brand?.id || null,
                 categoryIds: Array.isArray(item?.product?.categories)
                     ? item.product.categories
@@ -420,21 +414,18 @@ export function CartProvider({ children }) {
             }));
 
             try {
-
                 const verifyResponse = await fetchApi("/coupons/verify", {
                     method: "POST",
                     credentials: "include",
                     body: JSON.stringify({ code, cartTotal, cartItems: cartItemsPayload }),
                 });
 
-                // If we got here, coupon is valid - extract discount info
                 const discountAmount = verifyResponse.data.coupon.discountAmount;
                 const finalAmount = verifyResponse.data.coupon.finalAmount;
                 const applicableSubtotal = verifyResponse.data.coupon.applicableSubtotal;
                 const matchedItems = verifyResponse.data.coupon.matchedItems ?? 0;
                 const originalCartTotal = parseFloat(cartTotal);
 
-                // Check if discount is capped (for fixed amount discounts)
                 const discountPercentage = (discountAmount / originalCartTotal) * 100;
                 const isDiscountCapped =
                     verifyResponse.data.coupon.discountType === "FIXED_AMOUNT" &&
@@ -446,7 +437,6 @@ export function CartProvider({ children }) {
                     });
                 }
 
-                // Set coupon data right away for immediate UI update
                 setCoupon({
                     id: verifyResponse.data.coupon.id,
                     code: verifyResponse.data.coupon.code,
@@ -459,24 +449,21 @@ export function CartProvider({ children }) {
                     isDiscountCapped,
                 });
 
-                // Apply the coupon to the server in the background, but don't wait for it
-                // This prevents full page reload while waiting for the server
-                fetchApi("/coupons/apply", {
-                    method: "POST",
-                    credentials: "include",
-                    body: JSON.stringify({ code }),
-                }).catch((error) => {
-                    console.warn("Background coupon application error:", error);
-                    // If background apply fails, we don't need to show an error
-                    // since the coupon verification already succeeded
-                });
+                // For authenticated users, also apply to server cart in background
+                if (isAuthenticated) {
+                    fetchApi("/coupons/apply", {
+                        method: "POST",
+                        credentials: "include",
+                        body: JSON.stringify({ code }),
+                    }).catch((error) => {
+                        console.warn("Background coupon application error:", error);
+                    });
+                }
 
                 return verifyResponse.data;
             } catch (apiError) {
                 console.error("API Error applying coupon:", apiError);
-                // Extract error message from response or use a default message
-                const errorMessage = apiError.message || "Failed to apply coupon";
-                throw new Error(errorMessage);
+                throw new Error(apiError.message || "Failed to apply coupon");
             }
         } catch (err) {
             console.error("Coupon error:", err);

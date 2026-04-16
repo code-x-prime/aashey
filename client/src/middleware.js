@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 // Define private routes that require authentication
-const privateRoutes = ["/profile", "/checkout", "/wishlist", "/orders"];
+const privateRoutes = ["/profile", "/wishlist", "/orders"];
 
 // Define auth routes that should redirect to dashboard if already logged in
 const authRoutes = [

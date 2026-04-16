@@ -11,6 +11,12 @@ import {
   createCashOrder,
   phonePeCallback,
 } from "../controllers/payment.controller.js";
+import {
+  getGuestRazorpayKey,
+  createGuestRazorpayOrder,
+  verifyGuestPayment,
+  createGuestCashOrder,
+} from "../controllers/guestPayment.controller.js";
 
 const router = express.Router();
 
@@ -19,6 +25,12 @@ router.get("/settings", getPaymentSettings);
 
 // PhonePe callback (public route - called by PhonePe)
 router.post("/phonepe-callback", phonePeCallback);
+
+// Guest checkout routes (public - no auth required)
+router.get("/guest/razorpay-key", getGuestRazorpayKey);
+router.post("/guest/checkout", createGuestRazorpayOrder);
+router.post("/guest/verify", verifyGuestPayment);
+router.post("/guest/cash-order", createGuestCashOrder);
 
 // All other payment routes require authentication
 router.use(verifyJWTToken);

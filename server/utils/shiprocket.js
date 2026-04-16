@@ -303,12 +303,12 @@ export async function processShiprocketReturn(orderId, returnReason = "Customer 
             pickup_customer_name: order.shippingAddress.name || order.user.name,
             pickup_last_name: "",
             company_name: "",
-            pickup_address: order.shippingAddress.address1 || order.shippingAddress.street,
+            pickup_address: order.shippingAddress.street,
             pickup_address_2: order.shippingAddress.address2 || "",
             pickup_city: order.shippingAddress.city,
             pickup_state: order.shippingAddress.state,
             pickup_country: order.shippingAddress.country || "India",
-            pickup_pincode: order.shippingAddress.pincode,
+            pickup_pincode: order.shippingAddress.postalCode,
             pickup_email: order.user.email,
             pickup_phone: order.shippingAddress.phone || order.user.phone,
             pickup_isd_code: "91",
@@ -347,7 +347,6 @@ export async function processShiprocketReturn(orderId, returnReason = "Customer 
             where: { id: orderId },
             data: {
                 shiprocketStatus: "RETURN_INITIATED",
-                shiprocketReturnId: response.order_id?.toString() || null,
             },
         });
 

@@ -10,6 +10,57 @@ import { getFileUrl } from "../utils/deleteFromS3.js";
 import { processReferralReward } from "./referral.controller.js";
 import { decrypt } from "../utils/encryption.js";
 import { processOrderForShipping } from "../utils/shiprocket.js";
+import { getStoreConfig } from "../utils/storeConfig.js";
+
+// Send admin notification when a new order is placed (fire-and-forget)
+async function notifyAdminNewOrder(orderId) {
+  try {
+    const storeConfig = getStoreConfig();
+    const adminEmail = process.env.ADMIN_EMAIL || storeConfig.storeEmail;
+    if (!adminEmail) return;
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: { select: { name: true, email: true } },
+        items: { include: { product: { select: { name: true } } } },
+      },
+    });
+    if (!order) return;
+
+    const itemRows = order.items.map(i =>
+      `<tr><td style="padding:4px 8px">${i.product?.name || "Product"}</td><td style="padding:4px 8px;text-align:center">${i.quantity}</td><td style="padding:4px 8px;text-align:right">₹${parseFloat(i.price).toFixed(2)}</td></tr>`
+    ).join("");
+
+    const customerName = order.user?.name || "Guest";
+    const customerEmail = order.user?.email || "";
+    const total = parseFloat(order.total).toFixed(2);
+    const paymentMethod = order.paymentMethod === "CASH" ? "Cash on Delivery" : "Online Payment";
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+        <h2 style="color:#3F1F00">🛒 New Order — #${order.orderNumber}</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+          <tr><td style="padding:4px 8px;color:#666">Customer</td><td style="padding:4px 8px"><strong>${customerName}</strong> (${customerEmail})</td></tr>
+          <tr><td style="padding:4px 8px;color:#666">Payment</td><td style="padding:4px 8px">${paymentMethod}</td></tr>
+          <tr><td style="padding:4px 8px;color:#666">Total</td><td style="padding:4px 8px"><strong>₹${total}</strong></td></tr>
+        </table>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #eee">
+          <thead><tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left">Item</th><th style="padding:6px 8px">Qty</th><th style="padding:6px 8px;text-align:right">Price</th></tr></thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+        <p style="color:#666;font-size:12px;margin-top:16px">Log in to the admin panel to manage this order.</p>
+      </div>`;
+
+    await sendEmail({
+      email: adminEmail,
+      subject: `[${storeConfig.storeName}] New Order #${order.orderNumber} — ₹${total}`,
+      html,
+    });
+  } catch (err) {
+    console.error("Admin order notification email error:", err);
+  }
+}
 
 
 async function getPaymentGatewayConfig(userId = null, gateway = "RAZORPAY") {
@@ -846,6 +897,9 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       console.error("Order confirmation email error:", emailError);
       // Don't throw error, continue with response
     }
+
+    // Notify admin of new order (non-blocking)
+    notifyAdminNewOrder(result.order.id).catch(console.error);
 
     // Return success response
     return res.status(200).json(
@@ -1895,6 +1949,9 @@ export const createCashOrder = asyncHandler(async (req, res) => {
     } catch (emailError) {
       console.error("Order confirmation email error:", emailError);
     }
+
+    // Notify admin of new order (non-blocking)
+    notifyAdminNewOrder(result.order.id).catch(console.error);
 
     // Return success response
     return res.status(200).json(
