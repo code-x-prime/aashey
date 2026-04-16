@@ -21,9 +21,9 @@ import {
 
 /* ── Data ──────────────────────────────────────────── */
 const socialLinks = [
-  { name: "Instagram", href: "https://www.instagram.com/aashey/",    Icon: RiInstagramLine },
-  { name: "Facebook",  href: "https://www.facebook.com/aashey/",     Icon: RiFacebookCircleLine },
-  { name: "YouTube",   href: "https://youtube.com/@aashey",          Icon: RiYoutubeLine },
+  { name: "Instagram", href: "https://www.instagram.com/aashey.consumer.products?utm_source=qr&igsh=MThqY2JiNnpwOGc2bQ==", Icon: RiInstagramLine },
+  { name: "Facebook",  href: "https://www.facebook.com/share/18TMgfmNSR/",                                                   Icon: RiFacebookCircleLine },
+  { name: "YouTube",   href: "https://youtube.com/@aashey",                                                                   Icon: RiYoutubeLine },
 ];
 
 const quickLinks = [

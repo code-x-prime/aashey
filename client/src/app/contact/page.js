@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MapPin, MessageCircle, Mail, Clock, Send, Loader2, MessageSquare, Headphones, ArrowRight } from "lucide-react";
+import { RiInstagramLine, RiFacebookCircleLine } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { fetchApi } from "@/lib/utils";
@@ -61,7 +62,7 @@ export default function ContactPage() {
 
             {/* Quick contact */}
             <section className="section-container -mt-8 pb-12">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-12">
                     <a href="mailto:info@aashey.com" className="card-premium p-6 text-center hover:border-[#C9933A]/40 group transition-all">
                         <div className="w-14 h-14 bg-[#C9933A]/15 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-[#C9933A] transition-colors">
                             <Mail className="h-7 w-7 text-[#C9933A] group-hover:text-[#3F1F00]" />
@@ -85,6 +86,20 @@ export default function ContactPage() {
                             Village — Takali, Shiv Shakti Nagar, Chalisgaon, Dist — Jalgaon, Maharashtra — 424102
                         </p>
                     </div>
+                    <a href="https://www.facebook.com/share/18TMgfmNSR/" target="_blank" rel="noopener noreferrer" className="card-premium p-6 text-center hover:border-[#1877F2]/40 group transition-all">
+                        <div className="w-14 h-14 bg-[#1877F2]/10 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-[#1877F2] transition-colors">
+                            <RiFacebookCircleLine className="h-7 w-7 text-[#1877F2] group-hover:text-white" />
+                        </div>
+                        <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Facebook</h3>
+                        <p className="text-[#1877F2] font-semibold text-sm">@aashey</p>
+                    </a>
+                    <a href="https://www.instagram.com/aashey.consumer.products?utm_source=qr&igsh=MThqY2JiNnpwOGc2bQ==" target="_blank" rel="noopener noreferrer" className="card-premium p-6 text-center hover:border-[#E1306C]/40 group transition-all">
+                        <div className="w-14 h-14 bg-[#E1306C]/10 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-gradient-to-br group-hover:from-[#F58529] group-hover:via-[#E1306C] group-hover:to-[#833AB4] transition-colors">
+                            <RiInstagramLine className="h-7 w-7 text-[#E1306C] group-hover:text-white" />
+                        </div>
+                        <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Instagram</h3>
+                        <p className="text-[#E1306C] font-semibold text-sm">@aashey.consumer.products</p>
+                    </a>
                 </div>
             </section>
 

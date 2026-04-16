@@ -4,20 +4,6 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
 import { useState, useEffect, useRef } from "react";
-import {
-  ShoppingCart,
-  User,
-  Menu,
-  X,
-  Search,
-  Heart,
-  ChevronDown,
-  Package,
-  LogOut,
-  MapPin,
-} from "lucide-react";
-
-// ✅ react-icons — crisp, bold icons for mobile
 import { RiHomeLine, RiHomeFill } from "react-icons/ri";
 import { RiShoppingBag3Line, RiShoppingBag3Fill } from "react-icons/ri";
 import { RiShoppingCart2Line, RiShoppingCart2Fill } from "react-icons/ri";

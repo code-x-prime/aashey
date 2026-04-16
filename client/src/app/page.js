@@ -23,8 +23,6 @@ export default function Home() {
         {/* Flash Sale - If active */}
         <FlashSaleSection />
 
-
-
         {/* Featured Products - Hero products */}
         <FeaturedProducts />
 

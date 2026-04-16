@@ -176,13 +176,24 @@ const CartItem = React.memo(
                 <div className="md:col-span-2 flex items-center justify-between md:justify-center">
                     <span className="md:hidden font-sans font-medium text-[#5C3A1E]">Quantity:</span>
                     <div className="flex items-center border-2 border-[#C9933A]/25 rounded-xl overflow-hidden shadow-sm">
-                        <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity, -1)}
-                            className="px-3 py-2 hover:bg-[#C9933A] hover:text-[#3F1F00] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                            disabled={isLoading || item.quantity <= (item.moq || 1)}
-                        >
-                            <Minus className="h-4 w-4" />
-                        </button>
+                        {item.quantity <= (item.moq || 1) ? (
+                            <button
+                                onClick={() => onRemove(item.id)}
+                                className="px-3 py-2 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                disabled={isLoading}
+                                aria-label="Remove item"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => onUpdateQuantity(item.id, item.quantity, -1)}
+                                className="px-3 py-2 hover:bg-[#C9933A] hover:text-[#3F1F00] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                disabled={isLoading}
+                            >
+                                <Minus className="h-4 w-4" />
+                            </button>
+                        )}
                         <span className="px-4 py-2 min-w-[3rem] text-center font-cormorant font-bold text-lg bg-white border-x border-[#C9933A]/25">
                             {isLoading ? (
                                 <Loader2 className="h-4 w-4 animate-spin inline" />
@@ -211,7 +222,7 @@ const CartItem = React.memo(
                     </div>
                     <button
                         onClick={() => onRemove(item.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg ml-4 disabled:opacity-50 transition-all duration-200"
+                        className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-2.5 rounded-xl ml-4 disabled:opacity-50 transition-all duration-200 border border-red-200 hover:border-red-500"
                         aria-label="Remove item"
                         disabled={isLoading}
                     >
@@ -528,19 +539,6 @@ export default function CartPage() {
                                     ← Continue Shopping
                                 </Button>
                             </Link>
-                            <Button
-                                variant="outline"
-                                onClick={handleClearCart}
-                                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 hover:text-red-700 transition-all duration-200"
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                )}
-                                Clear Cart
-                            </Button>
                         </div>
                     </div>
                 </div>
