@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -1846,4 +1847,85 @@ export const resendVerificationEmail = asyncHandler(async (req, res, next) => {
         "OTP has been sent to your email address"
       )
     );
+});
+
+// Guest auto-register: check email → if exists return accountExists; if new → create user + set auth cookies
+export const guestRegister = asyncHandler(async (req, res) => {
+  const { name, email, phone } = req.body;
+
+  if (!name || !email) {
+    throw new ApiError(400, "Name and email are required");
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Email already exists → tell frontend to show login
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+
+  if (existingUser) {
+    return res.status(200).json(
+      new ApiResponsive(200, { accountExists: true, email: normalizedEmail }, "Account already exists")
+    );
+  }
+
+  // Create new user with random password (guest can reset via forgot-password)
+  const randomPassword = crypto.randomBytes(10).toString("hex");
+  const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+  const generateCode = (id) => {
+    const shortId = id.slice(-6).toUpperCase();
+    const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+    return `REF${shortId}${rand}`;
+  };
+
+  const newUser = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name: name.trim(),
+        email: normalizedEmail,
+        password: hashedPassword,
+        phone: phone || "",
+        otpVerified: false,
+      },
+    });
+
+    let referralCode = generateCode(user.id);
+    let codeExists = true;
+    while (codeExists) {
+      const taken = await tx.user.findUnique({ where: { referralCode } });
+      if (!taken) {
+        codeExists = false;
+      } else {
+        referralCode = generateCode(user.id + Date.now());
+      }
+    }
+
+    return tx.user.update({
+      where: { id: user.id },
+      data: { referralCode },
+    });
+  });
+
+  // Generate tokens and set auth cookies so next requests are authenticated
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(newUser.id);
+  setCookies(res, accessToken, refreshToken);
+
+  return res.status(200).json(
+    new ApiResponsive(
+      200,
+      {
+        userCreated: true,
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          role: newUser.role,
+        },
+      },
+      "Guest account created and logged in"
+    )
+  );
 });

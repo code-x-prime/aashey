@@ -4,6 +4,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../config/db.js";
 import { razorpay } from "../app.js";
 import { cancelShiprocketOrder, getShiprocketSettings } from "../utils/shiprocket.js";
+import sendEmail from "../utils/sendEmail.js";
+import { getStoreConfig } from "../utils/storeConfig.js";
 
 // Get all orders with pagination, filtering, and sorting
 export const getOrders = asyncHandler(async (req, res, next) => {
@@ -357,6 +359,7 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
     where: { id: orderId },
     include: {
       razorpayPayment: true,
+      user: { select: { name: true, email: true } },
     },
   });
 
@@ -601,6 +604,33 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
       performedByRole: "admin",
     },
   });
+
+  // Send customer email on CANCELLED (non-blocking)
+  if (status === "CANCELLED" && order.user?.email) {
+    try {
+      const storeConfig = getStoreConfig();
+      const cancelNotes = notes || "Cancelled by store";
+      const refundNote = order.razorpayPayment?.razorpayPaymentId
+        ? "Your refund has been initiated and will reflect in 5-7 business days."
+        : "";
+      await sendEmail({
+        email: order.user.email,
+        subject: `Order Cancelled — #${order.orderNumber}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+            <h2 style="color:#3F1F00">Order Cancelled — #${order.orderNumber}</h2>
+            <p>Hi ${order.user.name || "Customer"},</p>
+            <p>Your order <strong>#${order.orderNumber}</strong> has been cancelled.</p>
+            <p><strong>Reason:</strong> ${cancelNotes}</p>
+            ${refundNote ? `<p>${refundNote}</p>` : ""}
+            <p>Questions? Contact us at ${storeConfig.supportEmail}.</p>
+            <p>— ${storeConfig.storeName} Team</p>
+          </div>`,
+      });
+    } catch (emailErr) {
+      console.error("Admin cancel email error:", emailErr);
+    }
+  }
 
   res
     .status(200)

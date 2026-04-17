@@ -30,6 +30,7 @@ import {
   deleteReview,
   resendVerificationEmail,
   verifyOtp,
+  guestRegister,
 } from "../controllers/user.controller.js";
 import { verifyJWTToken } from "../middlewares/auth.middleware.js";
 import { uploadFiles } from "../middlewares/multer.middlerware.js";
@@ -40,6 +41,7 @@ const router = express.Router();
 // Auth routes
 // Apply otpRateLimiter to endpoints that generate or resend OTPs / reset links
 router.post("/register", otpRateLimiter, registerUser);
+router.post("/guest-register", guestRegister); // Public: check email → create user + auto-login
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);

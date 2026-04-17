@@ -1308,6 +1308,8 @@ export const cancelOrder = asyncHandler(async (req, res) => {
           variant: true,
         },
       },
+      razorpayPayment: true,
+      user: { select: { name: true, email: true } },
     },
   });
 
@@ -1360,25 +1362,53 @@ export const cancelOrder = asyncHandler(async (req, res) => {
       });
     }
 
-    // 3. Handle payment refund if needed (just mark as refund pending)
-    if (order.razorpayPayment) {
-      await tx.razorpayPayment.update({
-        where: { orderId },
-        data: {
-          status: "REFUNDED",
-        },
-      });
-    }
+    // 3. Payment status update handled after transaction (needs actual Razorpay API call)
   });
 
-  // Cancel Shiprocket order if it exists (outside transaction, non-blocking)
+  // Initiate actual Razorpay refund if applicable (non-blocking, outside transaction)
+  if (order.razorpayPayment?.razorpayPaymentId && order.paymentMethod === "RAZORPAY") {
+    try {
+      const paymentConfig = await getPaymentGatewayConfig(userId, "RAZORPAY");
+      const refundAmount = Math.round(parseFloat(order.total) * 100); // paise
+      const refund = await paymentConfig.razorpayInstance.payments.refund(
+        order.razorpayPayment.razorpayPaymentId,
+        {
+          amount: refundAmount,
+          notes: { reason: reason || "Customer cancelled order" },
+        }
+      );
+      if (refund?.id) {
+        await prisma.$transaction(async (tx) => {
+          await tx.razorpayPayment.update({
+            where: { orderId },
+            data: { status: "REFUNDED" },
+          });
+          await tx.razorpayRefund.create({
+            data: {
+              razorpayPaymentId: order.razorpayPayment.razorpayPaymentId,
+              amount: order.total,
+              razorpayRefundId: refund.id,
+              status: "PROCESSED",
+              reason: reason || "Customer cancelled order",
+              notes: JSON.stringify({ refundId: refund.id }),
+            },
+          });
+        });
+        console.log(`Refund initiated for order ${order.id}: ${refund.id}`);
+      }
+    } catch (refundErr) {
+      console.error("Razorpay refund failed:", refundErr.message);
+      // Non-critical — admin can manually refund
+    }
+  }
+
+  // Cancel Shiprocket order if it exists (non-blocking)
   if (order.shiprocketOrderId) {
     try {
       const { cancelShiprocketOrder, getShiprocketSettings } = await import("../utils/shiprocket.js");
       const settings = await getShiprocketSettings();
       if (settings.isEnabled) {
         await cancelShiprocketOrder(order.shiprocketOrderId);
-        // Update order shiprocket status
         await prisma.order.update({
           where: { id: orderId },
           data: { shiprocketStatus: "CANCELLED" },
@@ -1387,8 +1417,33 @@ export const cancelOrder = asyncHandler(async (req, res) => {
       }
     } catch (error) {
       console.error("Failed to cancel Shiprocket order:", error.message);
-      // Non-critical - order is already cancelled in our system
     }
+  }
+
+  // Send cancellation email to customer (non-blocking)
+  try {
+    if (order.user?.email) {
+      const storeConfig = getStoreConfig();
+      const refundNote = order.paymentMethod === "RAZORPAY"
+        ? "Your refund has been initiated and will reflect in 5-7 business days."
+        : "";
+      await sendEmail({
+        email: order.user.email,
+        subject: `Order Cancelled — #${order.orderNumber}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+            <h2 style="color:#3F1F00">Order Cancelled — #${order.orderNumber}</h2>
+            <p>Hi ${order.user.name || "Customer"},</p>
+            <p>Your order <strong>#${order.orderNumber}</strong> has been cancelled.</p>
+            ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
+            ${refundNote ? `<p>${refundNote}</p>` : ""}
+            <p>If you have questions, contact us at ${storeConfig.supportEmail}.</p>
+            <p>— ${storeConfig.storeName} Team</p>
+          </div>`,
+      });
+    }
+  } catch (emailErr) {
+    console.error("Cancellation email error:", emailErr);
   }
 
   res

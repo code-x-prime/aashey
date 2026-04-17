@@ -33,7 +33,7 @@ import { getImageUrl } from "@/lib/imageUrl";
 
 
 export default function CheckoutPage() {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, autoLogin } = useAuth();
     const router = useRouter();
     const { cart, coupon, getCartTotals, clearCart } = useCart();
     const [addresses, setAddresses] = useState([]);
@@ -58,6 +58,7 @@ export default function CheckoutPage() {
     const [confettiCannon, setConfettiCannon] = useState(false);
     const [orderItemsForReview, setOrderItemsForReview] = useState([]);
     const [isGuestOrder, setIsGuestOrder] = useState(false);
+    const [wasAutoCreated, setWasAutoCreated] = useState(false); // new account created during checkout
 
     // Guest address form state
     const [guestAddress, setGuestAddress] = useState({
@@ -480,37 +481,124 @@ export default function CheckoutPage() {
 
         } else {
             // ---------- GUEST USER FLOW ----------
+            // Step 1: validate address
             if (!validateGuestAddress()) {
                 toast.error("Please fill in all required address fields");
+                return;
+            }
+
+            if (!cart.items?.length) {
+                toast.error("Your cart is empty");
                 return;
             }
 
             setProcessing(true);
             setError("");
 
-            const guestCartItems = buildGuestCartItems();
-
-            if (!guestCartItems.length) {
-                toast.error("Your cart is empty");
-                setProcessing(false);
-                return;
-            }
-
             try {
+                // Step 2: check email / create account + auto-login
+                toast.loading("Setting up your account...", { id: "guest-register", duration: 10000 });
+
+                const registerRes = await fetchApi("/users/guest-register", {
+                    method: "POST",
+                    credentials: "include", // IMPORTANT: lets browser receive Set-Cookie
+                    body: JSON.stringify({
+                        name: guestAddress.name,
+                        email: guestAddress.email,
+                        phone: guestAddress.phone,
+                    }),
+                });
+
+                toast.dismiss("guest-register");
+
+                if (registerRes.data.accountExists) {
+                    // Account exists — ask user to log in
+                    setError(`An account with email "${guestAddress.email}" already exists. Please log in to continue.`);
+                    toast.error("Account already exists. Please log in.", {
+                        duration: 8000,
+                        action: {
+                            label: "Log In",
+                            onClick: () => router.push(`/auth?redirect=checkout`),
+                        },
+                    });
+                    setProcessing(false);
+                    return;
+                }
+
+                // Snapshot cart items NOW before autoLogin triggers cart-context refetch
+                const cartSnapshot = cart.items.map(item => ({
+                    productVariantId: item.productVariantId || item.variant?.id,
+                    quantity: item.quantity,
+                })).filter(item => item.productVariantId);
+
+                if (!cartSnapshot.length) {
+                    toast.dismiss("guest-register");
+                    toast.error("No valid cart items found");
+                    setProcessing(false);
+                    return;
+                }
+
+                // Step 3: auto-login in React (backend already set httpOnly cookies)
+                autoLogin(registerRes.data.user);
+                setWasAutoCreated(true);
+                toast.success(`Account created! Welcome, ${registerRes.data.user.name}.`, { duration: 3000 });
+
+                // Step 4: create address for the new user (cookies now set → authenticated)
+                toast.loading("Saving your address...", { id: "create-address", duration: 10000 });
+
+                const addressRes = await fetchApi("/users/addresses", {
+                    method: "POST",
+                    credentials: "include",
+                    body: JSON.stringify({
+                        name: guestAddress.name,
+                        phone: guestAddress.phone,
+                        street: guestAddress.street,
+                        city: guestAddress.city,
+                        state: guestAddress.state,
+                        postalCode: guestAddress.postalCode,
+                        country: guestAddress.country || "India",
+                        isDefault: true,
+                    }),
+                });
+
+                toast.dismiss("create-address");
+                const newAddressId = addressRes.data.address.id;
+
+                // Step 5: add guest cart items to server cart using snapshot
+                toast.loading("Preparing your cart...", { id: "cart-merge", duration: 10000 });
+
+                await Promise.all(
+                    cartSnapshot.map(async (item) => {
+                        try {
+                            await fetchApi("/cart/add", {
+                                method: "POST",
+                                credentials: "include",
+                                body: JSON.stringify({
+                                    productVariantId: item.productVariantId,
+                                    quantity: item.quantity,
+                                }),
+                            });
+                        } catch (cartErr) {
+                            console.warn("Cart item add failed:", cartErr.message);
+                        }
+                    })
+                );
+
+                toast.dismiss("cart-merge");
+
+                // Step 6: checkout using normal authenticated endpoints
                 const calculatedAmount = totals.total;
                 const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
 
                 if (paymentMethod === "CASH") {
-                    toast.loading("Creating your order...", {
-                        id: "order-creation",
-                        duration: 10000,
-                    });
+                    toast.loading("Creating your order...", { id: "order-creation", duration: 10000 });
 
-                    const orderResponse = await fetchApi("/payment/guest/cash-order", {
+                    const orderResponse = await fetchApi("/payment/cash-order", {
                         method: "POST",
+                        credentials: "include",
                         body: JSON.stringify({
-                            guestAddress,
-                            cartItems: guestCartItems,
+                            shippingAddressId: newAddressId,
+                            billingAddressSameAsShipping: true,
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
                             discountAmount: totals.discount || 0,
@@ -529,21 +617,34 @@ export default function CheckoutPage() {
                         paymentMethod: "CASH",
                     };
                     setOrderNumber(orderResponse.data.orderNumber);
-                    handleSuccessfulPayment(null, orderData, true);
+                    setOrderId(orderResponse.data.orderId || "");
+                    // isGuestOrder = false → user is now logged in → redirect to /account/orders
+                    handleSuccessfulPayment(null, orderData, false);
                     return;
 
                 } else if (paymentMethod === "RAZORPAY") {
-                    toast.loading("Creating your order...", {
-                        id: "order-creation",
-                        duration: 10000,
-                    });
+                    // Fetch Razorpay key (now authenticated)
+                    let currentKey = razorpayKey;
+                    if (!currentKey) {
+                        try {
+                            const keyRes = await fetchApi("/payment/razorpay-key", { credentials: "include" });
+                            if (keyRes.success && keyRes.data?.key) {
+                                currentKey = keyRes.data.key;
+                                setRazorpayKey(currentKey);
+                            }
+                        } catch { /* handled below */ }
+                    }
+                    if (!currentKey) throw new Error("Razorpay key not available. Please configure payment settings.");
 
-                    const orderResponse = await fetchApi("/payment/guest/checkout", {
+                    toast.loading("Creating your order...", { id: "order-creation", duration: 10000 });
+
+                    const orderResponse = await fetchApi("/payment/checkout", {
                         method: "POST",
+                        credentials: "include",
                         body: JSON.stringify({
-                            guestAddress,
-                            cartItems: guestCartItems,
+                            amount,
                             currency: "INR",
+                            paymentGateway: "RAZORPAY",
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
                             discountAmount: totals.discount || 0,
@@ -556,23 +657,19 @@ export default function CheckoutPage() {
                         throw new Error(orderResponse.message || "Failed to create order");
                     }
 
-                    const razorpayOrder = orderResponse.data;
-                    const guestRazorpayKey = razorpayOrder.razorpayKey;
-                    setOrderId(razorpayOrder.id);
-
                     toast.success("Order created! Opening payment gateway...", { duration: 2000 });
-                    toast.loading("Loading payment gateway...", {
-                        id: "payment-gateway",
-                        duration: 5000,
-                    });
+                    toast.loading("Loading payment gateway...", { id: "payment-gateway", duration: 5000 });
 
                     const loaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
                     toast.dismiss("payment-gateway");
 
                     if (!loaded) throw new Error("Razorpay SDK failed to load");
 
+                    const razorpayOrder = orderResponse.data;
+                    setOrderId(razorpayOrder.id);
+
                     const options = {
-                        key: guestRazorpayKey,
+                        key: currentKey,
                         amount: razorpayOrder.amount,
                         currency: razorpayOrder.currency,
                         name: "Aashey — Pure A2 Cow Ghee",
@@ -585,75 +682,65 @@ export default function CheckoutPage() {
                         },
                         handler: async function (response) {
                             setProcessing(true);
-                            toast.loading("Verifying your payment...", {
-                                id: "payment-verification",
-                                duration: 10000,
-                            });
+                            toast.loading("Verifying your payment...", { id: "payment-verification", duration: 10000 });
 
                             try {
-                                const verificationResponse = await fetchApi("/payment/guest/verify", {
+                                const verificationResponse = await fetchApi("/payment/verify", {
                                     method: "POST",
+                                    credentials: "include",
                                     body: JSON.stringify({
                                         razorpay_order_id: response.razorpay_order_id,
                                         razorpay_payment_id: response.razorpay_payment_id,
                                         razorpay_signature: response.razorpay_signature,
-                                        guestAddress,
-                                        cartItems: guestCartItems,
+                                        razorpayOrderId: response.razorpay_order_id,
+                                        razorpayPaymentId: response.razorpay_payment_id,
+                                        razorpaySignature: response.razorpay_signature,
+                                        shippingAddressId: newAddressId,
+                                        billingAddressSameAsShipping: true,
                                         couponCode: coupon?.code || null,
                                         couponId: coupon?.id || null,
                                         discountAmount: totals.discount || 0,
+                                        notes: "",
                                     }),
                                 });
 
                                 toast.dismiss("payment-verification");
 
                                 if (verificationResponse.success) {
-                                    toast.success("Payment verified successfully! 🎉", { duration: 3000 });
+                                    toast.success("Payment verified! 🎉", { duration: 3000 });
                                     setOrderId(verificationResponse.data.orderId);
-                                    handleSuccessfulPayment(response, verificationResponse.data, true);
+                                    handleSuccessfulPayment(response, verificationResponse.data, false);
                                 } else {
                                     throw new Error(verificationResponse.message || "Payment verification failed");
                                 }
-                            } catch (error) {
-                                console.error("Guest payment verification error:", error);
+                            } catch (verifyErr) {
                                 toast.dismiss("payment-verification");
-                                setError(error.message || "Payment verification failed");
-                                toast.error(error.message || "Payment verification failed. Please try again.", { duration: 5000 });
+                                setError(verifyErr.message || "Payment verification failed");
+                                toast.error(verifyErr.message || "Payment verification failed. Please try again.", { duration: 5000 });
                                 setProcessing(false);
                             }
                         },
                         theme: { color: "#FD5D0D" },
                         modal: {
-                            ondismiss: function () {
-                                setProcessing(false);
-                            },
+                            ondismiss: function () { setProcessing(false); },
                         },
                     };
 
                     const razorpay = new window.Razorpay(options);
                     razorpay.open();
+
                 } else {
                     toast.error("Please select a payment method");
                 }
             } catch (error) {
                 console.error("Guest checkout error:", error);
+                toast.dismiss("guest-register");
+                toast.dismiss("create-address");
+                toast.dismiss("cart-merge");
                 toast.dismiss("order-creation");
                 toast.dismiss("payment-gateway");
-                toast.dismiss("payment-verification");
-
-                const isAccountExists =
-                    error.statusCode === 409 ||
-                    error.message?.toLowerCase().includes("already exists");
-
-                if (isAccountExists) {
-                    setError("An account with this email already exists. Please log in to continue.");
-                    toast.error("Account already exists. Please log in.", {
-                        duration: 6000,
-                    });
-                } else {
-                    setError(error.message || "Checkout failed");
-                    toast.error(error.message || "Checkout failed", { duration: 4000 });
-                }
+                setError(error.message || "Checkout failed");
+                toast.error(error.message || "Checkout failed", { duration: 4000 });
             } finally {
                 setProcessing(false);
             }
@@ -665,7 +752,9 @@ export default function CheckoutPage() {
         if (processing) return true;
         if (!paymentMethod) return true;
         if (isAuthenticated) {
-            return !selectedAddressId || addresses.length === 0;
+            // selectedAddressId required; addresses.length check skipped so
+            // auto-logged-in guests (who have no loaded addresses yet) aren't blocked
+            return !selectedAddressId && addresses.length > 0;
         }
         // Guest: check required fields are non-empty
         const { name, email, phone, street, city, state, postalCode } = guestAddress;
@@ -731,20 +820,20 @@ export default function CheckoutPage() {
                                 placed and you&apos;ll receive an email confirmation shortly.
                             </p>
 
-                            {/* Guest account notice */}
-                            {isGuestOrder && (
-                                <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                            {/* Account created during checkout notice */}
+                            {wasAutoCreated && (
+                                <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4 text-left">
                                     <div className="flex items-start gap-2">
-                                        <User className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                                         <div>
-                                            <p className="text-sm font-semibold text-blue-800 mb-1">
-                                                Account created for you
+                                            <p className="text-sm font-semibold text-green-800 mb-1">
+                                                Account created &amp; you&apos;re logged in!
                                             </p>
-                                            <p className="text-sm text-blue-700">
-                                                We created an account with your email. Use &quot;Forgot Password&quot; to set your password and track your orders anytime.
+                                            <p className="text-sm text-green-700">
+                                                You can now track your orders. Set a password anytime using Forgot Password with your email.
                                             </p>
-                                            <Link href="/auth?tab=forgot">
-                                                <button className="text-blue-600 hover:text-blue-800 text-sm underline mt-1">
+                                            <Link href="/auth?mode=forgot">
+                                                <button className="text-green-700 hover:text-green-900 text-sm underline mt-1 font-medium">
                                                     Set my password →
                                                 </button>
                                             </Link>
@@ -887,8 +976,8 @@ export default function CheckoutPage() {
                     <div>
                         <p className="text-red-700 font-semibold">Error</p>
                         <p className="text-red-600">{error}</p>
-                        {error.includes("email already exists") && (
-                            <Link href="/auth?redirect=checkout">
+                        {(error.includes("already exists") || error.includes("Please log in")) && (
+                            <Link href={`/auth?redirect=checkout`}>
                                 <button className="mt-2 text-red-700 underline text-sm font-medium hover:text-red-900">
                                     Log in to your account →
                                 </button>

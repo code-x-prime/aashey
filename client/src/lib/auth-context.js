@@ -393,6 +393,20 @@ export function AuthProvider({ children }) {
         }
     };
 
+    // Directly set user state (used after guest auto-register — cookies already set by backend)
+    const autoLogin = (userData) => {
+        setUser(userData);
+        if (typeof window !== "undefined") {
+            document.cookie = `user_session=${encodeURIComponent(
+                JSON.stringify({
+                    isAuthenticated: true,
+                    userId: userData.id,
+                    timestamp: new Date().getTime(),
+                })
+            )}; path=/; max-age=86400`;
+        }
+    };
+
     // Compute isAuthenticated based on user state and loading state
     const isAuthenticated = !loading && !!user;
 
@@ -409,6 +423,7 @@ export function AuthProvider({ children }) {
         forgotPassword,
         resetPassword,
         updateProfile,
+        autoLogin,
         isAuthenticated,
         // Add helper methods
         isCustomer: user?.role === "CUSTOMER",

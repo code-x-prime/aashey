@@ -253,6 +253,11 @@ async function createUserAddress(userId, guestAddress) {
   });
 }
 
+function mapPaymentMethod(method) {
+  const map = { card: "CARD", netbanking: "NETBANKING", wallet: "WALLET", upi: "UPI", emi: "EMI" };
+  return map[method] || "OTHER";
+}
+
 async function notifyAdminNewOrder(orderId) {
   try {
     const storeConfig = getStoreConfig();
@@ -516,7 +521,7 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature,
         status: "CAPTURED",
-        paymentMethod: "RAZORPAY",
+        paymentMethod: mapPaymentMethod(razorpayPaymentDetails.method),
         notes: razorpayPaymentDetails,
       },
     });
