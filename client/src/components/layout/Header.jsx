@@ -4,22 +4,25 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
 import { useState, useEffect, useRef } from "react";
-import { RiHomeLine, RiHomeFill } from "react-icons/ri";
-import { RiShoppingBag3Line, RiShoppingBag3Fill } from "react-icons/ri";
-import { RiShoppingCart2Line, RiShoppingCart2Fill } from "react-icons/ri";
-import { RiUser3Line, RiUser3Fill } from "react-icons/ri";
-import { RiHeartLine, RiHeartFill } from "react-icons/ri";
-import { RiSearchLine } from "react-icons/ri";
-import { RiMenuLine } from "react-icons/ri";
-import { RiCloseLine } from "react-icons/ri";
-import { RiArrowRightSLine } from "react-icons/ri";
-import { RiArrowDownSLine } from "react-icons/ri";
-import { RiLogoutBoxLine } from "react-icons/ri";
-import { RiMapPin2Line } from "react-icons/ri";
-import { RiBox3Line } from "react-icons/ri";
-import { RiInstagramLine } from "react-icons/ri";
-import { RiFacebookCircleLine } from "react-icons/ri";
-import { RiYoutubeLine } from "react-icons/ri";
+import {
+
+  RiShoppingCart2Line,
+  RiUser3Line,
+  RiHeartLine, RiHeartFill,
+  RiSearchLine,
+  RiMenuLine,
+  RiCloseLine,
+  RiArrowRightSLine,
+  RiArrowDownSLine,
+  RiLogoutBoxLine,
+  RiMapPin2Line,
+  RiBox3Line,
+  RiInstagramLine,
+  RiFacebookCircleLine,
+  RiYoutubeLine,
+  RiMailLine,
+  RiWhatsappLine,
+} from "react-icons/ri";
 
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname } from "next/navigation";
@@ -100,7 +103,7 @@ export function Navbar() {
 
   // ── Reusable nav item for the drawer ──────────────────────────
   // Matches the "About Us / Why Choose Us" style but with an icon dot accent
-  const DrawerNavItem = ({ href, icon: Icon, iconActive: IconActive, label, badge }) => {
+  const DrawerNavItem = ({ href, icon: Icon, iconActive: IconActive, svg, label, badge }) => {
     const active = pathname === href;
     return (
       <Link
@@ -121,10 +124,13 @@ export function Navbar() {
               active ? "bg-[#C9933A]/15" : "bg-[#3F1F00]/[0.07]"
             )}
           >
-            {active && IconActive
-              ? <IconActive className="w-[15px] h-[15px] text-[#C9933A]" />
-              : <Icon className={cn("w-[15px] h-[15px]", active ? "text-[#C9933A]" : "text-[#5C3A1E]")} />
-            }
+            {svg ? (
+              <Image src={svg} alt={label} width={18} height={18} className="object-contain" />
+            ) : (
+              active && IconActive
+                ? <IconActive className="w-[15px] h-[15px] text-[#C9933A]" />
+                : <Icon className={cn("w-[15px] h-[15px]", active ? "text-[#C9933A]" : "text-[#5C3A1E]")} />
+            )}
           </span>
 
           {/* ── label — same as Company section ── */}
@@ -349,80 +355,69 @@ export function Navbar() {
       ═══════════════════════════════════════════════ */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
-          <div className="absolute inset-0 bg-[#1A0A00]/70 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
+          <div className="absolute inset-0 bg-[#3F1F00]/40 backdrop-blur-[2px]" onClick={() => setIsMenuOpen(false)} />
 
-          <div className="absolute left-0 top-0 bottom-0 w-[300px] bg-[#FDF6E3] shadow-2xl flex flex-col overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-left duration-300">
 
-            {/* ── Drawer Header ── */}
-            <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 bg-[#3F1F00]">
-              <div>
-                <p className="font-cormorant italic text-[22px] text-[#C9933A] font-bold leading-none tracking-wide">AASHEY</p>
-                <p className="text-[#FDF6E3]/40 text-[10px] tracking-[0.18em] font-sans uppercase mt-0.5">Pure A2 Ghee</p>
-              </div>
-              <button onClick={() => setIsMenuOpen(false)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#FDF6E3] hover:bg-white/20 transition-colors">
-                <RiCloseLine className="w-5 h-5" />
+            {/* ── New Drawer Header ── */}
+            <div className="flex-shrink-0 flex items-center justify-between px-4 h-16 border-b border-[#C9933A]/10">
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#3F1F00]">
+                <RiCloseLine className="w-6 h-6" />
               </button>
+
+              <Link href="/" className="flex-shrink-0" onClick={() => setIsMenuOpen(false)}>
+                <Image src="/logo-2.png" alt="AASHEY" width={100} height={30} className="h-7 w-auto object-contain" />
+              </Link>
+
+              <div className="flex items-center gap-1">
+                <button onClick={() => { setIsMenuOpen(false); setIsSearchOpen(true); }} className="p-2 text-[#3F1F00]">
+                  <RiSearchLine className="w-5 h-5" />
+                </button>
+                <Link href="/cart" onClick={() => setIsMenuOpen(false)} className="p-2 text-[#3F1F00] relative">
+                  <RiShoppingCart2Line className="w-5 h-5" />
+                  {getCartItemCount() > 0 && (
+                    <span className="absolute top-1 right-1 bg-[#C9933A] text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold">
+                      {getCartItemCount()}
+                    </span>
+                  )}
+                </Link>
+              </div>
             </div>
 
-            {/* ── User Block ── */}
-            <ClientOnly>
-              {isAuthenticated ? (
-                <div className="flex-shrink-0 px-5 py-4 bg-white border-b border-[#C9933A]/15 flex items-center gap-3">
-                  <div className="w-11 h-11 bg-gradient-to-br from-[#C9933A] to-[#A07020] rounded-full flex items-center justify-center text-white font-bold text-base shadow-md">
-                    {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                  </div>
-                  <div>
-                    <p className="font-playfair font-semibold text-[#3F1F00] text-[15px] leading-tight">{user?.name || "User"}</p>
-                    <p className="font-sans text-[11px] text-[#6B4423] mt-0.5">{user?.email}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-shrink-0 px-5 py-4 border-b border-[#C9933A]/15 bg-white">
-                  <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full btn-primary rounded-xl h-10 text-sm font-semibold">Sign In / Register</Button>
-                  </Link>
-                </div>
-              )}
-            </ClientOnly>
-
             {/* ── Scrollable Nav ── */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto bg-white py-2">
 
               {/* ── NAVIGATION Section ── */}
-              <p className="px-5 pt-4 pb-2 text-[10px] font-sans font-semibold tracking-[0.2em] text-[#C9933A] uppercase">
-                Navigation
+              <p className="px-6 pt-4 pb-2 text-[10px] font-sans font-bold tracking-[0.2em] text-[#C9933A] uppercase">
+                Main Menu
               </p>
 
               {/* Home */}
               <DrawerNavItem
                 href="/"
-                icon={RiHomeLine}
-                iconActive={RiHomeFill}
+                svg="/menu-icons/home.svg"
                 label="Home"
               />
 
               {/* All Products */}
               <DrawerNavItem
                 href="/products"
-                icon={RiShoppingBag3Line}
-                iconActive={RiShoppingBag3Fill}
+                svg="/menu-icons/products.svg"
                 label="All Products"
               />
 
               {/* Wishlist */}
               <DrawerNavItem
                 href="/wishlist"
-                icon={RiHeartLine}
-                iconActive={RiHeartFill}
+                svg="/menu-icons/wishlist.svg"
                 label="Wishlist"
               />
 
-              {/* Cart — with badge */}
+              {/* Cart */}
               <ClientOnly>
                 <DrawerNavItem
                   href="/cart"
-                  icon={RiShoppingCart2Line}
-                  iconActive={RiShoppingCart2Fill}
+                  svg="/menu-icons/cart.svg"
                   label="Cart"
                   badge={getCartItemCount()}
                 />
@@ -432,31 +427,30 @@ export function Navbar() {
               <div className="border-l-[3px] border-transparent">
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[#3F1F00]/[0.04] transition-all"
+                  className="w-full flex items-center justify-between px-6 py-3.5 hover:bg-[#FDF6E3]/40 transition-all"
                   onClick={() => setActiveDropdown((prev) => (prev === "mobile-categories" ? null : "mobile-categories"))}
                 >
-                  <span className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-lg bg-[#3F1F00]/[0.07] flex items-center justify-center">
-                      <RiBox3Line className="w-[15px] h-[15px] text-[#5C3A1E]" />
-                    </span>
-                    {/* ✅ font-sans font-medium — same as Company section */}
-                    <span className="font-sans text-[14px] font-medium text-[#5C3A1E]">Categories</span>
+                  <span className="flex items-center gap-4">
+                    <div className="w-5 h-5 flex items-center justify-center">
+                       <Image src="/menu-icons/categories.svg" alt="Categories" width={20} height={20} className="object-contain" />
+                    </div>
+                    <span className="font-sans text-[15px] font-medium text-[#333]">Categories</span>
                   </span>
                   <RiArrowDownSLine className={cn("w-4 h-4 text-[#C9933A]/50 transition-transform duration-200", activeDropdown === "mobile-categories" && "rotate-180")} />
                 </button>
 
                 {activeDropdown === "mobile-categories" && categories.length > 0 && (
-                  <div className="bg-[#3F1F00]/4 mx-4 mb-2 rounded-xl overflow-hidden">
+                  <div className="bg-[#FDF6E3]/20 mx-4 mb-2 rounded-xl overflow-hidden border border-[#C9933A]/5">
                     {(categories || []).slice(0, 5).map((cat, idx) => (
                       <Link key={cat.id} href={`/category/${cat.slug}`}
-                        className={`flex items-center gap-2 px-4 py-3 font-sans text-[13px] font-medium text-[#3F1F00] hover:text-[#C9933A] hover:bg-white/50 transition-all ${idx !== 0 ? "border-t border-[#C9933A]/10" : ""}`}
+                        className={`flex items-center gap-2 px-5 py-3 font-sans text-[13px] font-medium text-[#5C3A1E] hover:text-[#C9933A] hover:bg-white transition-all ${idx !== 0 ? "border-t border-[#C9933A]/5" : ""}`}
                         onClick={() => setIsMenuOpen(false)}>
                         <span className="w-1.5 h-1.5 rounded-full bg-[#C9933A]/60 flex-shrink-0" />
                         {cat.name}
                       </Link>
                     ))}
                     <Link href="/categories"
-                      className="flex items-center gap-2 px-4 py-3 font-sans text-[13px] font-semibold text-[#C9933A] hover:bg-white/50 transition-all border-t border-[#C9933A]/10"
+                      className="flex items-center gap-2 px-5 py-3 font-sans text-[13px] font-semibold text-[#C9933A] hover:bg-white transition-all border-t border-[#C9933A]/5"
                       onClick={() => setIsMenuOpen(false)}>
                       View All Categories →
                     </Link>
@@ -465,21 +459,26 @@ export function Navbar() {
               </div>
 
               {/* ── COMPANY Section ── */}
-              <p className="px-5 pt-4 pb-2 text-[10px] font-sans font-semibold tracking-[0.2em] text-[#C9933A] uppercase">
+              <p className="px-6 pt-6 pb-2 text-[10px] font-sans font-bold tracking-[0.2em] text-[#C9933A] uppercase">
                 Company
               </p>
 
               {[
-                { name: "About Us", href: "/about" },
-                { name: "Why Choose Us", href: "/why-us" },
-                { name: "Contact", href: "/contact" },
-                { name: "FAQs", href: "/faqs" },
+                { name: "About Us", href: "/about", svg: "/menu-icons/about.svg" },
+                { name: "Why Choose Us", href: "/why-us", svg: "/menu-icons/why-choose-us.svg" },
+                { name: "Contact", href: "/contact", svg: "/menu-icons/contact.svg" },
+                { name: "FAQs", href: "/faqs", svg: "/menu-icons/faq.svg" },
               ].map((item) => (
                 <Link key={item.href} href={item.href}
-                  className={`flex items-center justify-between px-5 py-3 transition-all ${pathname === item.href ? "bg-[#3F1F00]/6 border-l-[3px] border-[#C9933A]" : "border-l-[3px] border-transparent hover:bg-[#3F1F00]/4"}`}
+                  className={`flex items-center justify-between px-6 py-3.5 transition-all border-l-[3px] border-transparent hover:bg-[#FDF6E3]/40`}
                   onClick={() => setIsMenuOpen(false)}>
-                  <span className="font-sans text-[14px] font-medium text-[#5C3A1E]">{item.name}</span>
-                  <RiArrowRightSLine className="w-4 h-4 text-[#C9933A]/40" />
+                  <div className="flex items-center gap-4">
+                     <div className="w-5 h-5 flex items-center justify-center">
+                        <Image src={item.svg} alt={item.name} width={18} height={18} className="object-contain" />
+                     </div>
+                     <span className="font-sans text-[15px] font-medium text-[#333]">{item.name}</span>
+                  </div>
+                  <RiArrowRightSLine className="w-4 h-4 text-gray-300" />
                 </Link>
               ))}
 
@@ -487,116 +486,140 @@ export function Navbar() {
               <ClientOnly>
                 {isAuthenticated && (
                   <>
-                    <p className="px-5 pt-4 pb-2 text-[10px] font-sans font-semibold tracking-[0.2em] text-[#C9933A] uppercase">
+                    <p className="px-6 pt-6 pb-2 text-[10px] font-sans font-bold tracking-[0.2em] text-[#C9933A] uppercase">
                       My Account
                     </p>
-                    <Link href="/account" className="flex items-center justify-between px-5 py-3 border-l-[3px] border-transparent hover:bg-[#3F1F00]/4 transition-all" onClick={() => setIsMenuOpen(false)}>
-                      <span className="flex items-center gap-3">
-                        <RiUser3Line className="w-4 h-4 text-[#C9933A]" />
-                        <span className="font-sans text-[14px] font-medium text-[#5C3A1E]">My Profile</span>
+                    <Link href="/account" className="flex items-center justify-between px-6 py-3.5 border-l-[3px] border-transparent hover:bg-[#FDF6E3]/40 transition-all" onClick={() => setIsMenuOpen(false)}>
+                      <span className="flex items-center gap-4">
+                        <div className="w-5 h-5 flex items-center justify-center">
+                           <Image src="/menu-icons/login-register.svg" alt="Profile" width={20} height={20} className="object-contain" />
+                        </div>
+                        <span className="font-sans text-[15px] font-medium text-[#333]">My Profile</span>
                       </span>
-                      <RiArrowRightSLine className="w-4 h-4 text-[#C9933A]/40" />
+                      <RiArrowRightSLine className="w-4 h-4 text-gray-300" />
                     </Link>
-                    <Link href="/account/orders" className="flex items-center justify-between px-5 py-3 border-l-[3px] border-transparent hover:bg-[#3F1F00]/4 transition-all" onClick={() => setIsMenuOpen(false)}>
-                      <span className="flex items-center gap-3">
-                        <RiBox3Line className="w-4 h-4 text-[#C9933A]" />
-                        <span className="font-sans text-[14px] font-medium text-[#5C3A1E]">My Orders</span>
+                    <Link href="/account/orders" className="flex items-center justify-between px-6 py-3.5 border-l-[3px] border-transparent hover:bg-[#FDF6E3]/40 transition-all" onClick={() => setIsMenuOpen(false)}>
+                      <span className="flex items-center gap-4">
+                        <div className="w-5 h-5 flex items-center justify-center">
+                           <Image src="/menu-icons/products.svg" alt="Orders" width={20} height={20} className="object-contain" />
+                        </div>
+                        <span className="font-sans text-[15px] font-medium text-[#333]">My Orders</span>
                       </span>
-                      <RiArrowRightSLine className="w-4 h-4 text-[#C9933A]/40" />
+                      <RiArrowRightSLine className="w-4 h-4 text-gray-300" />
                     </Link>
-                    <Link href="/account/addresses" className="flex items-center justify-between px-5 py-3 border-l-[3px] border-transparent hover:bg-[#3F1F00]/4 transition-all" onClick={() => setIsMenuOpen(false)}>
-                      <span className="flex items-center gap-3">
-                        <RiMapPin2Line className="w-4 h-4 text-[#C9933A]" />
-                        <span className="font-sans text-[14px] font-medium text-[#5C3A1E]">Addresses</span>
+                    <Link href="/account/addresses" className="flex items-center justify-between px-6 py-3.5 border-l-[3px] border-transparent hover:bg-[#FDF6E3]/40 transition-all" onClick={() => setIsMenuOpen(false)}>
+                      <span className="flex items-center gap-4">
+                        <RiMapPin2Line className="w-5 h-5 text-[#092D15]" />
+                        <span className="font-sans text-[15px] font-medium text-[#333]">Addresses</span>
                       </span>
-                      <RiArrowRightSLine className="w-4 h-4 text-[#C9933A]/40" />
+                      <RiArrowRightSLine className="w-4 h-4 text-gray-300" />
                     </Link>
                     <button onClick={() => { handleLogout(); setIsMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-5 py-3 mt-1 hover:bg-red-50 transition-all">
-                      <RiLogoutBoxLine className="w-4 h-4 text-red-400" />
-                      <span className="font-sans text-[14px] font-medium text-red-400">Sign Out</span>
+                      className="w-full flex items-center gap-4 px-6 py-3.5 hover:bg-red-50 transition-all group">
+                      <RiLogoutBoxLine className="w-5 h-5 text-red-400 group-hover:text-red-600" />
+                      <span className="font-sans text-[15px] font-medium text-red-500 group-hover:text-red-700">Sign Out</span>
                     </button>
                   </>
                 )}
               </ClientOnly>
 
-              {/* Bottom padding */}
-              <div className="h-6" />
-            </div>
+              {!isAuthenticated && (
+                <div className="px-6 py-8">
+                  <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
+                    <Button className="w-full btn-primary rounded-xl h-11 text-sm font-semibold shadow-lg shadow-[#C9933A]/20">Sign In / Register</Button>
+                  </Link>
+                </div>
+              )}
 
-            {/* ── Drawer Footer ── */}
-            <div className="flex-shrink-0 px-5 py-4 border-t border-[#C9933A]/15 bg-white">
-              <p className="text-center text-[10px] font-sans text-[#8B6040] mb-3 tracking-[0.15em] uppercase">Follow Us</p>
-              <div className="flex justify-center gap-3">
-                <a href="#" className="w-9 h-9 rounded-full bg-[#FDF6E3] border border-[#C9933A]/25 flex items-center justify-center text-[#C9933A] hover:bg-[#C9933A] hover:text-white transition-all">
-                  <RiInstagramLine className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-[#FDF6E3] border border-[#C9933A]/25 flex items-center justify-center text-[#C9933A] hover:bg-[#C9933A] hover:text-white transition-all">
-                  <RiFacebookCircleLine className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-[#FDF6E3] border border-[#C9933A]/25 flex items-center justify-center text-[#C9933A] hover:bg-[#C9933A] hover:text-white transition-all">
-                  <RiYoutubeLine className="w-4 h-4" />
-                </a>
+              {/* ── Footer ── */}
+              <div className="px-6 py-8 mt-4 border-t border-gray-50">
+                <div className="flex items-center gap-5 mb-8">
+                  <a href="https://www.instagram.com/aashey.consumer.products?utm_source=qr&igsh=MThqY2JiNnpwOGc2bQ==" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 hover:bg-[#C9933A] hover:text-white transition-all"><RiInstagramLine className="w-5 h-5" /></a>
+                  <a href="https://www.facebook.com/share/18TMgfmNSR/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 hover:bg-[#C9933A] hover:text-white transition-all"><RiFacebookCircleLine className="w-5 h-5" /></a>
+                  <a href="https://youtube.com/@aashey" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 hover:bg-[#C9933A] hover:text-white transition-all"><RiYoutubeLine className="w-5 h-5" /></a>
+                  <a href="https://wa.me/918999046484" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 hover:bg-[#C9933A] hover:text-white transition-all"><RiWhatsappLine className="w-5 h-5" /></a>
+                  <a href="mailto:info@aashey.com" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 hover:bg-[#C9933A] hover:text-white transition-all"><RiMailLine className="w-5 h-5" /></a>
+                </div>
+                <p className="font-playfair italic text-[20px] text-[#092D15]">Enjoy Your Journey</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════
-          MOBILE BOTTOM NAV
-      ═══════════════════════════════════════════════ */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C9933A]/40 to-transparent" />
-
-        <div className="bg-[#2A1200] grid grid-cols-4">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1A0A00]/95 backdrop-blur-md border-t border-[#C9933A]/20" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="grid grid-cols-4 h-16">
 
           {/* Home */}
-          <Link href="/" className={`flex flex-col items-center justify-center pt-3 pb-2.5 gap-1 relative transition-all ${pathname === "/" ? "text-[#C9933A]" : "text-[#FDF6E3]/50 active:text-[#FDF6E3]"}`}>
-            {pathname === "/" && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#C9933A]" />}
-            {pathname === "/" ? <RiHomeFill className="w-[22px] h-[22px]" /> : <RiHomeLine className="w-[22px] h-[22px]" />}
-            <span className={`text-[10px] font-sans font-semibold tracking-wide ${pathname === "/" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>Home</span>
+          <Link href="/" className={`flex flex-col items-center justify-center relative transition-all duration-300 ${pathname === "/" ? "text-[#C9933A]" : "text-[#FDF6E3]/60"}`}>
+            {pathname === "/" && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#C9933A] rounded-b-lg shadow-[0_0_12px_rgba(201,147,58,0.4)]" />}
+            <div className={`transition-all duration-300 ${pathname === "/" ? "scale-110 mb-0.5" : "scale-100"}`}>
+              <Image 
+                src="/menu-icons/home.svg" 
+                alt="Home" 
+                width={22} 
+                height={22} 
+                className="brightness-0 invert opacity-90"
+                style={pathname === "/" ? { filter: "brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(10deg)" } : { filter: "brightness(0) invert(1)" }}
+              />
+            </div>
+            <span className={`text-[10px] font-sans font-bold tracking-wider uppercase mt-1 ${pathname === "/" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>Home</span>
           </Link>
 
           {/* Shop */}
-          <Link href="/categories" className={`flex flex-col items-center justify-center pt-3 pb-2.5 gap-1 relative transition-all ${pathname === "/categories" ? "text-[#C9933A]" : "text-[#FDF6E3]/50 active:text-[#FDF6E3]"}`}>
-            {pathname === "/categories" && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#C9933A]" />}
-            {pathname === "/categories" ? <RiShoppingBag3Fill className="w-[22px] h-[22px]" /> : <RiShoppingBag3Line className="w-[22px] h-[22px]" />}
-            <span className={`text-[10px] font-sans font-semibold tracking-wide ${pathname === "/categories" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>Shop</span>
+          <Link href="/categories" className={`flex flex-col items-center justify-center relative transition-all duration-300 ${pathname === "/categories" ? "text-[#C9933A]" : "text-[#FDF6E3]/60"}`}>
+            {pathname === "/categories" && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#C9933A] rounded-b-lg shadow-[0_0_12px_rgba(201,147,58,0.4)]" />}
+            <div className={`transition-all duration-300 ${pathname === "/categories" ? "scale-110 mb-0.5" : "scale-100"}`}>
+              <Image 
+                src="/menu-icons/products.svg" 
+                alt="Shop" 
+                width={22} 
+                height={22} 
+                className="brightness-0 invert opacity-90"
+                style={pathname === "/categories" ? { filter: "brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(10deg)" } : { filter: "brightness(0) invert(1)" }}
+              />
+            </div>
+            <span className={`text-[10px] font-sans font-bold tracking-wider uppercase mt-1 ${pathname === "/categories" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>Shop</span>
           </Link>
 
           {/* Cart */}
-          <Link href="/cart" className={`flex flex-col items-center justify-center pt-3 pb-2.5 gap-1 relative transition-all ${pathname === "/cart" ? "text-[#C9933A]" : "text-[#FDF6E3]/50 active:text-[#FDF6E3]"}`}>
-            {pathname === "/cart" && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#C9933A]" />}
-            <div className="relative">
-              {pathname === "/cart" ? <RiShoppingCart2Fill className="w-[22px] h-[22px]" /> : <RiShoppingCart2Line className="w-[22px] h-[22px]" />}
+          <Link href="/cart" className={`flex flex-col items-center justify-center relative transition-all duration-300 ${pathname === "/cart" ? "text-[#C9933A]" : "text-[#FDF6E3]/60"}`}>
+            {pathname === "/cart" && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#C9933A] rounded-b-lg shadow-[0_0_12px_rgba(201,147,58,0.4)]" />}
+            <div className={`relative transition-all duration-300 ${pathname === "/cart" ? "scale-110 mb-0.5" : "scale-100"}`}>
+              <Image 
+                src="/menu-icons/cart.svg" 
+                alt="Cart" 
+                width={22} 
+                height={22} 
+                className="brightness-0 invert opacity-90"
+                style={pathname === "/cart" ? { filter: "brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(10deg)" } : { filter: "brightness(0) invert(1)" }}
+              />
               <ClientOnly>
                 {getCartItemCount() > 0 && (
-                  <span className="absolute -top-1 -right-2 min-w-[16px] h-4 bg-[#C9933A] text-white text-[9px] font-sans font-bold rounded-full flex items-center justify-center px-0.5 shadow-sm">
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 bg-[#C9933A] text-white text-[9px] font-sans font-bold rounded-full flex items-center justify-center px-0.5 border border-[#1A0A00]">
                     {getCartItemCount()}
                   </span>
                 )}
               </ClientOnly>
             </div>
-            <span className={`text-[10px] font-sans font-semibold tracking-wide ${pathname === "/cart" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>Cart</span>
+            <span className={`text-[10px] font-sans font-bold tracking-wider uppercase mt-1 ${pathname === "/cart" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>Cart</span>
           </Link>
 
           {/* Account */}
           <Link href={isAuthenticated ? "/account" : "/auth"}
-            className={`flex flex-col items-center justify-center pt-3 pb-2.5 gap-1 relative transition-all ${pathname.includes("/account") || pathname === "/auth" ? "text-[#C9933A]" : "text-[#FDF6E3]/50 active:text-[#FDF6E3]"}`}>
-            {(pathname.includes("/account") || pathname === "/auth") && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#C9933A]" />}
-            <ClientOnly>
-              {isAuthenticated ? (
-                <div className="w-[22px] h-[22px] bg-[#C9933A] rounded-full flex items-center justify-center text-white font-bold text-[9px]">
-                  {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                </div>
-              ) : (
-                pathname.includes("/account") || pathname === "/auth"
-                  ? <RiUser3Fill className="w-[22px] h-[22px]" />
-                  : <RiUser3Line className="w-[22px] h-[22px]" />
-              )}
-            </ClientOnly>
-            <span className={`text-[10px] font-sans font-semibold tracking-wide ${pathname.includes("/account") || pathname === "/auth" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>
+            className={`flex flex-col items-center justify-center relative transition-all duration-300 ${pathname.includes("/account") || pathname === "/auth" ? "text-[#C9933A]" : "text-[#FDF6E3]/60"}`}>
+            {(pathname.includes("/account") || pathname === "/auth") && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#C9933A] rounded-b-lg shadow-[0_0_12px_rgba(201,147,58,0.4)]" />}
+            <div className={`transition-all duration-300 ${pathname.includes("/account") || pathname === "/auth" ? "scale-110 mb-0.5" : "scale-100"}`}>
+              <Image 
+                src="/menu-icons/login-register.svg" 
+                alt="Account" 
+                width={22} 
+                height={22} 
+                className="brightness-0 invert opacity-90"
+                style={pathname.includes("/account") || pathname === "/auth" ? { filter: "brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(10deg)" } : { filter: "brightness(0) invert(1)" }}
+              />
+            </div>
+            <span className={`text-[10px] font-sans font-bold tracking-wider uppercase mt-1 ${pathname.includes("/account") || pathname === "/auth" ? "text-[#C9933A]" : "text-[#FDF6E3]/40"}`}>
               {isAuthenticated ? "Account" : "Login"}
             </span>
           </Link>
