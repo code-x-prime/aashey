@@ -677,7 +677,7 @@ export default function CartPage() {
                                 ) : (
                                     <>
                                         <ShoppingBag className="h-5 w-5" />
-                                        Proceed to Checkout
+                                        Checkout
                                         <span className="ml-2 font-bold">
                                             • {formatCurrency(totals.total)}
                                         </span>

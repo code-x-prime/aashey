@@ -46,6 +46,7 @@ import ShiprocketSettingsPage from "./pages/ShiprocketSettingsPage";
 import ShippingSettingsPage from "./pages/ShippingSettingsPage";
 import SettingsPage from "./pages/SettingsPage";
 import { LanguageProvider } from "./context/LanguageContext";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({
@@ -625,6 +626,15 @@ const App = () => {
               element={
                 <ProtectedRoute resource={Resource.BANNERS} action={Action.READ}>
                   <BannersPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="announcements"
+              element={
+                <ProtectedRoute resource={Resource.SETTINGS} action={Action.UPDATE}>
+                  <AnnouncementsPage />
                 </ProtectedRoute>
               }
             />

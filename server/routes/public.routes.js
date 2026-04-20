@@ -64,4 +64,7 @@ router.get("/price-visibility-settings", getPriceVisibilitySettings);
 router.post("/newsletter/subscribe", subscribeNewsletter);
 router.post("/newsletter/unsubscribe", unsubscribeNewsletter);
 
+import { getActiveAnnouncements } from "../controllers/announcement.controller.js";
+router.get("/announcements", getActiveAnnouncements);
+
 export default router;

@@ -1275,3 +1275,19 @@ export const pricingSlabs = {
     });
   },
 };
+
+// ==================== Announcements Management ====================
+export const announcements = {
+  getAnnouncements: () => {
+    return api.get("/api/admin/announcements");
+  },
+  createAnnouncement: (data: { text: string; link?: string; isActive?: boolean; order?: number; isScrollable?: boolean }) => {
+    return api.post("/api/admin/announcements", data);
+  },
+  updateAnnouncement: (id: string, data: { text?: string; link?: string; isActive?: boolean; order?: number; isScrollable?: boolean }) => {
+    return api.put(`/api/admin/announcements/${id}`, data);
+  },
+  deleteAnnouncement: (id: string) => {
+    return api.delete(`/api/admin/announcements/${id}`);
+  },
+};

@@ -38,6 +38,7 @@ import adminReturnRoutes from "./routes/admin.return.routes.js";
 import adminMOQRoutes from "./routes/admin.moq.routes.js";
 import adminPaymentGatewayRoutes from "./routes/admin.payment-gateway.routes.js";
 import adminShiprocketRoutes from "./routes/admin.shiprocket.routes.js";
+import adminAnnouncementRoutes from "./routes/admin.announcement.routes.js";
 
 const app = express();
 
@@ -155,6 +156,7 @@ app.use("/api/admin/returns", adminReturnRoutes);
 app.use("/api/admin", adminMOQRoutes);
 app.use("/api/admin", adminPaymentGatewayRoutes);
 app.use("/api/admin/shiprocket", adminShiprocketRoutes);
+app.use("/api/admin/announcements", adminAnnouncementRoutes);
 
 // Shiprocket webhook (public endpoint)
 app.use("/api/webhooks/shiprocket", adminShiprocketRoutes);

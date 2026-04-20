@@ -1176,3 +1176,14 @@ model ShiprocketPickupAddress {
 
   @@index([isDefault])
 }
+
+model Announcement {
+  id           String   @id @default(uuid())
+  text         String
+  link         String?  // Optional URL
+  isActive     Boolean  @default(true)
+  isScrollable Boolean  @default(true)
+  order        Int      @default(0) // In case admin wants to order them
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

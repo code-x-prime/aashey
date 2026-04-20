@@ -40,6 +40,7 @@ export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [announcements, setAnnouncements] = useState([]);
 
   const searchInputRef = useRef(null);
   const navbarRef = useRef(null);
@@ -83,7 +84,19 @@ export function Navbar() {
         console.error("Failed to fetch categories:", error);
       }
     };
+    const fetchAnnouncements = async () => {
+      try {
+        const response = await fetchApi("/public/announcements");
+        // response is the JSON body directly from fetchApi
+        if (response && response.success) {
+          setAnnouncements(response.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch announcements:", error);
+      }
+    };
     fetchCategories();
+    fetchAnnouncements();
   }, []);
 
   const handleSearch = (e) => {
@@ -162,18 +175,102 @@ export function Navbar() {
         <Toaster position="top-center" richColors />
 
         {/* Top Announcement Bar */}
-        <div className="bg-[#092D15] h-9 overflow-hidden hidden md:flex items-center justify-center">
-          <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 w-full">
-            <div className="flex items-center justify-center gap-6 whitespace-nowrap">
-              <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">Free Delivery above ₹999</span>
-              <span className="text-[#C9933A]/60 font-light">·</span>
-              <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">100% Pure A2 Ghee</span>
-              <span className="text-[#C9933A]/60 font-light">·</span>
-              <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">Traditionally Bilona Crafted</span>
-              <span className="text-[#C9933A]/60 font-light">·</span>
-              <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">Lab Tested</span>
+        <div className="bg-[#092D15] h-9 overflow-hidden hidden md:flex items-center w-full relative">
+          {announcements.length > 0 ? (
+            <div className={`flex whitespace-nowrap relative h-full w-full items-center ${announcements.some(a => a.isScrollable) ? "overflow-hidden" : "justify-center"}`}>
+              {/* First Track */}
+              <div 
+                className={cn(
+                  "flex items-center h-full transition-transform duration-300",
+                  announcements.some(a => a.isScrollable) 
+                    ? "animate-marquee absolute left-0 min-w-full gap-8 pr-8" 
+                    : "relative gap-6"
+                )}
+              >
+                {announcements.map((item, idx) => (
+                  <div key={`a1-${idx}`} className="flex items-center flex-shrink-0">
+                    {item.link ? (
+                      <Link href={item.link} className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90 hover:text-[#C9933A] transition-colors">{item.text}</Link>
+                    ) : (
+                      <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{item.text}</span>
+                    )}
+                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Second Track (Repeated for seamless loop) */}
+              {announcements.some((a) => a.isScrollable) && (
+                <div className="animate-marquee min-w-full flex items-center h-full absolute left-full top-0 gap-8 pr-8">
+                  {announcements.map((item, idx) => (
+                    <div key={`a2-${idx}`} className="flex items-center flex-shrink-0">
+                      {item.link ? (
+                        <Link href={item.link} className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90 hover:text-[#C9933A] transition-colors">{item.text}</Link>
+                      ) : (
+                        <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{item.text}</span>
+                      )}
+                      <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="flex whitespace-nowrap overflow-hidden relative w-full h-full items-center">
+              {/* First Track Fallback */}
+              <div className="animate-marquee absolute left-0 min-w-full flex items-center h-full gap-8 pr-8">
+                {[
+                  "Free Delivery above ₹999",
+                  "100% Pure A2 Ghee",
+                  "Traditionally Bilona Crafted",
+                  "Lab Tested"
+                ].map((text, i) => (
+                  <div key={`f1-${i}`} className="flex items-center flex-shrink-0">
+                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
+                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                  </div>
+                ))}
+                {/* Repeat to fill screen if needed */}
+                {[
+                  "Free Delivery above ₹999",
+                  "100% Pure A2 Ghee",
+                  "Traditionally Bilona Crafted",
+                  "Lab Tested"
+                ].map((text, i) => (
+                  <div key={`f1-rep-${i}`} className="flex items-center flex-shrink-0">
+                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
+                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Second Track Fallback */}
+              <div className="animate-marquee min-w-full flex items-center h-full absolute left-full top-0 gap-8 pr-8">
+                {[
+                  "Free Delivery above ₹999",
+                  "100% Pure A2 Ghee",
+                  "Traditionally Bilona Crafted",
+                  "Lab Tested"
+                ].map((text, i) => (
+                  <div key={`f2-${i}`} className="flex items-center flex-shrink-0">
+                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
+                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                  </div>
+                ))}
+                {[
+                  "Free Delivery above ₹999",
+                  "100% Pure A2 Ghee",
+                  "Traditionally Bilona Crafted",
+                  "Lab Tested"
+                ].map((text, i) => (
+                  <div key={`f2-rep-${i}`} className="flex items-center flex-shrink-0">
+                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
+                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Navbar */}

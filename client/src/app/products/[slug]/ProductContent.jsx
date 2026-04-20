@@ -301,10 +301,10 @@ export default function ProductContent({ slug }) {
       return (
         <div>
           <div className="flex items-baseline gap-3 flex-wrap mb-2">
-            <span className="font-cormorant text-5xl font-bold text-[#C9933A] leading-none">{formatCurrency(price)}</span>
+            <span className=" text-5xl font-bold text-[#C9933A] leading-none">{formatCurrency(price)}</span>
             {originalPrice > price && (
               <>
-                <span className="font-cormorant text-2xl text-[#8B6040] line-through">{formatCurrency(originalPrice)}</span>
+                <span className=" text-2xl text-[#8B6040] line-through">{formatCurrency(originalPrice)}</span>
                 {disc > 0 && (
                   <span className={`flex items-center gap-1 text-[11px] font-sans font-bold px-2.5 py-1 rounded-full ${isFlash ? "bg-[#3F1F00] text-[#C9933A]" : "bg-green-600 text-white"}`}>
                     {isFlash && <RiFlashlightLine className="w-3 h-3" />} {disc}% OFF
@@ -329,8 +329,8 @@ export default function ProductContent({ slug }) {
         return (
           <div>
             <div className="flex items-baseline gap-3 flex-wrap mb-1">
-              <span className="font-cormorant text-5xl font-bold text-[#C9933A] leading-none">{formatCurrency(base)}</span>
-              <span className="font-cormorant text-2xl text-[#8B6040] line-through">{formatCurrency(reg)}</span>
+              <span className=" text-5xl font-bold text-[#C9933A] leading-none">{formatCurrency(base)}</span>
+              <span className=" text-2xl text-[#8B6040] line-through">{formatCurrency(reg)}</span>
               {disc > 0 && <span className="bg-green-600 text-white text-[11px] font-sans font-bold px-2.5 py-1 rounded-full">{disc}% OFF</span>}
             </div>
             <span className="font-sans text-[11px] text-[#8B6040]">Inclusive of all taxes</span>
@@ -339,7 +339,7 @@ export default function ProductContent({ slug }) {
       }
       if (base > 0) return (
         <div>
-          <span className="font-cormorant text-5xl font-bold text-[#C9933A] leading-none">{formatCurrency(base)}</span>
+          <span className=" text-5xl font-bold text-[#C9933A] leading-none">{formatCurrency(base)}</span>
           <p className="font-sans text-[11px] text-[#8B6040] mt-1">Inclusive of all taxes</p>
         </div>
       );
@@ -354,7 +354,7 @@ export default function ProductContent({ slug }) {
     <div className="min-h-screen bg-[#FDF6E3] flex items-center justify-center">
       <div className="text-center">
         <RiLoader4Line className="w-12 h-12 text-[#C9933A] animate-spin mx-auto mb-4" />
-        <p className="font-cormorant italic text-[#6B4423] text-xl">Loading product...</p>
+        <p className=" italic text-[#6B4423] text-xl">Loading product...</p>
       </div>
     </div>
   );
@@ -365,7 +365,7 @@ export default function ProductContent({ slug }) {
         <div className="w-14 h-14 rounded-2xl bg-[#C9933A]/10 flex items-center justify-center mx-auto mb-4">
           <RiAlertLine className="w-7 h-7 text-[#C9933A]" />
         </div>
-        <h2 className="font-cormorant text-2xl font-semibold text-[#3F1F00] mb-2">Product Unavailable</h2>
+        <h2 className=" text-2xl font-semibold text-[#3F1F00] mb-2">Product Unavailable</h2>
         <p className="font-sans text-sm text-[#5C3A1E] mb-6">{error}</p>
         <Link href="/products"><button className="btn-gold gap-2 text-sm">Browse Products <RiArrowRightSLine className="w-4 h-4" /></button></Link>
       </div>
@@ -378,7 +378,7 @@ export default function ProductContent({ slug }) {
         <div className="w-14 h-14 rounded-2xl bg-[#C9933A]/10 flex items-center justify-center mx-auto mb-4">
           <RiBox3Line className="w-7 h-7 text-[#C9933A]" />
         </div>
-        <h2 className="font-cormorant text-2xl font-semibold text-[#3F1F00] mb-2">Product Not Found</h2>
+        <h2 className=" text-2xl font-semibold text-[#3F1F00] mb-2">Product Not Found</h2>
         <p className="font-sans text-sm text-[#5C3A1E] mb-6">This product doesn&apos;t exist or has been removed.</p>
         <Link href="/products"><button className="btn-gold gap-2 text-sm">Browse Products <RiArrowRightSLine className="w-4 h-4" /></button></Link>
       </div>
@@ -449,7 +449,7 @@ export default function ProductContent({ slug }) {
 
             {/* Name + Rating */}
             <div>
-              <h1 className="font-cormorant text-4xl md:text-5xl font-semibold text-[#3F1F00] leading-tight">
+              <h1 className=" text-4xl md:text-5xl font-semibold text-[#3F1F00] leading-tight">
                 {product.name}
               </h1>
               {product.avgRating >= 0 && (
@@ -476,12 +476,12 @@ export default function ProductContent({ slug }) {
                 <div className="flex items-center gap-2.5">
                   <RiFlashlightLine className="w-5 h-5 text-[#C9933A] flex-shrink-0" />
                   <div>
-                    <p className="font-cormorant font-bold text-[#FDF6E3] text-lg leading-tight">Flash Sale</p>
+                    <p className=" font-bold text-[#FDF6E3] text-lg leading-tight">Flash Sale</p>
                     <p className="font-sans text-[12px] text-[#FDF6E3]/55">{product.flashSale.name}</p>
                   </div>
                 </div>
                 <div className="bg-[#C9933A] px-4 py-2 rounded-lg flex-shrink-0">
-                  <span className="font-cormorant font-bold text-2xl text-[#3F1F00]">{product.flashSale.discountPercentage}% OFF</span>
+                  <span className=" font-bold text-2xl text-[#3F1F00]">{product.flashSale.discountPercentage}% OFF</span>
                 </div>
               </div>
             )}
@@ -567,7 +567,7 @@ export default function ProductContent({ slug }) {
                     className="w-10 h-10 flex items-center justify-center font-bold text-lg text-[#3F1F00] hover:bg-[#FDF6E3] disabled:opacity-30 transition-colors">
                     −
                   </button>
-                  <span className="w-12 h-10 flex items-center justify-center font-cormorant font-bold text-xl text-[#3F1F00] border-x border-[#C9933A]/20">
+                  <span className="w-12 h-10 flex items-center justify-center  font-bold text-xl text-[#3F1F00] border-x border-[#C9933A]/20">
                     {quantity}
                   </span>
                   <button onClick={() => handleQuantityChange(1)}
@@ -614,7 +614,7 @@ export default function ProductContent({ slug }) {
             {/* Delivery info card */}
             <div className="bg-white rounded-xl border border-[#C9933A]/15 overflow-hidden">
               <div className="px-4 py-3 border-b border-[#C9933A]/10 bg-[#FDF6E3]/50">
-                <p className="font-cormorant font-semibold text-[#3F1F00] text-[15px]">Delivery Information</p>
+                <p className=" font-semibold text-[#3F1F00] text-[15px]">Delivery Information</p>
               </div>
               <div className="p-4 space-y-3">
                 {[
@@ -678,12 +678,12 @@ export default function ProductContent({ slug }) {
                   dangerouslySetInnerHTML={{ __html: product.description || "" }} />
                 {product.directions && (
                   <div className="mt-8 p-6 bg-[#FDF6E3] rounded-xl border border-[#C9933A]/15">
-                    <h3 className="font-cormorant font-semibold text-[#3F1F00] text-xl mb-5">Directions for Use</h3>
+                    <h3 className=" font-semibold text-[#3F1F00] text-xl mb-5">Directions for Use</h3>
                     <div className="space-y-4">
                       {product.directions.split("\n").filter(Boolean).map((step, i) => (
                         <div key={i} className="flex gap-4">
                           <div className="w-8 h-8 rounded-full bg-[#C9933A] flex items-center justify-center flex-shrink-0">
-                            <span className="font-cormorant font-bold text-[#3F1F00] text-base">{i + 1}</span>
+                            <span className=" font-bold text-[#3F1F00] text-base">{i + 1}</span>
                           </div>
                           <p className="font-sans text-[13.5px] text-[#5C3A1E] mt-1">{step}</p>
                         </div>
@@ -720,7 +720,7 @@ export default function ProductContent({ slug }) {
                   }
                 ].map(({ title, items }) => (
                   <div key={title}>
-                    <h3 className="font-cormorant font-semibold text-[#3F1F00] text-xl mb-5">{title}</h3>
+                    <h3 className=" font-semibold text-[#3F1F00] text-xl mb-5">{title}</h3>
                     <div className="space-y-3">
                       {items.map((item, i) => (
                         <div key={i} className="flex gap-3 pb-3 border-b border-[#C9933A]/10">
@@ -747,7 +747,7 @@ export default function ProductContent({ slug }) {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
               <div>
                 <span className="section-eyebrow">Explore More</span>
-                <h2 className="font-cormorant text-4xl md:text-5xl font-semibold text-[#3F1F00] mt-1 leading-tight">
+                <h2 className=" text-4xl md:text-5xl font-semibold text-[#3F1F00] mt-1 leading-tight">
                   You May Also Like
                 </h2>
                 <div className="w-10 h-px bg-gradient-to-r from-[#C9933A] to-transparent mt-4" />

@@ -233,7 +233,7 @@ export const ProductCard = ({ product }) => {
       {/* Details */}
       <div className="p-4 flex flex-col flex-grow">
         <Link href={`/products/${product.slug}`} className="block">
-          <h3 className="font-semibold text-[#3F1F00] text-base mb-1.5 line-clamp-2 group-hover:text-[#C9933A] transition-colors leading-snug font-playfair" title={product.name}>
+          <h3 className="font-semibold text-[#3F1F00] text-base mb-1.5 line-clamp-2 group-hover:text-[#C9933A] transition-colors leading-snug " title={product.name}>
             {product.name}
           </h3>
         </Link>
@@ -248,11 +248,11 @@ export const ProductCard = ({ product }) => {
             <div className="flex items-baseline gap-2.5">
               <span className={`text-lg font-bold  ${showFlashSaleBadge ? "text-[#C9933A]" : "text-[#3F1F00]"}`}>{formatCurrency(displayPrice)}</span>
               {(hasSale || showFlashSaleBadge) && originalPrice && (
-                <span className="text-sm text-[#7A4E2D] line-through font-sans">{formatCurrency(originalPrice)}</span>
+                <span className="text-sm text-[#7A4E2D] line-through ">{formatCurrency(originalPrice)}</span>
               )}
             </div>
           ) : (
-            <Link href="/auth?redirect=products" className="text-sm font-semibold text-[#C9933A] hover:underline font-sans">Login to view price</Link>
+            <Link href="/auth?redirect=products" className="text-sm font-semibold text-[#C9933A] hover:underline ">Login to view price</Link>
           )}
         </div>
       </div>
@@ -302,7 +302,7 @@ export const ProductListCard = ({ product }) => {
 
         {/* Name */}
         <Link href={`/products/${product.slug}`}>
-          <h3 className="font-playfair font-bold text-[#3F1F00] text-lg leading-snug mb-1.5 group-hover:text-[#C9933A] transition-colors line-clamp-2" title={product.name}>
+          <h3 className=" font-bold text-[#3F1F00] text-lg leading-snug mb-1.5 group-hover:text-[#C9933A] transition-colors line-clamp-2" title={product.name}>
             {product.name}
           </h3>
         </Link>
@@ -319,7 +319,7 @@ export const ProductListCard = ({ product }) => {
 
         {/* Short description if available */}
         {product.shortDescription && (
-          <p className="font-sans text-xs text-[#6B4423] line-clamp-2 mb-2 hidden sm:block">{product.shortDescription}</p>
+          <p className=" text-xs text-[#6B4423] line-clamp-2 mb-2 hidden sm:block">{product.shortDescription}</p>
         )}
 
         {/* Price + Wishlist */}
@@ -327,13 +327,13 @@ export const ProductListCard = ({ product }) => {
           <div>
             {showPrice ? (
               <div className="flex items-baseline gap-2.5">
-                <span className={`text-xl font-bold font-playfair ${showFlashSaleBadge ? "text-[#C9933A]" : "text-[#3F1F00]"}`}>{formatCurrency(displayPrice)}</span>
+                <span className={`text-xl font-bold  ${showFlashSaleBadge ? "text-[#C9933A]" : "text-[#3F1F00]"}`}>{formatCurrency(displayPrice)}</span>
                 {(hasSale || showFlashSaleBadge) && originalPrice && (
-                  <span className="text-sm text-[#7A4E2D] line-through font-sans">{formatCurrency(originalPrice)}</span>
+                  <span className="text-sm text-[#7A4E2D] line-through ">{formatCurrency(originalPrice)}</span>
                 )}
               </div>
             ) : (
-              <Link href="/auth?redirect=products" className="text-sm font-semibold text-[#C9933A] hover:underline font-sans">Login to view price</Link>
+              <Link href="/auth?redirect=products" className="text-sm font-semibold text-[#C9933A] hover:underline ">Login to view price</Link>
             )}
           </div>
           <button
