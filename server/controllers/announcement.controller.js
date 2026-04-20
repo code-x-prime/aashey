@@ -22,8 +22,24 @@ export const createAnnouncement = asyncHandler(async (req, res) => {
   const { text, link, isActive, isScrollable, order } = req.body;
   if (!text) throw new ApiError(400, "Text is required for announcement");
 
+  // Get the current max order to auto-increment if not provided
+  let finalOrder = order;
+  if (finalOrder === undefined || finalOrder === null) {
+    const lastItem = await prisma.announcement.findFirst({
+      orderBy: { order: "desc" },
+      select: { order: true }
+    });
+    finalOrder = lastItem ? lastItem.order + 1 : 0;
+  }
+
   const announcement = await prisma.announcement.create({
-    data: { text, link, isActive: isActive ?? true, isScrollable: isScrollable ?? true, order: order || 0 },
+    data: { 
+      text, 
+      link, 
+      isActive: isActive ?? true, 
+      isScrollable: isScrollable ?? true, 
+      order: finalOrder 
+    },
   });
   res.status(201).json(new ApiResponsive(201, announcement, "Announcement created successfully"));
 });
@@ -48,8 +64,17 @@ export const deleteAnnouncement = asyncHandler(async (req, res) => {
   const existing = await prisma.announcement.findUnique({ where: { id } });
   if (!existing) throw new ApiError(404, "Announcement not found");
 
+  const deletedOrder = existing.order;
+
   await prisma.announcement.delete({ where: { id } });
-  res.status(200).json(new ApiResponsive(200, null, "Announcement deleted successfully"));
+
+  // Shift all higher orders down to close the gap
+  await prisma.announcement.updateMany({
+    where: { order: { gt: deletedOrder } },
+    data: { order: { decrement: 1 } }
+  });
+
+  res.status(200).json(new ApiResponsive(200, null, "Announcement deleted successfully and reordered"));
 });
 
 // For Reordering

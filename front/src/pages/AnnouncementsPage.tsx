@@ -7,7 +7,6 @@ import {
   Megaphone
 } from "lucide-react";
 import { toast } from "sonner";
-import { useLanguage } from "@/context";
 import { announcements } from "@/api/adminService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 
 export default function AnnouncementsPage() {
-  const { t } = useLanguage();
   const [dataList, setDataList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -299,15 +297,18 @@ export default function AnnouncementsPage() {
                 />
               </div>
               <div className="flex gap-4">
-                <div className="space-y-2 flex-1">
-                  <Label htmlFor="order">Display Order</Label>
-                  <Input
-                    id="order"
-                    type="number"
-                    value={formData.order}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
+                {editingId && (
+                  <div className="space-y-2 flex-1">
+                    <Label htmlFor="order">Display Order</Label>
+                    <Input
+                      id="order"
+                      type="number"
+                      value={formData.order}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2 flex-1 pt-8 self-end pb-1 inline-flex items-center gap-2">
                   <Switch
                     id="isActive"
