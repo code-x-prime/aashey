@@ -95,10 +95,15 @@ module.exports = {
 				marquee: {
 					'0%': { transform: 'translateX(0%)' },
 					'100%': { transform: 'translateX(-100%)' },
+				},
+				'marquee-infinite': {
+					'0%': { transform: 'translateX(0%)' },
+					'100%': { transform: 'translateX(-50%)' },
 				}
 			},
 			animation: {
 				marquee: 'marquee 25s linear infinite',
+				'marquee-infinite': 'marquee-infinite 25s linear infinite',
 			}
 		}
 

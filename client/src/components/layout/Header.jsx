@@ -175,103 +175,63 @@ export function Navbar() {
         <Toaster position="top-center" richColors />
 
         {/* Top Announcement Bar */}
-        <div className="bg-[#092D15] h-9 overflow-hidden hidden md:flex items-center w-full relative">
+        <div className="bg-[#092D15] h-8 sm:h-9 overflow-hidden flex items-center w-full relative">
+          <div className="container mx-auto px-4 h-full flex items-center justify-center">
           {announcements.length > 0 ? (
-            <div className={`flex whitespace-nowrap relative h-full w-full items-center ${announcements.some(a => a.isScrollable) ? "overflow-hidden" : "justify-center"}`}>
-              {/* First Track */}
-              <div 
-                className={cn(
-                  "flex items-center h-full transition-transform duration-300",
-                  announcements.some(a => a.isScrollable) 
-                    ? "animate-marquee absolute left-0 min-w-full gap-8 pr-8" 
-                    : "relative gap-6"
-                )}
-              >
-                {announcements.map((item, idx) => (
-                  <div key={`a1-${idx}`} className="flex items-center flex-shrink-0">
-                    {item.link ? (
-                      <Link href={item.link} className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90 hover:text-[#C9933A] transition-colors">{item.text}</Link>
-                    ) : (
-                      <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{item.text}</span>
-                    )}
-                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Second Track (Repeated for seamless loop) */}
-              {announcements.some((a) => a.isScrollable) && (
-                <div className="animate-marquee min-w-full flex items-center h-full absolute left-full top-0 gap-8 pr-8">
-                  {announcements.map((item, idx) => (
-                    <div key={`a2-${idx}`} className="flex items-center flex-shrink-0">
+            <div className={cn(
+              "flex whitespace-nowrap h-full items-center",
+              announcements.some(a => a.isScrollable) || announcements.length > 1 ? "overflow-hidden w-full relative" : "justify-center"
+            )}>
+              {/* Single Track Marquee for API Data */}
+              {(announcements.some(a => a.isScrollable) || announcements.length > 1) ? (
+                <div className="flex w-max items-center h-full animate-marquee-infinite hover:[animation-play-state:paused] gap-12 pr-12">
+                  {/* Render items twice for seamless loop */}
+                  {[...announcements, ...announcements].map((item, idx) => (
+                    <div key={`ann-${idx}`} className="flex items-center flex-shrink-0">
                       {item.link ? (
-                        <Link href={item.link} className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90 hover:text-[#C9933A] transition-colors">{item.text}</Link>
+                        <Link href={item.link} className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90 hover:text-[#C9933A] transition-colors">{item.text}</Link>
                       ) : (
-                        <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{item.text}</span>
+                        <span className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{item.text}</span>
                       )}
-                      <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                      <span className="text-[#C9933A]/60 font-light ml-12">·</span>
                     </div>
                   ))}
+                </div>
+              ) : (
+                /* Static Single Item */
+                <div className="flex items-center">
+                  {announcements[0].link ? (
+                    <Link href={announcements[0].link} className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90 hover:text-[#C9933A] transition-colors">{announcements[0].text}</Link>
+                  ) : (
+                    <span className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{announcements[0].text}</span>
+                  )}
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex whitespace-nowrap overflow-hidden relative w-full h-full items-center">
-              {/* First Track Fallback */}
-              <div className="animate-marquee absolute left-0 min-w-full flex items-center h-full gap-8 pr-8">
+            /* Fallback Marquee */
+            <div className="flex whitespace-nowrap overflow-hidden w-full relative h-full items-center">
+              <div className="flex w-max items-center h-full animate-marquee-infinite gap-12 pr-12">
                 {[
+                  "Free Delivery above ₹999",
+                  "100% Pure A2 Ghee",
+                  "Traditionally Bilona Crafted",
+                  "Lab Tested",
                   "Free Delivery above ₹999",
                   "100% Pure A2 Ghee",
                   "Traditionally Bilona Crafted",
                   "Lab Tested"
                 ].map((text, i) => (
-                  <div key={`f1-${i}`} className="flex items-center flex-shrink-0">
-                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
-                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
-                  </div>
-                ))}
-                {/* Repeat to fill screen if needed */}
-                {[
-                  "Free Delivery above ₹999",
-                  "100% Pure A2 Ghee",
-                  "Traditionally Bilona Crafted",
-                  "Lab Tested"
-                ].map((text, i) => (
-                  <div key={`f1-rep-${i}`} className="flex items-center flex-shrink-0">
-                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
-                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Second Track Fallback */}
-              <div className="animate-marquee min-w-full flex items-center h-full absolute left-full top-0 gap-8 pr-8">
-                {[
-                  "Free Delivery above ₹999",
-                  "100% Pure A2 Ghee",
-                  "Traditionally Bilona Crafted",
-                  "Lab Tested"
-                ].map((text, i) => (
-                  <div key={`f2-${i}`} className="flex items-center flex-shrink-0">
-                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
-                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
-                  </div>
-                ))}
-                {[
-                  "Free Delivery above ₹999",
-                  "100% Pure A2 Ghee",
-                  "Traditionally Bilona Crafted",
-                  "Lab Tested"
-                ].map((text, i) => (
-                  <div key={`f2-rep-${i}`} className="flex items-center flex-shrink-0">
-                    <span className="font-sans text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
-                    <span className="text-[#C9933A]/60 font-light ml-8">·</span>
+                  <div key={`fallback-${i}`} className="flex items-center flex-shrink-0">
+                    <span className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
+                    <span className="text-[#C9933A]/60 font-light ml-12">·</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
         </div>
+      </div>
 
         {/* Main Navbar */}
         <div className={`bg-[#FDF6E3]/95 backdrop-blur-lg border-b border-[#C9933A]/15 transition-all duration-300 ${isScrolled ? "shadow-[0_4px_32px_rgba(63,31,0,0.12)]" : "shadow-[0_2px_24px_rgba(63,31,0,0.06)]"}`}>
