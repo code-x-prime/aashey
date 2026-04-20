@@ -424,7 +424,7 @@ export default function CartPage() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 bg-[#FDF6E3] min-h-screen p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 bg-[#FDF6E3] min-h-screen ">
 
                 {/* Cart Items Section */}
                 <div className="lg:col-span-2">
@@ -479,7 +479,7 @@ export default function CartPage() {
 
                 {/* Cart Summary Section */}
                 <div className="lg:col-span-1">
-                    <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(63,31,0,0.08)] border border-[#C9933A]/15 p-5 md:p-6 sticky top-4 hover:shadow-lg transition-shadow duration-300">
+                    <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(63,31,0,0.08)] border border-[#C9933A]/15 p-3 md:p-6 sticky top-4 hover:shadow-lg transition-shadow duration-300">
                         <div className="mb-6">
                             <h2 className="font-cormorant text-xl font-semibold text-[#3F1F00] mb-2">
                                 Cart Summary
