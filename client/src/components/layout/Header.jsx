@@ -582,9 +582,11 @@ export function Navbar() {
 
               {!isAuthenticated && (
                 <div className="px-6 py-8">
-                  <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full btn-primary rounded-xl h-11 text-sm font-semibold shadow-lg shadow-[#C9933A]/20">Sign In / Register</Button>
-                  </Link>
+                  <Button asChild className="w-full btn-primary rounded-xl h-11 text-sm font-semibold shadow-lg shadow-[#C9933A]/20">
+                    <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
+                      Sign In / Register
+                    </Link>
+                  </Button>
                 </div>
               )}
 

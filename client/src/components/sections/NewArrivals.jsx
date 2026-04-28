@@ -103,10 +103,11 @@ export function NewArrivals() {
               </button>
             </div>
             <div className="w-px h-6 bg-[#C9933A]/20" />
-            <Link href="/products?sort=newest">
-              <button className="btn-gold gap-1.5 text-sm">
-                View All New Arrivals <RiArrowRightSLine className="w-4 h-4" />
-              </button>
+            <Link 
+              href="/products?sort=newest"
+              className="btn-gold gap-1.5 text-sm"
+            >
+              View All New Arrivals <RiArrowRightSLine className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -141,10 +142,11 @@ export function NewArrivals() {
 
         {/* Mobile + Desktop bottom: View All */}
         <div className="text-center mt-10 md:mt-12">
-          <Link href="/products?sort=newest">
-            <button className="btn-gold gap-1.5">
-              View All New Arrivals <RiArrowRightSLine className="w-4 h-4" />
-            </button>
+          <Link 
+            href="/products?sort=newest"
+            className="btn-gold gap-1.5"
+          >
+            View All New Arrivals <RiArrowRightSLine className="w-4 h-4" />
           </Link>
         </div>
 

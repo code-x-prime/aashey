@@ -8,6 +8,7 @@ import { FlashSaleSection } from "@/components/sections/FlashSaleSection";
 import { TrendingProducts } from "@/components/sections/TrendingProducts";
 import { NewsletterCTA } from "@/components/sections/NewsletterCTA";
 import BannerCarousel from "@/components/sections/BannerCarousel";
+import BrandCarousel from "@/components/sections/BrandCarousel";
 
 
 export default function Home() {
@@ -22,7 +23,7 @@ export default function Home() {
 
         {/* Flash Sale - If active */}
         <FlashSaleSection />
-
+        <BrandCarousel tag="TOP" title="TOP BRANDS" />
         {/* Featured Products - Hero products */}
         <FeaturedProducts />
 
@@ -34,13 +35,13 @@ export default function Home() {
 
         {/* Trending Products */}
         <TrendingProducts />
-
+        <BrandCarousel tag="HOT" title="HOT BRANDS" />
         <BannerCarousel />
 
         {/* New Arrivals - Latest products */}
         <NewArrivals />
 
-
+        <BrandCarousel tag="NEW" title="NEW BRANDS" />
         {/* Customer Reviews - Social proof */}
         <CustomerReviews showStats={true} />
 

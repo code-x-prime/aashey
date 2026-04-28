@@ -181,8 +181,21 @@ export const ProductCard = ({ product }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/products/${product.slug}`} className="block relative aspect-[4/5] overflow-hidden bg-[#FDF6E3]">
-        {/* Wishlist */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-[#FDF6E3]">
+        <Link href={`/products/${product.slug}`} className="block w-full h-full">
+          {/* Image */}
+          <div className="relative w-full h-full">
+            <Image
+              src={getAllProductImages[currentImageIndex] || "/placeholder.jpg"}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            />
+          </div>
+        </Link>
+
+        {/* Wishlist button - Moved outside Link */}
         <button
           onClick={handleAddToWishlist}
           disabled={isAddingToWishlist[product.id]}
@@ -208,27 +221,16 @@ export const ProductCard = ({ product }) => {
           )}
         </div>
 
-        {/* Image */}
-        <div className="relative w-full h-full">
-          <Image
-            src={getAllProductImages[currentImageIndex] || "/placeholder.jpg"}
-            alt={product.name}
-            fill
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          />
-        </div>
-
         {/* Dots */}
         {getAllProductImages.length > 1 && isHovered && (
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 z-20">
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
             {getAllProductImages.map((_, idx) => (
               <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? "w-5 bg-[#C9933A]" : "w-1.5 bg-[#FDF6E3]/60"}`} />
             ))}
           </div>
         )}
         <div className="absolute inset-0 bg-[#3F1F00]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-      </Link>
+      </div>
 
       {/* Details */}
       <div className="p-4 flex flex-col flex-grow">

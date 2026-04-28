@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -219,7 +219,7 @@ export function FlashSaleSection() {
                     <div className="text-center mt-12">
                         <Link
                             href="/products?flashSale=true"
-                            className="btn-gold text-base gap-3"
+                            className="btn-gold text-base gap-3 inline-flex"
                         >
                             <Flame className="w-5 h-5" />
                             View All Flash Deals

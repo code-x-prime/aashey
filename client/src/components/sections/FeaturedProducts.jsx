@@ -129,10 +129,11 @@ export function FeaturedProducts() {
 
             <div className="w-px h-6 bg-[#C9933A]/20" />
 
-            <Link href="/products">
-              <button className="btn-outline gap-1.5 text-sm px-4 py-2">
-                View All <RiArrowRightSLine className="w-4 h-4" />
-              </button>
+            <Link 
+              href="/products"
+              className="btn-outline gap-1.5 text-sm px-4 py-2"
+            >
+              View All <RiArrowRightSLine className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -167,10 +168,11 @@ export function FeaturedProducts() {
 
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">
-          <Link href="/products" className="w-full max-w-xs">
-            <button className="btn-outline gap-1.5 text-sm px-5 py-2.5 w-full">
-              View All Products <RiArrowRightSLine className="w-4 h-4" />
-            </button>
+          <Link 
+            href="/products" 
+            className="w-full max-w-xs btn-outline gap-1.5 text-sm px-5 py-2.5 flex items-center justify-center"
+          >
+            View All Products <RiArrowRightSLine className="w-4 h-4" />
           </Link>
         </div>
 

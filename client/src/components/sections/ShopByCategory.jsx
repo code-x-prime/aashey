@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -109,10 +109,11 @@ export function ShopByCategory() {
         {/* ── Mobile: View All ───────────────────── */}
         {categories.length > 7 && (
           <div className="mt-8 text-center md:hidden">
-            <Link href="/categories">
-              <button className="btn-gold gap-1.5 text-sm">
-                View All Categories <RiArrowRightUpLine className="w-4 h-4" />
-              </button>
+            <Link 
+              href="/categories"
+              className="btn-gold gap-1.5 text-sm flex items-center justify-center w-full max-w-[240px] mx-auto"
+            >
+              View All Categories <RiArrowRightUpLine className="w-4 h-4" />
             </Link>
           </div>
         )}

@@ -114,10 +114,11 @@ export function BestSellers() {
               </button>
             </div>
             <div className="w-px h-6 bg-[#C9933A]/20" />
-            <Link href="/products?sort=popular">
-              <button className="btn-outline gap-1.5 text-sm px-4 py-2">
-                View All <RiArrowRightSLine className="w-4 h-4" />
-              </button>
+            <Link 
+              href="/products?sort=popular"
+              className="btn-outline gap-1.5 text-sm px-4 py-2"
+            >
+              View All <RiArrowRightSLine className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -152,10 +153,11 @@ export function BestSellers() {
 
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">
-          <Link href="/products?sort=popular" className="w-full max-w-xs">
-            <button className="btn-outline gap-1.5 text-sm px-5 py-2.5 w-full">
-              View All <RiArrowRightSLine className="w-4 h-4" />
-            </button>
+          <Link 
+            href="/products?sort=popular" 
+            className="w-full max-w-xs btn-outline gap-1.5 text-sm px-5 py-2.5 flex items-center justify-center"
+          >
+            View All <RiArrowRightSLine className="w-4 h-4" />
           </Link>
         </div>
 
