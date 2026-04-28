@@ -124,19 +124,19 @@ export function BestSellers() {
 
         {/* ── Carousel Track ────────────────────── */}
         <div className="relative">
-          <div className="overflow-hidden">
+          <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
-              className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+              className="flex md:transition-transform md:duration-500 md:ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
               style={{
                 gap: `${gap}px`,
-                transform: `translateX(calc(-${currentIndex} * (100% / ${slidesPerView} + ${gap / slidesPerView}px)))`,
+                transform: slidesPerView === 2 ? 'none' : `translateX(calc(-${currentIndex} * (100% / ${slidesPerView} + ${gap / slidesPerView}px)))`,
               }}
             >
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="flex-shrink-0"
-                  style={{ width: `calc(100% / ${slidesPerView} - ${gap * (slidesPerView - 1) / slidesPerView}px)` }}
+                  className="flex-shrink-0 snap-start"
+                  style={{ width: slidesPerView === 2 ? "calc(50vw - 22px)" : `calc(100% / ${slidesPerView} - ${gap * (slidesPerView - 1) / slidesPerView}px)` }}
                 >
                   <ProductCard product={product} />
                 </div>
@@ -148,31 +148,7 @@ export function BestSellers() {
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent md:hidden" />
         </div>
 
-        {/* ── Mobile Bottom Controls ─────────────── */}
-        <div className="flex items-center justify-between mt-6 md:hidden">
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalDots }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                aria-label={`Go to slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === currentIndex ? "w-5 h-1.5 bg-[#C9933A]" : "w-1.5 h-1.5 bg-[#C9933A]/30"
-                }`}
-              />
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={prev} disabled={!canPrev} aria-label="Previous"
-              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${canPrev ? "border-[#C9933A] text-[#C9933A]" : "border-[#C9933A]/20 text-[#C9933A]/25 cursor-not-allowed"}`}>
-              <RiArrowLeftLine className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={next} disabled={!canNext} aria-label="Next"
-              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${canNext ? "border-[#C9933A] text-[#C9933A]" : "border-[#C9933A]/20 text-[#C9933A]/25 cursor-not-allowed"}`}>
-              <RiArrowRightLine className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+        {/* ── Mobile Bottom Controls removed as requested ─────────────── */}
 
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">
