@@ -2,6 +2,7 @@ import express from "express";
 import { verifyJWTToken } from "../middlewares/auth.middleware.js";
 import {
   getUserCart,
+  getShippingOptions,
   addToCart,
   updateCartItem,
   removeFromCart,
@@ -10,7 +11,10 @@ import {
 
 const router = express.Router();
 
-// All cart routes require authentication
+// Shipping options are public so guest checkout can fetch courier rates
+router.post("/shipping-options", getShippingOptions);
+
+// All other cart routes require authentication
 router.use(verifyJWTToken);
 
 // Get user's cart

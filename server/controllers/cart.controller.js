@@ -200,8 +200,8 @@ export const getUserCart = asyncHandler(async (req, res) => {
       return {
         id: item.id,
         quantity: item.quantity,
-        price: effectivePrice, // Use effective price (from slab if applicable)
-        originalPrice: parseFloat(variant.price), // True base price for strike-through
+        price: effectivePrice,
+        originalPrice: parseFloat(variant.price),
         subtotal: itemTotal,
         moq: effectiveMOQ,
         moqSource,
@@ -217,17 +217,26 @@ export const getUserCart = asyncHandler(async (req, res) => {
           id: variant.id,
           sku: variant.sku,
           attributes: formatVariantWithAttributes(variant).attributes,
-          // Include shipping dimensions
           shippingLength: variant.shippingLength,
           shippingBreadth: variant.shippingBreadth,
           shippingHeight: variant.shippingHeight,
           shippingWeight: variant.shippingWeight,
+          images: (variant.images || []).map((img) => ({
+            url: getFileUrl(img.url),
+            isPrimary: img.isPrimary,
+            order: img.order ?? 0,
+          })),
         },
         product: {
           id: variant.product.id,
           name: variant.product.name,
           slug: variant.product.slug,
           image: imageUrl ? getFileUrl(imageUrl) : null,
+          images: (variant.product.images || []).map((img) => ({
+            url: getFileUrl(img.url),
+            isPrimary: img.isPrimary,
+            order: img.order ?? 0,
+          })),
           brand: variant.product.brand
             ? {
               id: variant.product.brand.id,
@@ -292,6 +301,142 @@ export const getUserCart = asyncHandler(async (req, res) => {
       "Cart fetched successfully"
     )
   );
+});
+
+// Get shipping options for cart (public endpoint for checkout)
+export const getShippingOptions = asyncHandler(async (req, res) => {
+  const { deliveryPincode, pickupPincode, cartItems: guestCartItems } = req.body;
+
+  if (!deliveryPincode) {
+    throw new ApiError(400, "Delivery pincode is required");
+  }
+
+  // Get user's cart (if authenticated) or guest cart from request body
+  let cartItems = [];
+  let userId = null;
+
+  if (req.user?.id) {
+    userId = req.user.id;
+    cartItems = await prisma.cartItem.findMany({
+      where: { userId },
+      include: {
+        productVariant: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+  } else {
+    if (!Array.isArray(guestCartItems) || guestCartItems.length === 0) {
+      throw new ApiError(400, "Guest cart items are required for shipping options");
+    }
+
+    const variantIds = guestCartItems
+      .map((item) => item.productVariantId)
+      .filter(Boolean);
+
+    if (!variantIds.length) {
+      throw new ApiError(400, "Guest cart item variant IDs are required");
+    }
+
+    const variants = await prisma.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      include: {
+        product: true,
+      },
+    });
+
+    cartItems = guestCartItems.map((item) => {
+      const variant = variants.find((variant) => variant.id === item.productVariantId);
+      if (!variant) {
+        throw new ApiError(400, `Product variant not found: ${item.productVariantId}`);
+      }
+      return {
+        quantity: item.quantity,
+        productVariant: variant,
+      };
+    });
+  }
+
+  if (!cartItems.length) {
+    throw new ApiError(400, "No items in cart");
+  }
+
+  // Calculate total weight
+  let totalWeight = 0;
+  for (const item of cartItems) {
+    const variant = item.productVariant;
+    const weight = variant.shippingWeight || 0.5; // Default 0.5kg if not set
+    totalWeight += weight * item.quantity;
+  }
+
+  // Shiprocket must be enabled and configured
+  const shiprocketSettings = await prisma.shiprocketSettings.findFirst();
+  if (!shiprocketSettings?.isEnabled) {
+    throw new ApiError(400, "Shipping options are not available. Please contact support.");
+  }
+
+  // Get pickup pincode from default warehouse
+  let finalPickupPincode = pickupPincode;
+  if (!finalPickupPincode) {
+    const defaultPickup = await prisma.shiprocketPickupAddress.findFirst({
+      where: { isDefault: true },
+    });
+    if (defaultPickup) {
+      finalPickupPincode = defaultPickup.pincode;
+    } else {
+      throw new ApiError(400, "No pickup address configured. Please contact support.");
+    }
+  }
+
+  // Check serviceability with Shiprocket
+  const { checkServiceability } = await import("../utils/shiprocket.js");
+
+  try {
+    const serviceabilityData = await checkServiceability({
+      pickupPincode: finalPickupPincode,
+      deliveryPincode,
+      weight: Math.max(totalWeight, 0.5), // Minimum 0.5kg
+      cod: false, // We'll handle COD separately
+    });
+
+    // Format the response
+    const shippingOptions = [];
+
+    if (serviceabilityData && serviceabilityData.data && Array.isArray(serviceabilityData.data.available_courier_companies)) {
+      for (const courier of serviceabilityData.data.available_courier_companies) {
+        shippingOptions.push({
+          id: courier.courier_company_id,
+          name: courier.courier_name,
+          rate: parseFloat(courier.rate),
+          etd: courier.etd || "2-3 days", // Estimated delivery time
+          pickupAvailable: courier.pickup_available || false,
+          codAvailable: courier.cod === 1,
+          description: `${courier.courier_name} - ₹${courier.rate} (${courier.etd || "2-3 days"})`,
+        });
+      }
+    }
+
+    // Sort by rate (cheapest first)
+    shippingOptions.sort((a, b) => a.rate - b.rate);
+
+    res.status(200).json(
+      new ApiResponsive(
+        200,
+        {
+          shippingOptions,
+          totalWeight,
+          pickupPincode: finalPickupPincode,
+          deliveryPincode,
+        },
+        "Shipping options fetched successfully"
+      )
+    );
+  } catch (error) {
+    console.error("Shiprocket serviceability error:", error);
+    throw new ApiError(400, `Unable to fetch shipping options: ${error.message}`);
+  }
 });
 
 // Add item to cart

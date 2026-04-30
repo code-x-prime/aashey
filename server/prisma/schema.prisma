@@ -404,6 +404,11 @@ model Order {
   awbCode                      String?
   courierName                  String?
   shiprocketStatus             String?
+  // Selected Shipping Option
+  selectedCourierId            Int?
+  selectedCourierName          String?
+  selectedCourierRate          Decimal?             @db.Decimal(10, 2)
+  selectedCourierEtd           String?
   shippingAddress              Address?             @relation(fields: [shippingAddressId], references: [id])
   user                         User                 @relation(fields: [userId], references: [id])
   items                        OrderItem[]
@@ -1119,13 +1124,13 @@ model PhonePeTransaction {
 // Newsletter Subscribers
 // -----------------------
 model NewsletterSubscriber {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  name        String?
-  source      String   @default("website") // website, checkout, etc.
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  source    String   @default("website") // website, checkout, etc.
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([isActive])
@@ -1180,7 +1185,7 @@ model ShiprocketPickupAddress {
 model Announcement {
   id           String   @id @default(uuid())
   text         String
-  link         String?  // Optional URL
+  link         String? // Optional URL
   isActive     Boolean  @default(true)
   isScrollable Boolean  @default(true)
   order        Int      @default(0) // In case admin wants to order them

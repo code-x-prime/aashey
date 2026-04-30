@@ -235,6 +235,11 @@ export const checkout = asyncHandler(async (req, res) => {
     couponCode,
     couponId,
     discountAmount,
+    shippingCost,
+    selectedCourierId,
+    selectedCourierName,
+    selectedCourierRate,
+    selectedCourierEtd,
     paymentGateway = "RAZORPAY", // Default to RAZORPAY
   } = req.body;
   const userId = req.user.id;
@@ -286,6 +291,22 @@ export const checkout = asyncHandler(async (req, res) => {
     }
     if (discountAmount && discountAmount > 0) {
       notes.discountAmount = discountAmount;
+    }
+    // Store shipping information
+    if (shippingCost) {
+      notes.shippingCost = shippingCost;
+    }
+    if (selectedCourierId) {
+      notes.selectedCourierId = selectedCourierId;
+    }
+    if (selectedCourierName) {
+      notes.selectedCourierName = selectedCourierName;
+    }
+    if (selectedCourierRate) {
+      notes.selectedCourierRate = selectedCourierRate;
+    }
+    if (selectedCourierEtd) {
+      notes.selectedCourierEtd = selectedCourierEtd;
     }
     // Store payment gateway info in notes
     notes.paymentGateway = paymentConfig.paymentSettings.gateway;
@@ -498,6 +519,10 @@ export const paymentVerification = asyncHandler(async (req, res) => {
     let discount = 0;
     let couponCode = null;
     let couponId = null;
+    let selectedCourierId = null;
+    let selectedCourierName = null;
+    let selectedCourierRate = null;
+    let selectedCourierEtd = null;
 
     // Helper to calculate effective price based on quantity (Slab Pricing)
     const calculateSlabPrice = (variant, quantity) => {
@@ -537,16 +562,39 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       }
     }
 
-    // Calculate shipping cost based on Shiprocket settings
-    const shiprocketSettings = await prisma.shiprocketSettings.findFirst();
-    if (shiprocketSettings) {
-      const threshold = parseFloat(shiprocketSettings.freeShippingThreshold || 0);
-      const charge = parseFloat(shiprocketSettings.shippingCharge || 0);
+    // Use selected courier shipping rate from Razorpay order notes (stored at checkout time)
+    // Fall back to flat fee from admin settings only if no courier was selected
+    try {
+      const razorpayOrderForShipping = await paymentConfig.razorpayInstance.orders.fetch(razorpay_order_id);
+      if (razorpayOrderForShipping.notes) {
+        if (razorpayOrderForShipping.notes.shippingCost) {
+          shippingCost = parseFloat(razorpayOrderForShipping.notes.shippingCost) || 0;
+        }
+        if (razorpayOrderForShipping.notes.selectedCourierId) {
+          selectedCourierId = parseInt(razorpayOrderForShipping.notes.selectedCourierId);
+        }
+        if (razorpayOrderForShipping.notes.selectedCourierName) {
+          selectedCourierName = razorpayOrderForShipping.notes.selectedCourierName;
+        }
+        if (razorpayOrderForShipping.notes.selectedCourierRate) {
+          selectedCourierRate = parseFloat(razorpayOrderForShipping.notes.selectedCourierRate);
+        }
+        if (razorpayOrderForShipping.notes.selectedCourierEtd) {
+          selectedCourierEtd = razorpayOrderForShipping.notes.selectedCourierEtd;
+        }
+      }
+    } catch (shippingNoteErr) {
+      // If we can't fetch notes, fall back to admin flat fee
+      console.warn("Could not fetch shipping from Razorpay notes, using flat fee:", shippingNoteErr.message);
+    }
 
-      if (threshold > 0 && subTotal >= threshold) {
-        shippingCost = 0;
-      } else {
-        shippingCost = charge;
+    // If no courier rate from notes, fall back to admin flat fee
+    if (!shippingCost) {
+      const shiprocketSettings = await prisma.shiprocketSettings.findFirst();
+      if (shiprocketSettings) {
+        const threshold = parseFloat(shiprocketSettings.freeShippingThreshold || 0);
+        const charge = parseFloat(shiprocketSettings.shippingCharge || 0);
+        shippingCost = (threshold > 0 && subTotal >= threshold) ? 0 : charge;
       }
     }
 
@@ -680,6 +728,10 @@ export const paymentVerification = asyncHandler(async (req, res) => {
           paymentMethod: paymentGateway === "PHONEPE" ? "PHONEPE" : "RAZORPAY",
           couponCode,
           couponId: couponId,
+          selectedCourierId,
+          selectedCourierName,
+          selectedCourierRate,
+          selectedCourierEtd,
         },
       });
 
@@ -1615,6 +1667,11 @@ export const createCashOrder = asyncHandler(async (req, res) => {
     couponCode: requestCouponCode,
     couponId: requestCouponId,
     discountAmount: requestDiscount,
+    shippingCost: requestShippingCost,
+    selectedCourierId,
+    selectedCourierName,
+    selectedCourierRate,
+    selectedCourierEtd,
     notes,
   } = req.body;
 
@@ -1694,7 +1751,7 @@ export const createCashOrder = asyncHandler(async (req, res) => {
     // Calculate order totals
     let subTotal = 0;
     let tax = 0;
-    let shippingCost = 0;
+    let shippingCost = parseFloat(requestShippingCost) || 0;
     let discount = 0;
     let couponCode = null;
     let couponId = null;
@@ -1783,19 +1840,6 @@ export const createCashOrder = asyncHandler(async (req, res) => {
       });
     }
 
-    // Calculate shipping cost based on Shiprocket settings
-    const shiprocketSettings = await prisma.shiprocketSettings.findFirst();
-    if (shiprocketSettings) {
-      const threshold = parseFloat(shiprocketSettings.freeShippingThreshold || 0);
-      const charge = parseFloat(shiprocketSettings.shippingCharge || 0);
-
-      if (threshold > 0 && subTotal >= threshold) {
-        shippingCost = 0;
-      } else {
-        shippingCost = charge;
-      }
-    }
-
     // Apply coupon discount if available
     if (userCoupon && userCoupon.coupon) {
       couponCode = userCoupon.coupon.code;
@@ -1850,6 +1894,11 @@ export const createCashOrder = asyncHandler(async (req, res) => {
           status: "PENDING", // COD orders start as PENDING
           couponCode,
           couponId: couponId,
+          // Selected shipping option
+          selectedCourierId: selectedCourierId ? parseInt(selectedCourierId) : null,
+          selectedCourierName,
+          selectedCourierRate: selectedCourierRate ? parseFloat(selectedCourierRate) : null,
+          selectedCourierEtd,
         },
       });
 

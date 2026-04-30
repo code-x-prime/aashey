@@ -23,6 +23,8 @@ import {
     MessageSquare,
     User,
     LogIn,
+    Truck,
+    Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -30,15 +32,26 @@ import AddressForm from "@/components/AddressForm";
 import Image from "next/image";
 import { getImageUrl } from "@/lib/imageUrl";
 
-
-
 export default function CheckoutPage() {
     const { isAuthenticated, user, autoLogin } = useAuth();
     const router = useRouter();
     const { cart, coupon, getCartTotals, clearCart } = useCart();
+
+    // Checkout steps
+    const [currentStep, setCurrentStep] = useState(1); // 1: Address, 2: Shipping, 3: Payment
+
+    // Address state
     const [addresses, setAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState("");
     const [loadingAddresses, setLoadingAddresses] = useState(false);
+    const [showAddressForm, setShowAddressForm] = useState(false);
+
+    // Shipping state
+    const [shippingOptions, setShippingOptions] = useState([]);
+    const [selectedShippingOption, setSelectedShippingOption] = useState(null);
+    const [loadingShipping, setLoadingShipping] = useState(false);
+
+    // Payment state
     const [paymentSettings, setPaymentSettings] = useState({
         cashEnabled: true,
         razorpayEnabled: false,
@@ -51,14 +64,13 @@ export default function CheckoutPage() {
     const [paymentId, setPaymentId] = useState("");
     const [razorpayKey, setRazorpayKey] = useState("");
     const [error, setError] = useState("");
-    const [showAddressForm, setShowAddressForm] = useState(false);
     const [orderNumber, setOrderNumber] = useState("");
     const [successAnimation, setSuccessAnimation] = useState(false);
     const [redirectCountdown, setRedirectCountdown] = useState(2);
     const [confettiCannon, setConfettiCannon] = useState(false);
     const [orderItemsForReview, setOrderItemsForReview] = useState([]);
     const [isGuestOrder, setIsGuestOrder] = useState(false);
-    const [wasAutoCreated, setWasAutoCreated] = useState(false); // new account created during checkout
+    const [wasAutoCreated, setWasAutoCreated] = useState(false);
 
     // Guest address form state
     const [guestAddress, setGuestAddress] = useState({
@@ -74,6 +86,11 @@ export default function CheckoutPage() {
     const [guestAddressErrors, setGuestAddressErrors] = useState({});
 
     const totals = getCartTotals();
+    const selectedShippingRate = selectedShippingOption ? parseFloat(selectedShippingOption.rate) : totals.shipping;
+    const checkoutTotal = Math.max(
+        totals.subtotal - totals.discount + selectedShippingRate + (paymentMethod === "CASH" ? (paymentSettings.codCharge || 0) : 0),
+        0
+    );
 
     // Redirect if cart is empty (but not if order is already created)
     useEffect(() => {
@@ -171,6 +188,86 @@ export default function CheckoutPage() {
     const handleAddressFormSuccess = () => {
         setShowAddressForm(false);
         fetchAddresses();
+    };
+
+    // Fetch shipping options based on selected address
+    const fetchShippingOptions = async () => {
+        if (!selectedAddressId && !guestAddress.postalCode) {
+            toast.error("Please select or enter a delivery address first");
+            return;
+        }
+
+        setLoadingShipping(true);
+        try {
+            let deliveryPincode = "";
+
+            if (isAuthenticated && selectedAddressId) {
+                const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
+                if (selectedAddress) {
+                    deliveryPincode = selectedAddress.postalCode;
+                }
+            } else {
+                deliveryPincode = guestAddress.postalCode;
+            }
+
+            if (!deliveryPincode) {
+                throw new Error("Delivery pincode not found");
+            }
+
+            const response = await fetchApi("/cart/shipping-options", {
+                method: "POST",
+                credentials: "include",
+                body: JSON.stringify({
+                    deliveryPincode,
+                    cartItems: !isAuthenticated ? buildGuestCartItems() : undefined,
+                }),
+            });
+
+            if (response.success) {
+                setShippingOptions(response.data.shippingOptions || []);
+                if (response.data.shippingOptions?.length > 0) {
+                    setSelectedShippingOption(response.data.shippingOptions[0]); // Select cheapest by default
+                }
+                setCurrentStep(2); // Move to shipping step
+            }
+        } catch (error) {
+            console.error("Error fetching shipping options:", error);
+            toast.error(error.message || "Failed to fetch shipping options");
+        } finally {
+            setLoadingShipping(false);
+        }
+    };
+
+    // Handle step navigation
+    const handleNextStep = () => {
+        if (currentStep === 1) {
+            // Validate address selection
+            if (isAuthenticated) {
+                if (!selectedAddressId) {
+                    toast.error("Please select a shipping address");
+                    return;
+                }
+            } else {
+                if (!validateGuestAddress()) {
+                    return;
+                }
+            }
+            // Fetch shipping options and move to step 2
+            fetchShippingOptions();
+        } else if (currentStep === 2) {
+            // Validate shipping option selection
+            if (!selectedShippingOption) {
+                toast.error("Please select a shipping option");
+                return;
+            }
+            setCurrentStep(3); // Move to payment step
+        }
+    };
+
+    const handlePrevStep = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+        }
     };
 
     // Guest address field change
@@ -278,6 +375,11 @@ export default function CheckoutPage() {
 
     // Process checkout
     const handleCheckout = async () => {
+        if (!selectedShippingOption) {
+            toast.error("Please select a shipping option");
+            return;
+        }
+
         if (isAuthenticated) {
             // ---------- AUTHENTICATED USER FLOW ----------
             if (!selectedAddressId) {
@@ -289,7 +391,9 @@ export default function CheckoutPage() {
             setError("");
 
             try {
-                const calculatedAmount = totals.total;
+                // Calculate total with selected shipping
+                const shippingCost = parseFloat(selectedShippingOption.rate);
+                const calculatedAmount = totals.subtotal - totals.discount + shippingCost;
                 const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
 
                 if (calculatedAmount < 1) {
@@ -311,6 +415,11 @@ export default function CheckoutPage() {
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
                             discountAmount: totals.discount || 0,
+                            shippingCost: shippingCost,
+                            selectedCourierId: selectedShippingOption.id,
+                            selectedCourierName: selectedShippingOption.name,
+                            selectedCourierRate: selectedShippingOption.rate,
+                            selectedCourierEtd: selectedShippingOption.etd,
                         }),
                     });
 
@@ -363,6 +472,11 @@ export default function CheckoutPage() {
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
                             discountAmount: totals.discount || 0,
+                            shippingCost: shippingCost,
+                            selectedCourierId: selectedShippingOption.id,
+                            selectedCourierName: selectedShippingOption.name,
+                            selectedCourierRate: selectedShippingOption.rate,
+                            selectedCourierEtd: selectedShippingOption.etd,
                         }),
                     });
 
@@ -602,6 +716,11 @@ export default function CheckoutPage() {
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
                             discountAmount: totals.discount || 0,
+                            shippingCost: selectedShippingOption ? parseFloat(selectedShippingOption.rate) : 0,
+                            selectedCourierId: selectedShippingOption?.id || null,
+                            selectedCourierName: selectedShippingOption?.name || null,
+                            selectedCourierRate: selectedShippingOption?.rate || null,
+                            selectedCourierEtd: selectedShippingOption?.etd || null,
                         }),
                     });
 
@@ -751,6 +870,8 @@ export default function CheckoutPage() {
     const isCheckoutDisabled = () => {
         if (processing) return true;
         if (!paymentMethod) return true;
+        if (currentStep !== 3) return true;
+        if (!selectedShippingOption) return true;
         if (isAuthenticated) {
             // selectedAddressId required; addresses.length check skipped so
             // auto-logged-in guests (who have no loaded addresses yet) aren't blocked
@@ -1011,6 +1132,29 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main checkout area */}
                 <div className="lg:col-span-2 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 className="text-xl font-semibold">Checkout</h1>
+                            <p className="text-sm text-[#5C3A1E] mt-1">Select address, courier and payment to complete your order.</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {[
+                                { step: 1, label: "Address" },
+                                { step: 2, label: "Shipping" },
+                                { step: 3, label: "Payment" },
+                            ].map((item) => (
+                                <button
+                                    key={item.step}
+                                    type="button"
+                                    className={`px-4 py-2 rounded-full text-xs font-medium transition ${currentStep === item.step ? "bg-primary text-white" : "bg-gray-100 text-[#5C3A1E] hover:bg-gray-200"}`}
+                                    onClick={() => setCurrentStep(item.step)}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Shipping Address */}
                     <div className="bg-white rounded-lg shadow-sm border p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -1247,92 +1391,164 @@ export default function CheckoutPage() {
                         )}
                     </div>
 
-                    {/* Payment Method */}
-                    <div className="bg-white rounded-lg shadow-sm border p-6">
-                        <h2 className="text-lg font-semibold flex items-center mb-4">
-                            <CreditCard className="h-5 w-5 mr-2 text-primary" />
-                            Payment Method
-                        </h2>
-
-                        {!paymentSettings.cashEnabled && !paymentSettings.razorpayEnabled ? (
-                            <div className="border rounded-md p-4 bg-yellow-50 border-yellow-200">
-                                <p className="text-sm text-yellow-800">
-                                    No payment methods are currently available. Please contact support or try again later.
-                                </p>
+                    {currentStep === 2 && (
+                        <div className="bg-white rounded-lg shadow-sm border p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 className="text-lg font-semibold flex items-center">
+                                        <Truck className="h-5 w-5 mr-2 text-primary" />
+                                        Shipping Options
+                                    </h2>
+                                    <p className="text-sm text-[#5C3A1E] mt-1">
+                                        Choose a courier from Shiprocket and apply the correct shipping charge.
+                                    </p>
+                                </div>
+                                <Button size="sm" variant="outline" onClick={fetchShippingOptions} disabled={loadingShipping}>
+                                    Refresh
+                                </Button>
                             </div>
+
+                            {loadingShipping ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                </div>
+                            ) : shippingOptions.length > 0 ? (
+                                <div className="space-y-3">
+                                    {shippingOptions.map((option) => (
+                                        <label
+                                            key={option.id}
+                                            className={`block border rounded-lg p-4 cursor-pointer transition ${selectedShippingOption?.id === option.id ? "border-primary bg-primary/5" : "border-gray-200 hover:border-gray-400"}`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <input
+                                                    type="radio"
+                                                    name="shippingOption"
+                                                    checked={selectedShippingOption?.id === option.id}
+                                                    onChange={() => setSelectedShippingOption(option)}
+                                                    className="mt-1 h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <span className="font-medium">{option.name}</span>
+                                                        <span className="text-sm font-semibold text-[#3F1F00]">{formatCurrency(option.rate)}</span>
+                                                    </div>
+                                                    <p className="text-sm text-[#5C3A1E] mt-1">ETD: {option.etd || "2-3 days"}</p>
+                                                    <p className="text-sm text-[#5C3A1E] mt-1">{option.description}</p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-[#5C3A1E]">
+                                    No shipping options were found for this pincode. Please verify the address or try another courier.
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {currentStep === 3 && (
+                        <div className="bg-white rounded-lg shadow-sm border p-6">
+                            <h2 className="text-lg font-semibold flex items-center mb-4">
+                                <CreditCard className="h-5 w-5 mr-2 text-primary" />
+                                Payment Method
+                            </h2>
+
+                            {!paymentSettings.cashEnabled && !paymentSettings.razorpayEnabled ? (
+                                <div className="border rounded-md p-4 bg-yellow-50 border-yellow-200">
+                                    <p className="text-sm text-yellow-800">
+                                        No payment methods are currently available. Please contact support or try again later.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {paymentSettings.cashEnabled && (
+                                        <div
+                                            className={`border rounded-md p-4 transition ${paymentMethod === "CASH"
+                                                ? "border-primary bg-primary/5 cursor-pointer"
+                                                : "hover:border-gray-400 cursor-pointer"
+                                                }`}
+                                            onClick={() => handlePaymentMethodSelect("CASH")}
+                                        >
+                                            <div className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    id="cash"
+                                                    name="paymentMethod"
+                                                    checked={paymentMethod === "CASH"}
+                                                    onChange={() => handlePaymentMethodSelect("CASH")}
+                                                    className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+                                                />
+                                                <label htmlFor="cash" className="ml-2 flex items-center flex-1">
+                                                    <span className="font-medium">Cash on Delivery (COD)</span>
+                                                    {paymentMethod === "CASH" && (
+                                                        <span className="ml-2 text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">
+                                                            Selected
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                <Wallet className="h-4 w-4 text-green-600" />
+                                            </div>
+                                            <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
+                                                Pay with cash when your order is delivered
+                                                {paymentSettings.codCharge > 0 && (
+                                                    <span className="block mt-1 text-primary font-medium">
+                                                        Note: An extra fee of {formatCurrency(paymentSettings.codCharge)} applies for COD orders.
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {paymentSettings.razorpayEnabled && (
+                                        <div
+                                            className={`border rounded-md p-4 transition ${paymentMethod === "RAZORPAY"
+                                                ? "border-primary bg-primary/5 cursor-pointer"
+                                                : "hover:border-gray-400 cursor-pointer"
+                                                }`}
+                                            onClick={() => handlePaymentMethodSelect("RAZORPAY")}
+                                        >
+                                            <div className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    id="razorpay"
+                                                    name="paymentMethod"
+                                                    checked={paymentMethod === "RAZORPAY"}
+                                                    onChange={() => handlePaymentMethodSelect("RAZORPAY")}
+                                                    className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+                                                />
+                                                <label htmlFor="razorpay" className="ml-2 flex items-center flex-1">
+                                                    <span className="font-medium">Pay Online (Razorpay)</span>
+                                                    {paymentMethod === "RAZORPAY" && (
+                                                        <span className="ml-2 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
+                                                            Selected
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                <IndianRupee className="h-4 w-4 text-primary" />
+                                            </div>
+                                            <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
+                                                Pay securely with Credit/Debit Card, UPI, NetBanking, etc.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between gap-3 mt-4">
+                        {currentStep > 1 ? (
+                            <Button variant="outline" size="md" onClick={handlePrevStep}>
+                                Back
+                            </Button>
                         ) : (
-                            <div className="space-y-3">
-                                {paymentSettings.cashEnabled && (
-                                    <div
-                                        className={`border rounded-md p-4 transition-all ${paymentMethod === "CASH"
-                                            ? "border-primary bg-primary/5 cursor-pointer"
-                                            : "hover:border-gray-400 cursor-pointer"
-                                            }`}
-                                        onClick={() => handlePaymentMethodSelect("CASH")}
-                                    >
-                                        <div className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                id="cash"
-                                                name="paymentMethod"
-                                                checked={paymentMethod === "CASH"}
-                                                onChange={() => handlePaymentMethodSelect("CASH")}
-                                                className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                            />
-                                            <label htmlFor="cash" className="ml-2 flex items-center flex-1">
-                                                <span className="font-medium">Cash on Delivery (COD)</span>
-                                                {paymentMethod === "CASH" && (
-                                                    <span className="ml-2 text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">
-                                                        Selected
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <Wallet className="h-4 w-4 text-green-600" />
-                                        </div>
-                                        <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
-                                            Pay with cash when your order is delivered
-                                            {paymentSettings.codCharge > 0 && (
-                                                <span className="block mt-1 text-primary font-medium">
-                                                    Note: An extra fee of {formatCurrency(paymentSettings.codCharge)} applies for COD orders.
-                                                </span>
-                                            )}
-                                        </p>
-                                    </div>
-                                )}
-
-                                {paymentSettings.razorpayEnabled && (
-                                    <div
-                                        className={`border rounded-md p-4 transition-all ${paymentMethod === "RAZORPAY"
-                                            ? "border-primary bg-primary/5 cursor-pointer"
-                                            : "hover:border-gray-400 cursor-pointer"
-                                            }`}
-                                        onClick={() => handlePaymentMethodSelect("RAZORPAY")}
-                                    >
-                                        <div className="flex items-center">
-                                            <input
-                                                type="radio"
-                                                id="razorpay"
-                                                name="paymentMethod"
-                                                checked={paymentMethod === "RAZORPAY"}
-                                                onChange={() => handlePaymentMethodSelect("RAZORPAY")}
-                                                className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                            />
-                                            <label htmlFor="razorpay" className="ml-2 flex items-center flex-1">
-                                                <span className="font-medium">Pay Online (Razorpay)</span>
-                                                {paymentMethod === "RAZORPAY" && (
-                                                    <span className="ml-2 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
-                                                        Selected
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <IndianRupee className="h-4 w-4 text-primary" />
-                                        </div>
-                                        <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
-                                            Pay securely with Credit/Debit Card, UPI, NetBanking, etc.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
+                            <div />
+                        )}
+                        {currentStep < 3 && (
+                            <Button size="md" onClick={handleNextStep}>
+                                {currentStep === 1 ? "Continue to Shipping" : "Continue to Payment"}
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -1409,9 +1625,9 @@ export default function CheckoutPage() {
                                 )}
 
                                 <div className="flex justify-between">
-                                    <span className="text-[#5C3A1E]">Shipping</span>
-                                    {totals.shipping > 0 ? (
-                                        <span className="font-medium">{formatCurrency(totals.shipping)}</span>
+                                    <span className="text-[#5C3A1E]">Shipping{selectedShippingOption ? ` (${selectedShippingOption.name})` : ""}</span>
+                                    {selectedShippingRate > 0 ? (
+                                        <span className="font-medium">{formatCurrency(selectedShippingRate)}</span>
                                     ) : (
                                         <span className="text-green-600 font-medium">FREE</span>
                                     )}
@@ -1424,7 +1640,7 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
-                                {totals.shipping > 0 && cart.freeShippingThreshold > 0 && (
+                                {selectedShippingRate > 0 && cart.freeShippingThreshold > 0 && (
                                     <div className="mt-3 text-xs text-amber-700 bg-amber-50 p-2 rounded text-center font-medium border border-amber-200">
                                         Add <strong>{formatCurrency(cart.freeShippingThreshold - totals.subtotal)}</strong> more for <span className="text-green-600 font-bold">FREE shipping!</span>
                                     </div>
@@ -1433,11 +1649,7 @@ export default function CheckoutPage() {
                                 <div className="pt-4">
                                     <div className="flex justify-between font-bold text-lg">
                                         <span>Total</span>
-                                        <span>
-                                            {formatCurrency(
-                                                totals.total + (paymentMethod === "CASH" ? (paymentSettings.codCharge || 0) : 0)
-                                            )}
-                                        </span>
+                                        <span>{formatCurrency(checkoutTotal)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1456,10 +1668,7 @@ export default function CheckoutPage() {
                                 ) : (
                                     <span className="flex items-center justify-center">
                                         <IndianRupee className="mr-2 h-4 w-4" />
-                                        Place Order —{" "}
-                                        {formatCurrency(
-                                            totals.total + (paymentMethod === "CASH" ? (paymentSettings.codCharge || 0) : 0)
-                                        )}
+                                        Place Order — {formatCurrency(checkoutTotal)}
                                     </span>
                                 )}
                             </Button>

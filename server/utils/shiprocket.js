@@ -648,7 +648,10 @@ export async function processOrderForShipping(orderId) {
 
         // Try to assign AWB
         try {
-            const awbResponse = await assignAWB(shiprocketResponse.shipment_id);
+            const awbResponse = await assignAWB(
+                shiprocketResponse.shipment_id,
+                order.selectedCourierId || null
+            );
 
             await prisma.order.update({
                 where: { id: orderId },
