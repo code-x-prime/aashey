@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const banners = [
   {
     desktopImage: "/desk-1.png",
-    mobileImage: "/mob-1.png",
+    mobileImage: "/mob-1.jpeg",
     alt: "Pure A2 Cow Ghee - Banner 1",
     link: "/products",
   },
