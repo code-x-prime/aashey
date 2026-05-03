@@ -7,14 +7,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const banners = [
   {
-    desktopImage: "/ban3.png",
-    mobileImage: "/ban-m3.png",
+    desktopImage: "/desk-1.png",
+    mobileImage: "/mob-1.png",
     alt: "Pure A2 Cow Ghee - Banner 1",
     link: "/products",
   },
   {
-    desktopImage: "/ban4.png",
-    mobileImage: "/ban-m4.png",
+    desktopImage: "/desk-2.png",
+    mobileImage: "/mob-2.png",
     alt: "Pure A2 Cow Ghee - Banner 2",
     link: "/products",
   },
@@ -58,9 +58,9 @@ export default function BannerCarousel() {
                 <Image
                   src={banner.desktopImage}
                   alt={banner.alt}
-                  width={2000}
-                  height={800}
-                  className="w-full h-auto md:h-[85vh]"
+                  width={1900}
+                  height={600}
+                  className="w-full h-auto aspect-[1900/650] object-cover object-center"
                   priority={index === 0}
                   sizes="100vw"
                 />
@@ -71,9 +71,9 @@ export default function BannerCarousel() {
                 <Image
                   src={banner.mobileImage}
                   alt={banner.alt}
-                  width={800}
-                  height={800}
-                  className="w-full h-auto md:h-[85vh]"
+                  width={1000}
+                  height={450}
+                  className="w-full h-auto aspect-[800/600] object-cover object-center"
                   priority={index === 0}
                   sizes="100vw"
                 />

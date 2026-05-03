@@ -35,7 +35,7 @@ export default function ProductContent({ slug }) {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [mainImage, setMainImage] = useState(null);
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -94,7 +94,7 @@ export default function ProductContent({ slug }) {
         const productData = response.data.product;
         setProduct(productData);
         setRelatedProducts(response.data.relatedProducts || []);
-        if (productData.images?.length > 0) setMainImage(productData.images[0]);
+
         if (productData.variants?.length > 0) {
           const combos = productData.variants
             .filter((v) => v.isActive && (v.stock > 0 || v.quantity > 0))
@@ -107,10 +107,12 @@ export default function ProductContent({ slug }) {
             const match = combos.find((c) => c.attributeValueIds.sort().join(",") === Object.values(defaults).sort().join(","));
             const variant = match?.variant || productData.variants[0];
             setSelectedVariant(variant);
+            setActiveImgIndex(0);
             const moq = variant.moq || 1; setQuantity(moq);
             setEffectivePriceInfo(getEffectivePrice(variant, moq));
           } else {
             const v = productData.variants[0]; setSelectedVariant(v);
+            setActiveImgIndex(0);
             const moq = v.moq || 1; setQuantity(moq);
             setEffectivePriceInfo(getEffectivePrice(v, moq));
           }
@@ -150,11 +152,12 @@ export default function ProductContent({ slug }) {
     });
     if (match) {
       setSelectedVariant(match.variant);
+      setActiveImgIndex(0);
       const moq = match.variant.moq || 1;
       const newQty = quantity < moq ? moq : quantity;
       if (quantity < moq) setQuantity(newQty);
       setEffectivePriceInfo(getEffectivePrice(match.variant, newQty));
-    } else { setSelectedVariant(null); setEffectivePriceInfo(null); }
+    } else { setSelectedVariant(null); setActiveImgIndex(0); setEffectivePriceInfo(null); }
   };
 
   const getAvailableValuesForAttribute = (attrId) => {
@@ -232,7 +235,13 @@ export default function ProductContent({ slug }) {
     let imgs = [];
     if (selectedVariant?.images?.length) imgs = selectedVariant.images;
     else if (product?.images?.length) imgs = product.images;
-    else { const vImg = product?.variants?.find((v) => v.images?.length); if (vImg) imgs = vImg.images; }
+    else {
+      const vImg = product?.variants?.find((v) => v.images?.length);
+      if (vImg) imgs = vImg.images;
+    }
+
+    const safeIndex = activeImgIndex < imgs.length ? activeImgIndex : 0;
+    const currentImg = imgs[safeIndex];
 
     const Badges = () => (
       <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
@@ -249,21 +258,18 @@ export default function ProductContent({ slug }) {
       </div>
     );
 
-    const primary = imgs.find((i) => i.isPrimary) || imgs[0];
-    const currentMain = mainImage && imgs.some((i) => i.url === mainImage.url) ? mainImage : primary;
-
     return (
       <div className="space-y-3">
         <div className="relative aspect-square w-full bg-[#F5EDD5] rounded-2xl overflow-hidden border border-[#C9933A]/20 group"
           style={{ boxShadow: "0 8px 40px rgba(63,31,0,0.10)" }}>
-          <Image src={getImageUrl(currentMain?.url)} alt={product?.name || "Product"} fill className="object-cover transition-transform duration-700 group-hover:scale-105" priority />
+          <Image src={getImageUrl(currentImg?.url)} alt={product?.name || "Product"} fill className="object-cover transition-transform duration-700 group-hover:scale-105" priority />
           <Badges />
         </div>
         {imgs.length > 1 && (
           <div className="flex gap-2.5 overflow-x-auto pb-1">
             {imgs.map((img, i) => (
-              <button key={i} onClick={() => setMainImage(img)}
-                className={`flex-shrink-0 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-200 ${currentMain?.url === img.url ? "border-[#C9933A] ring-2 ring-[#C9933A]/25 scale-105" : "border-transparent hover:border-[#C9933A]/50 opacity-70 hover:opacity-100"}`}>
+              <button key={i} onClick={() => setActiveImgIndex(i)}
+                className={`flex-shrink-0 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-200 ${safeIndex === i ? "border-[#C9933A] ring-2 ring-[#C9933A]/25 scale-105" : "border-transparent hover:border-[#C9933A]/50 opacity-70 hover:opacity-100"}`}>
                 <Image src={getImageUrl(img.url)} alt={`${product.name} ${i + 1}`} width={72} height={72} className="w-full h-full object-cover" />
               </button>
             ))}

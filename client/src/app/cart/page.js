@@ -106,12 +106,12 @@ const CartItem = React.memo(
                     <div className="flex-1 min-w-0">
                         <Link
                             href={`/products/${productSlug}`}
-                            className="font-playfair font-semibold text-[#3F1F00] hover:text-[#C9933A] transition-colors line-clamp-2"
+                            className=" font-semibold text-[#3F1F00] hover:text-[#C9933A] transition-colors line-clamp-2"
                         >
                             {productName}
                         </Link>
                         {variantName && (
-                            <div className="font-sans text-sm text-[#5C3A1E] mt-2 flex items-center gap-2">
+                            <div className=" text-sm text-[#5C3A1E] mt-2 flex items-center gap-2">
                                 {/* Show color swatch only if it's a color attribute (for backward compatibility) */}
                                 {(item.variant?.color?.hexCode || item.color?.hexCode) && (
                                     <div
@@ -127,13 +127,13 @@ const CartItem = React.memo(
                         )}
                         {/* MOQ Display */}
                         {item.moq && item.moq > 1 && (
-                            <div className="font-sans text-xs text-[#C9933A] mt-1 font-medium">
+                            <div className=" text-xs text-[#C9933A] mt-1 font-medium">
                                 Min. Order: {item.moq} units
                             </div>
                         )}
                         {/* Pricing Slabs Info */}
                         {item.pricingSlabs && item.pricingSlabs.length > 0 && (
-                            <div className="font-sans text-xs text-[#6B4423] mt-1">
+                            <div className=" text-xs text-[#6B4423] mt-1">
                                 Bulk pricing available
                             </div>
                         )}
@@ -141,21 +141,21 @@ const CartItem = React.memo(
                 </div>
 
                 <div className="md:col-span-2 flex items-center justify-between md:justify-center flex-col gap-1">
-                    <span className="md:hidden font-sans font-medium text-[#5C3A1E]">Price:</span>
+                    <span className="md:hidden  font-medium text-[#5C3A1E]">Price:</span>
                     <div className="flex flex-col items-end md:items-center">
                         {/* Price Visibility Logic */}
                         {!isLoading && !item.isAuthenticated && item.hidePricesForGuests ? (
-                            <span className="font-sans text-sm font-medium text-[#C9933A]">
+                            <span className=" text-sm font-medium text-[#C9933A]">
                                 Login to view
                             </span>
                         ) : (
                             <>
                                 {item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price) && (
-                                    <span className="font-sans text-xs text-[#7A4E2D] line-through">
+                                    <span className=" text-xs text-[#7A4E2D]">
                                         {formatCurrency(item.originalPrice)}
                                     </span>
                                 )}
-                                <span className={`font-cormorant font-semibold italic text-lg ${item.priceSource === 'FLASH_SALE' ? 'text-orange-600' : 'text-[#3F1F00]'}`}>
+                                <span className={` font-semibold  text-lg ${item.priceSource === 'FLASH_SALE' ? 'text-orange-600' : 'text-[#3F1F00]'}`}>
                                     {formatCurrency(item.price)}
                                 </span>
                                 {item.priceSource === 'FLASH_SALE' && item.flashSale && (
@@ -174,7 +174,7 @@ const CartItem = React.memo(
                 </div>
 
                 <div className="md:col-span-2 flex items-center justify-between md:justify-center">
-                    <span className="md:hidden font-sans font-medium text-[#5C3A1E]">Quantity:</span>
+                    <span className="md:hidden  font-medium text-[#5C3A1E]">Quantity:</span>
                     <div className="flex items-center border-2 border-[#C9933A]/25 rounded-xl overflow-hidden shadow-sm">
                         {item.quantity <= (item.moq || 1) ? (
                             <button
@@ -213,10 +213,10 @@ const CartItem = React.memo(
 
                 <div className="md:col-span-2 flex items-center justify-between md:justify-center">
                     <div className="flex items-center md:block">
-                        <span className="md:hidden mr-2 font-sans font-medium text-[#3F1F00]/60">
+                        <span className="md:hidden mr-2  font-medium text-[#3F1F00]/60">
                             Subtotal:
                         </span>
-                        <span className="font-cormorant font-bold text-[#3F1F00] text-xl italic">
+                        <span className=" font-bold text-[#3F1F00] text-base ">
                             {!isLoading && !item.isAuthenticated && item.hidePricesForGuests ? "-" : formatCurrency(item.subtotal)}
                         </span>
                     </div>
@@ -395,7 +395,7 @@ export default function CartPage() {
                     <h2 className="font-cormorant text-2xl font-semibold mb-3 text-[#3F1F00]">
                         Your cart is empty
                     </h2>
-                    <p className="font-sans text-[#3F1F00]/70 mb-8 text-base">
+                    <p className=" text-[#3F1F00]/70 mb-8 text-base">
                         Looks like you haven&apos;t added any ghee yet.
                     </p>
                     <Link href="/products">
@@ -468,7 +468,7 @@ export default function CartPage() {
                             <Link href="/products">
                                 <Button
                                     variant="outline"
-                                    className="border-[#C9933A] text-[#3F1F00] hover:bg-[#C9933A] hover:text-[#3F1F00] transition-all duration-200 font-sans"
+                                    className="border-[#C9933A] text-[#3F1F00] hover:bg-[#C9933A] hover:text-[#3F1F00] transition-all duration-200 "
                                 >
                                     ← Continue Shopping
                                 </Button>

@@ -1539,14 +1539,14 @@ export default function CheckoutPage() {
 
                     <div className="flex items-center justify-between gap-3 mt-4">
                         {currentStep > 1 ? (
-                            <Button variant="outline" size="md" onClick={handlePrevStep}>
+                            <Button variant="outline" size="md" onClick={handlePrevStep} className="border-[#C9933A] hover:bg-[#C9933A] hover:text-[#3F1F00] py-3 px-5">
                                 Back
                             </Button>
                         ) : (
                             <div />
                         )}
                         {currentStep < 3 && (
-                            <Button size="md" onClick={handleNextStep}>
+                            <Button size="md" onClick={handleNextStep} className="border-[#C9933A] hover:bg-[#C9933A] hover:text-[#3F1F00] py-3 px-5">
                                 {currentStep === 1 ? "Continue to Shipping" : "Continue to Payment"}
                             </Button>
                         )}

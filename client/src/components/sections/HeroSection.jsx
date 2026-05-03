@@ -8,15 +8,15 @@ import { fetchApi } from "@/lib/utils";
 const fallbackSlides = [
   {
     headline: "Pure A2 Cow Ghee",
-    desktopImage: "/ban1.png",
-    mobileImage: "/ban-m1.png",
+    desktopImage: "/desk-1.png",
+    mobileImage: "/mob-1.jpeg",
     link: "/products",
     cta: "Shop Now"
   },
   {
     headline: "Pure A2 Cow Ghee",
-    desktopImage: "/ban2.png",
-    mobileImage: "/ban-m2.png",
+    desktopImage: "/desk-2.png",
+    mobileImage: "/mob-2.png",
     link: "/products",
     cta: "Shop Now"
   },
@@ -85,30 +85,28 @@ export default function HeroSection() {
           }`}
         >
           {/* Desktop Image */}
-          <div className="hidden md:block relative w-full">
+          <div className="hidden md:block relative w-full overflow-hidden">
             <Image
               src={slide.desktopImage}
               alt={slide.headline || "Banner"}
-              width={2000}
-              height={1000}
-              className="w-full h-auto md:h-[85vh]"
+              width={1900}
+              height={600}
+              className="w-full h-auto aspect-[1900/650] object-cover object-center"
               priority={index === 0}
               sizes="100vw"
-              style={{ objectFit: "cover", objectPosition: "center" }}
             />
           </div>
 
           {/* Mobile Image */}
-          <div className="block md:hidden relative w-full">
+          <div className="block md:hidden relative w-full overflow-hidden">
             <Image
               src={slide.mobileImage}
               alt={slide.headline || "Banner"}
               width={1000}
-              height={1000}
-              className="w-full h-auto md:h-[85vh]"
+              height={450}
+              className="w-full h-auto aspect-[800/600] object-cover object-center"
               priority={index === 0}
               sizes="100vw"
-              style={{ objectFit: "cover", objectPosition: "center" }}
             />
           </div>
         </div>
