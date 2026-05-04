@@ -4,6 +4,14 @@ import Link from "next/link";
 export const metadata = {
     title: "About Us | Aashey – Born from Purity, Built on Trust",
     description: "Discover the story of Aashey — a mother's care that became a movement for pure, traditional A2 Bilona Ghee. Founded in 2020 by Smt. Asha Deshmukh.",
+    alternates: {
+        canonical: "/about",
+    },
+    openGraph: {
+        title: "About Us | Aashey",
+        description: "The story of AASHEY – From a Mother's Kitchen to Your Family's Table.",
+        type: "website",
+    },
 };
 
 const processSteps = [

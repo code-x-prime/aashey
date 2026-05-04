@@ -33,11 +33,20 @@ export async function generateMetadata({ params }) {
     return {
         title,
         description,
+        alternates: {
+            canonical: `/products/${slug}`,
+        },
         openGraph: {
             title,
             description,
-            images: image ? [image] : [],
+            images: image ? [{ url: image }] : [],
             type: "website",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: image ? [image] : [],
         },
     };
 }

@@ -1,7 +1,7 @@
 import { API_URL } from "@/lib/utils";
 
 export default async function sitemap() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.aashey.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://aashey.com";
 
   // 1. Static Routes
   const staticRoutes = [
@@ -13,6 +13,8 @@ export default async function sitemap() {
     "/return-policy",
     "/shipping-policy",
     "/warranty",
+    "/categories",
+    "/products",
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
@@ -52,7 +54,7 @@ export default async function sitemap() {
         url: `${baseUrl}/products/${prod.slug}`,
         lastModified: new Date(prod.updatedAt || new Date()),
         changeFrequency: "daily",
-        priority: 0.6,
+        priority: 0.9,
       }));
     }
   } catch (error) {
