@@ -4,11 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchApi } from "@/lib/utils";
-import { AlertCircle, ArrowRight, Grid3X3, Package, Zap, Headphones } from "lucide-center";
 import { getCategoryImageUrl } from "@/lib/imageUrl";
-import { LucideIcon } from "lucide-react"; // Import just in case, but using names above
-
-// Using names from lucide-react if the previous import was wrong (lucide-center doesn't exist)
 import { 
     Grid3X3 as GridIcon, 
     Package as PackageIcon, 
