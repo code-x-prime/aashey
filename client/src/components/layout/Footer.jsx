@@ -244,7 +244,7 @@ export const Footer = () => {
               <span className="w-px h-3 bg-[#FDF6E3]/10 hidden sm:inline-block" />
               <a href="https://groxmedia.in/" target="_blank" rel="noopener noreferrer"
                 className="font-sans text-[11.5px] text-[#FDF6E3]/35 hover:text-[#C9933A] transition-colors">
-                Design by <span className="font-semibold text-[#FDF6E3]/50">Grox Media</span>
+                Developed by <span className="font-semibold text-[#FDF6E3]/50">Grox Media</span>
               </a>
             </div>
 
