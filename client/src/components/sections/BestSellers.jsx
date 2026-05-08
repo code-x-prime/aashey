@@ -18,7 +18,12 @@ export function BestSellers() {
     const fetchProducts = async () => {
       try {
         const response = await fetchApi("/public/products?bestseller=true&limit=12");
-        setProducts(response.data.products || []);
+        const raw = response.data.products || [];
+        const sorted = [
+          ...raw.filter((p) => p.ourProduct),
+          ...raw.filter((p) => !p.ourProduct),
+        ];
+        setProducts(sorted);
       } catch (error) {
         console.error("Error fetching best sellers:", error);
       } finally {

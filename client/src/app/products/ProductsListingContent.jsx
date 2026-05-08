@@ -217,9 +217,14 @@ export default function ProductsListingContent() {
                     qp.append("limit", String(pagination.limit * pagination.page));
                     response = await fetchApi(`/public/products/type/${filters.productType}?${qp.toString()}`);
                     const all = response.data?.products || [];
+                    // Sort: ourProduct first
+                    const allSorted = [
+                        ...all.filter((p) => p.ourProduct),
+                        ...all.filter((p) => !p.ourProduct),
+                    ];
                     const start = (pagination.page - 1) * pagination.limit;
-                    setProducts(all.slice(start, start + pagination.limit));
-                    setPagination({ page: pagination.page, limit: pagination.limit, total: all.length, pages: Math.ceil(all.length / pagination.limit) });
+                    setProducts(allSorted.slice(start, start + pagination.limit));
+                    setPagination({ page: pagination.page, limit: pagination.limit, total: allSorted.length, pages: Math.ceil(allSorted.length / pagination.limit) });
                 } else {
                     const qp = new URLSearchParams();
                     qp.append("page", String(pagination.page)); qp.append("limit", String(pagination.limit));
@@ -239,7 +244,15 @@ export default function ProductsListingContent() {
                     if (selectedSizes.length > 0) qp.append("size", selectedSizes[0]);
                     if (attrIds.size > 0) qp.append("attributeValueIds", [...attrIds].join(","));
                     response = await fetchApi(`/public/products?${qp.toString()}`);
-                    setProducts(response.data.products || []);
+                    const raw = response.data.products || [];
+                    // Sort: ourProduct first (only on page 1 to avoid disrupting pagination flow)
+                    const finalProducts = pagination.page === 1
+                        ? [
+                            ...raw.filter((p) => p.ourProduct),
+                            ...raw.filter((p) => !p.ourProduct),
+                          ]
+                        : raw;
+                    setProducts(finalProducts);
                     setPagination(response.data.pagination || {});
                 }
             } catch (err) {

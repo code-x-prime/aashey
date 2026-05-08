@@ -17,8 +17,14 @@ export function FeaturedProducts() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetchApi("/public/products?featured=true&limit=12");
-        setProducts(response.data.products || []);
+        const response = await fetchApi("/public/products?featured=true&limit=12&ourProduct=true");
+        // Sort: ourProduct=true first
+        const raw = response.data.products || [];
+        const sorted = [
+          ...raw.filter((p) => p.ourProduct),
+          ...raw.filter((p) => !p.ourProduct),
+        ];
+        setProducts(sorted);
       } catch (error) {
         console.error("Error fetching featured products:", error);
       } finally {

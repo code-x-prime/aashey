@@ -20,7 +20,12 @@ export const TrendingProducts = () => {
       try {
         setLoading(true);
         const response = await fetchApi("/public/products?trending=true&limit=12");
-        setProducts(response?.data?.products || []);
+        const raw = response?.data?.products || [];
+        const sorted = [
+          ...raw.filter((p) => p.ourProduct),
+          ...raw.filter((p) => !p.ourProduct),
+        ];
+        setProducts(sorted);
       } catch (err) {
         console.error("Error fetching trending products:", err);
         setError(err.message);
