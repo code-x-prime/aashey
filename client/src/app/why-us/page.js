@@ -3,8 +3,8 @@ import Link from "next/link";
 import { TestimonialsCarousel } from "@/components/sections/TestimonialsCarousel";
 
 export const metadata = {
-    title: "Why Choose Aashey | Pure A2 Cow Ghee â€“ More Than Ghee, A Commitment",
-    description: "Choosing ghee is about trust. Discover why thousands of families choose Aashey â€” small-batch, Bilona-churned, A2 milk, zero preservatives.",
+    title: "Why Choose Aashey | Pure A2 Cow Ghee – More Than Ghee, A Commitment",
+    description: "Choosing ghee is about trust. Discover why thousands of families choose Aashey — small-batch, Bilona-churned, A2 milk, zero preservatives.",
 };
 
 const commitments = [
@@ -18,12 +18,12 @@ const commitments = [
         icon: Droplets,
         title: "Traditional Bilona Method",
         tagline: "Curd-churning, not cream shortcuts.",
-        description: "We hand-churn curd the ancient way â€” not the industrial cream method. This preserves the natural aroma, granular texture, and true nutrition of A2 ghee.",
+        description: "We hand-churn curd the ancient way — not the industrial cream method. This preserves the natural aroma, granular texture, and true nutrition of A2 ghee.",
     },
     {
         icon: Leaf,
         title: "Indigenous A2 Cow Milk",
-        tagline: "Gir, Sahiwal, Tharparkar â€” pure.",
+        tagline: "Gir, Sahiwal, Tharparkar — pure.",
         description: "We source only from trusted local farmers raising indigenous Indian cows. No mixing with A1 or buffalo milk. Ever. Direct farm tie-ups ensure traceability.",
     },
     {
@@ -36,13 +36,13 @@ const commitments = [
         icon: FlaskConical,
         title: "No Compromise Policy",
         tagline: "Zero preservatives. Zero additives.",
-        description: "No preservatives, no artificial flavoring, no additives of any kind. What goes into our ghee is A2 milk curd â€” and nothing else.",
+        description: "No preservatives, no artificial flavoring, no additives of any kind. What goes into our ghee is A2 milk curd — and nothing else.",
     },
     {
         icon: Heart,
         title: "A Mother's Foundation",
         tagline: "Built on the intention to serve the best.",
-        description: "AASHEY was founded in 2020 by Smt. Asha Deshmukh at age 64 â€” not to build a business, but to serve her family. That intent shapes every jar we fill.",
+        description: "AASHEY was founded in 2020 by Smt. Asha Deshmukh at age 64 — not to build a business, but to serve her family. That intent shapes every jar we fill.",
     },
 ];
 
@@ -50,7 +50,7 @@ const reasons = [
     {
         icon: Beaker,
         title: "Lab Tested Every Batch",
-        description: "Every batch undergoes rigorous lab testing for purity, fat content, and adulteration â€” and the report is included with your order.",
+        description: "Every batch undergoes rigorous lab testing for purity, fat content, and adulteration — and the report is included with your order.",
     },
     {
         icon: Award,
@@ -59,13 +59,13 @@ const reasons = [
     },
     {
         icon: Truck,
-        title: "Free Delivery â‚¹999+",
-        description: "Free delivery across India on orders above â‚¹999. Secure, insulated packaging to preserve freshness during transit.",
+        title: "Free Delivery ₹999+",
+        description: "Free delivery across India on orders above ₹999. Secure, insulated packaging to preserve freshness during transit.",
     },
     {
         icon: Droplets,
         title: "Authentic Granular Texture",
-        description: "Real Bilona ghee solidifies with a natural grainy texture at room temperature. That granularity is the proof of purity â€” you can see it.",
+        description: "Real Bilona ghee solidifies with a natural grainy texture at room temperature. That granularity is the proof of purity — you can see it.",
     },
 ];
 
@@ -95,7 +95,7 @@ export default function WhyUsPage() {
                         <span className="text-[#C9933A] italic">A Commitment to Purity.</span>
                     </h1>
                     <p className="font-sans text-[#FDF6E3]/65 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-                        Choosing ghee is not just about taste â€” it is about trust. Here is why thousands
+                        Choosing ghee is not just about taste — it is about trust. Here is why thousands
                         of families choose Aashey, every single day.
                     </p>
                 </div>
@@ -204,7 +204,7 @@ export default function WhyUsPage() {
                     </h2>
                     <p className="font-sans text-[#FDF6E3]/60 text-sm max-w-xl mx-auto mb-8 leading-relaxed">
                         Join thousands of families who have made the switch.
-                        Free delivery on orders above â‚¹999.
+                        Free delivery on orders above ₹999.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link href="/products" className="btn-gold gap-2 inline-flex items-center justify-center">

@@ -40,11 +40,11 @@ const cormorantSC = Cormorant_SC({
 export const metadata = {
   metadataBase: new URL("https://aashey.com"),
   title: {
-    default: "AASHEY | Pure A2 Cow Ghee â€” Traditionally Bilona Crafted",
+    default: "AASHEY | Pure A2 Cow Ghee — Traditionally Bilona Crafted",
     template: "%s | AASHEY",
   },
   description:
-    "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method. 100% pure, lab tested, no preservatives. Free shipping on orders above â‚¹999.",
+    "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method. 100% pure, lab tested, no preservatives. Free shipping on orders above ₹999.",
   keywords: [
     "aashey",
     "A2 cow ghee",
@@ -70,14 +70,14 @@ export const metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "AASHEY | Pure A2 Cow Ghee â€” Traditionally Bilona Crafted",
+    title: "AASHEY | Pure A2 Cow Ghee — Traditionally Bilona Crafted",
     description:
       "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method. 100% pure, lab tested, no preservatives.",
     url: "https://aashey.com",
     siteName: "AASHEY",
     images: [
       {
-        url: "/og-image.jpg", // Make sure this exists in public folder or use a dynamic one
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "AASHEY Pure A2 Cow Ghee",
@@ -91,7 +91,7 @@ export const metadata = {
     title: "AASHEY | Pure A2 Cow Ghee",
     description:
       "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method.",
-    images: ["/og-image.jpg"],
+    images: ["/og-image.png"],
   },
   verification: {
     google: "aLdiwKXl0n9Cq8bqfU_CbBlN8mjCLLV0Wz5y0EGHYjk",

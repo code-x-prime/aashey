@@ -2,14 +2,14 @@ import { CheckCircle, ArrowRight, Leaf, Beaker, Milk, FlameKindling } from "luci
 import Link from "next/link";
 
 export const metadata = {
-    title: "About Us | Aashey â€“ Born from Purity, Built on Trust",
-    description: "Discover the story of Aashey â€” a mother's care that became a movement for pure, traditional A2 Bilona Ghee. Founded in 2020 by Smt. Asha Deshmukh.",
+    title: "About Us | Aashey – Born from Purity, Built on Trust",
+    description: "Discover the story of Aashey — a mother's care that became a movement for pure, traditional A2 Bilona Ghee. Founded in 2020 by Smt. Asha Deshmukh.",
     alternates: {
         canonical: "/about",
     },
     openGraph: {
         title: "About Us | Aashey",
-        description: "The story of AASHEY â€“ From a Mother's Kitchen to Your Family's Table.",
+        description: "The story of AASHEY – From a Mother's Kitchen to Your Family's Table.",
         type: "website",
     },
 };
@@ -18,7 +18,7 @@ const processSteps = [
     {
         step: "01",
         title: "Boil & Culture",
-        description: "Fresh A2 milk is carefully boiled and naturally converted into curd â€” no shortcuts, no artificial cultures.",
+        description: "Fresh A2 milk is carefully boiled and naturally converted into curd — no shortcuts, no artificial cultures.",
     },
     {
         step: "02",
@@ -33,7 +33,7 @@ const processSteps = [
     {
         step: "04",
         title: "Slow Simmer",
-        description: "The butter is slowly simmered on low flame into golden, aromatic ghee â€” preserving all nutrients.",
+        description: "The butter is slowly simmered on low flame into golden, aromatic ghee — preserving all nutrients.",
     },
 ];
 
@@ -95,7 +95,7 @@ export default function AboutPage() {
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
                     <div className="grid lg:grid-cols-2 gap-12 md:gap-16 items-start">
 
-                        {/* Left â€” heading + pull quote */}
+                        {/* Left — heading + pull quote */}
                         <div className="lg:sticky lg:top-28">
                             <span className="font-sans text-xs font-semibold tracking-[0.2em] text-[#C9933A] uppercase block mb-4">About Us</span>
                             <h2 className="font-sans text-4xl md:text-5xl font-bold text-[#3F1F00] leading-tight mb-6">
@@ -107,7 +107,7 @@ export default function AboutPage() {
                                     &ldquo;We will never produce in large volumes if it affects quality.&rdquo;
                                 </p>
                                 <footer className="font-sans text-sm text-[#8B6040] mt-3 font-medium">
-                                    â€” Smt. Asha Deshmukh, Founder
+                                    — Smt. Asha Deshmukh, Founder
                                 </footer>
                             </blockquote>
 
@@ -126,7 +126,7 @@ export default function AboutPage() {
                             </div>
                         </div>
 
-                        {/* Right â€” story paragraphs */}
+                        {/* Right — story paragraphs */}
                         <div className="space-y-6 font-sans text-base text-[#4A2C0A] leading-[1.9]">
                             <p>
                                 Every meaningful journey begins at home. AASHEY began not as a business, but as a
@@ -135,19 +135,19 @@ export default function AboutPage() {
                                 traditional A2 Bilona Ghee for her own household.
                             </p>
                             <p>
-                                Her intention was simple â€” to serve pure, nourishing, and trustworthy ghee made the
+                                Her intention was simple — to serve pure, nourishing, and trustworthy ghee made the
                                 way it was prepared in earlier generations. Using traditional methods and preparing
                                 only in small quantities, she ensured that every batch carried the same aroma,
                                 richness, and purity she had known throughout her life.
                             </p>
                             <p>
-                                Soon, neighbours and close circles began noticing the difference â€” the authentic
+                                Soon, neighbours and close circles began noticing the difference — the authentic
                                 fragrance, natural granular texture, richness in taste, and unmistakable feeling of
                                 purity. There were no advertisements. No marketing campaigns.{" "}
                                 <strong className="text-[#3F1F00] font-semibold">Only word-of-mouth appreciation and growing trust.</strong>
                             </p>
                             <p>
-                                As demand increased, the family continued with the same principles â€”
+                                As demand increased, the family continued with the same principles —
                                 small-batch production, strict hygiene standards, and uncompromised purity.
                             </p>
                             <p className="text-[#3F1F00] font-semibold text-lg font-sans italic">
@@ -156,7 +156,7 @@ export default function AboutPage() {
                                 The purity is protected.
                             </p>
                             <p className="text-[#C9933A] font-sans font-semibold text-lg italic">
-                                AASHEY â€“ From a Mother&apos;s Kitchen to Your Family&apos;s Table.
+                                AASHEY – From a Mother&apos;s Kitchen to Your Family&apos;s Table.
                             </p>
                         </div>
                     </div>
@@ -174,7 +174,7 @@ export default function AboutPage() {
                             </h2>
                             <div className="w-14 h-0.5 bg-[#C9933A] mb-6" />
                             <p className="font-sans text-[#FDF6E3]/65 text-base leading-relaxed mb-5">
-                                At AASHEY, we believe purity does not begin in the kitchen â€” it begins at the farm.
+                                At AASHEY, we believe purity does not begin in the kitchen — it begins at the farm.
                                 We source fresh A2 milk directly from trusted local farmers who raise indigenous
                                 Indian cows with care and responsibility.
                             </p>
@@ -184,13 +184,13 @@ export default function AboutPage() {
                                 we ensure transparency and consistency from the very beginning.
                             </p>
                             <p className="font-sans italic text-[#C9933A] text-lg mt-6">
-                                &ldquo;True purity cannot be added later â€” it must start at the source.&rdquo;
+                                &ldquo;True purity cannot be added later — it must start at the source.&rdquo;
                             </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             {[
-                                { icon: Leaf, title: "Indigenous Breeds", desc: "Gir, Sahiwal & Tharparkar cows â€” pure A2 genetics, never mixed." },
+                                { icon: Leaf, title: "Indigenous Breeds", desc: "Gir, Sahiwal & Tharparkar cows — pure A2 genetics, never mixed." },
                                 { icon: Milk, title: "Direct Farmer Tie-ups", desc: "No middlemen. We source directly for full transparency." },
                                 { icon: CheckCircle, title: "Natural Rearing", desc: "Free-grazing, natural diet, zero hormones or antibiotics." },
                                 { icon: Beaker, title: "Milk Quality Checks", desc: "Every delivery tested before entering our process." },
@@ -216,8 +216,8 @@ export default function AboutPage() {
                         </h2>
                         <div className="w-14 h-0.5 bg-[#C9933A] mx-auto mt-5 mb-5" />
                         <p className="font-sans text-[#5C3A1E] text-base max-w-2xl mx-auto leading-relaxed">
-                            We follow the ancient Bilona method â€” a slow and time-honoured process that preserves
-                            the true essence of ghee. We never use cream-based shortcuts. We respect tradition â€”
+                            We follow the ancient Bilona method — a slow and time-honoured process that preserves
+                            the true essence of ghee. We never use cream-based shortcuts. We respect tradition —
                             because tradition preserves quality.
                         </p>
                     </div>
@@ -262,7 +262,7 @@ export default function AboutPage() {
                     </h2>
                     <p className="font-sans text-[#FDF6E3]/60 text-sm max-w-xl mx-auto mb-8 leading-relaxed">
                         Join 50,000+ families who have made the switch to pure, authentic A2 Bilona Ghee.
-                        Free delivery on orders above â‚¹999.
+                        Free delivery on orders above ₹999.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link href="/products" className="btn-gold gap-2 inline-flex items-center justify-center">

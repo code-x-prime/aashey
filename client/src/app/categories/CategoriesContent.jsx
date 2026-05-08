@@ -57,7 +57,7 @@ const CategoryCard = ({ category, index }) => {
                                     <Link href={`/products?category=${encodeURIComponent(category.slug)}&subcategory=${encodeURIComponent(sub.slug)}`} className="flex items-start gap-1.5 text-xs text-[#1A0A00] hover:text-[#C9933A]">
                                         <ArrowIcon className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                         <span className="font-medium">{sub.name}</span>
-                                        {sub.description && <span className="text-[10px] text-[#6B4423] line-clamp-1"> â€” {sub.description}</span>}
+                                        {sub.description && <span className="text-[10px] text-[#6B4423] line-clamp-1"> — {sub.description}</span>}
                                     </Link>
                                 </li>
                             ))}

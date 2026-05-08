@@ -482,8 +482,8 @@ export default function ProductsListingContent() {
                                         <option value="newest">Featured</option>
                                         <option value="price-low">Price: Low to High</option>
                                         <option value="price-high">Price: High to Low</option>
-                                        <option value="name-asc">A â†’ Z</option>
-                                        <option value="name-desc">Z â†’ A</option>
+                                        <option value="name-asc">A → Z</option>
+                                        <option value="name-desc">Z → A</option>
                                         <option value="oldest">Oldest</option>
                                     </select>
                                 </div>
@@ -497,7 +497,7 @@ export default function ProductsListingContent() {
                                 {filters.subcategory && (() => { const cat = categories.find((c) => c.slug === filters.category); const sub = cat?.subCategories?.find((s) => s.slug === filters.subcategory); return <FilterChip label={sub?.name || filters.subcategory} onRemove={() => handleFilterChange("subcategory", "")} />; })()}
                                 {selectedColors.map((id) => <FilterChip key={id} label={colors.find((c) => c.id === id)?.name || id} onRemove={() => { setSelectedColors([]); handleFilterChange("color", ""); }} />)}
                                 {selectedSizes.map((id) => <FilterChip key={id} label={sizes.find((s) => s.id === id)?.display || sizes.find((s) => s.id === id)?.name || id} onRemove={() => { setSelectedSizes([]); handleFilterChange("size", ""); }} />)}
-                                {(filters.minPrice || filters.maxPrice) && <FilterChip label={`â‚¹${filters.minPrice || 0} â€“ â‚¹${filters.maxPrice || "âˆž"}`} onRemove={() => { handleFilterChange("minPrice", ""); handleFilterChange("maxPrice", ""); }} />}
+                                {filters.minPrice || filters.maxPrice && <FilterChip label={`₹${filters.minPrice || 0} – ₹${filters.maxPrice || "∞"}`} onRemove={() => { handleFilterChange("minPrice", ""); handleFilterChange("maxPrice", ""); }} />}
                                 <button onClick={clearFilters} className="font-sans text-[11px] font-semibold text-[#C9933A] hover:text-[#3F1F00] ml-1 transition-colors">Clear all</button>
                             </div>
                         )}

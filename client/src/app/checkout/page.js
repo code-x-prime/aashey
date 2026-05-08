@@ -397,7 +397,7 @@ export default function CheckoutPage() {
                 const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
 
                 if (calculatedAmount < 1) {
-                    toast.info("Minimum order amount is â‚¹1. Your total has been adjusted.");
+                    toast.info("Minimum order amount is ₹1. Your total has been adjusted.");
                 }
 
                 if (paymentMethod === "CASH") {
@@ -505,8 +505,8 @@ export default function CheckoutPage() {
                         key: currentKey,
                         amount: razorpayOrder.amount,
                         currency: razorpayOrder.currency,
-                        name: "Aashey â€” Pure A2 Cow Ghee",
-                        description: "Traditional Bilona A2 Ghee â€” Pure, Natural, Authentic.",
+                        name: "Aashey — Pure A2 Cow Ghee",
+                        description: "Traditional Bilona A2 Ghee — Pure, Natural, Authentic.",
                         order_id: razorpayOrder.id,
                         prefill: {
                             name: user?.name || "",
@@ -543,7 +543,7 @@ export default function CheckoutPage() {
                                 toast.dismiss("payment-verification");
 
                                 if (verificationResponse.success) {
-                                    toast.success("Payment verified successfully! ðŸŽ‰", { duration: 3000 });
+                                    toast.success("Payment verified successfully! 🎉", { duration: 3000 });
                                     setOrderId(verificationResponse.data.orderId);
                                     handleSuccessfulPayment(response, verificationResponse.data, false);
                                 } else {
@@ -626,7 +626,7 @@ export default function CheckoutPage() {
                 toast.dismiss("guest-register");
 
                 if (registerRes.data.accountExists) {
-                    // Account exists â€” ask user to log in
+                    // Account exists — ask user to log in
                     setError(`An account with email "${guestAddress.email}" already exists. Please log in to continue.`);
                     toast.error("Account already exists. Please log in.", {
                         duration: 8000,
@@ -657,7 +657,7 @@ export default function CheckoutPage() {
                 setWasAutoCreated(true);
                 toast.success(`Account created! Welcome, ${registerRes.data.user.name}.`, { duration: 3000 });
 
-                // Step 4: create address for the new user (cookies now set â†’ authenticated)
+                // Step 4: create address for the new user (cookies now set → authenticated)
                 toast.loading("Saving your address...", { id: "create-address", duration: 10000 });
 
                 const addressRes = await fetchApi("/users/addresses", {
@@ -737,7 +737,7 @@ export default function CheckoutPage() {
                     };
                     setOrderNumber(orderResponse.data.orderNumber);
                     setOrderId(orderResponse.data.orderId || "");
-                    // isGuestOrder = false â†’ user is now logged in â†’ redirect to /account/orders
+                    // isGuestOrder = false → user is now logged in → redirect to /account/orders
                     handleSuccessfulPayment(null, orderData, false);
                     return;
 
@@ -791,8 +791,8 @@ export default function CheckoutPage() {
                         key: currentKey,
                         amount: razorpayOrder.amount,
                         currency: razorpayOrder.currency,
-                        name: "Aashey â€” Pure A2 Cow Ghee",
-                        description: "Traditional Bilona A2 Ghee â€” Pure, Natural, Authentic.",
+                        name: "Aashey — Pure A2 Cow Ghee",
+                        description: "Traditional Bilona A2 Ghee — Pure, Natural, Authentic.",
                         order_id: razorpayOrder.id,
                         prefill: {
                             name: guestAddress.name,
@@ -826,7 +826,7 @@ export default function CheckoutPage() {
                                 toast.dismiss("payment-verification");
 
                                 if (verificationResponse.success) {
-                                    toast.success("Payment verified! ðŸŽ‰", { duration: 3000 });
+                                    toast.success("Payment verified! 🎉", { duration: 3000 });
                                     setOrderId(verificationResponse.data.orderId);
                                     handleSuccessfulPayment(response, verificationResponse.data, false);
                                 } else {
@@ -932,7 +932,7 @@ export default function CheckoutPage() {
                             <div className="my-6 flex items-center justify-center bg-green-50 p-4 rounded-lg">
                                 <CheckCircle className="h-8 w-8 text-green-500 mr-2" />
                                 <p className="text-xl text-green-600 font-medium">
-                                    {paymentMethod === "CASH" ? "Order Confirmed â€” Pay on Delivery" : "Payment Successful"}
+                                    {paymentMethod === "CASH" ? "Order Confirmed — Pay on Delivery" : "Payment Successful"}
                                 </p>
                             </div>
 
@@ -955,7 +955,7 @@ export default function CheckoutPage() {
                                             </p>
                                             <Link href="/auth?mode=forgot">
                                                 <button className="text-green-700 hover:text-green-900 text-sm underline mt-1 font-medium">
-                                                    Set my password â†’
+                                                    Set my password →
                                                 </button>
                                             </Link>
                                         </div>
@@ -985,7 +985,7 @@ export default function CheckoutPage() {
                                                     className="border-amber-300 text-amber-800 hover:bg-amber-100 hover:border-amber-400 gap-1.5"
                                                 >
                                                     <MessageSquare className="h-3.5 w-3.5" />
-                                                    Review {item.productName?.length > 20 ? item.productName.slice(0, 18) + "â€¦" : item.productName}
+                                                    Review {item.productName?.length > 20 ? item.productName.slice(0, 18) + "…" : item.productName}
                                                 </Button>
                                             </Link>
                                         ))}
@@ -1004,13 +1004,13 @@ export default function CheckoutPage() {
                                     {isGuestOrder ? (
                                         <Link href="/">
                                             <button className="text-blue-600 hover:text-blue-800 text-sm underline">
-                                                Go to homepage â†’
+                                                Go to homepage →
                                             </button>
                                         </Link>
                                     ) : (
                                         <Link href="/account/orders">
                                             <button className="text-blue-600 hover:text-blue-800 text-sm underline">
-                                                Go to orders now â†’
+                                                Go to orders now →
                                             </button>
                                         </Link>
                                     )}
@@ -1100,7 +1100,7 @@ export default function CheckoutPage() {
                         {(error.includes("already exists") || error.includes("Please log in")) && (
                             <Link href={`/auth?redirect=checkout`}>
                                 <button className="mt-2 text-red-700 underline text-sm font-medium hover:text-red-900">
-                                    Log in to your account â†’
+                                    Log in to your account →
                                 </button>
                             </Link>
                         )}
@@ -1590,7 +1590,7 @@ export default function CheckoutPage() {
                                                             {item.variant.attributes.map((attr, idx) => (
                                                                 <span key={attr.attributeValueId}>
                                                                     {attr.attribute}: {attr.value}
-                                                                    {idx < item.variant.attributes.length - 1 && " â€¢ "}
+                                                                    {idx < item.variant.attributes.length - 1 && " • "}
                                                                 </span>
                                                             ))}
                                                         </p>
@@ -1599,7 +1599,7 @@ export default function CheckoutPage() {
                                                         <p className="text-xs text-[#6B4423]">{item.variantName}</p>
                                                     )}
                                                     <p className="text-xs text-[#6B4423]">
-                                                        {item.quantity} Ã— {formatCurrency(item.price)}
+                                                        {item.quantity} × {formatCurrency(item.price)}
                                                     </p>
                                                 </div>
                                                 <p className="font-medium text-sm">
@@ -1668,7 +1668,7 @@ export default function CheckoutPage() {
                                 ) : (
                                     <span className="flex items-center justify-center">
                                         <IndianRupee className="mr-2 h-4 w-4" />
-                                        Place Order â€” {formatCurrency(checkoutTotal)}
+                                        Place Order — {formatCurrency(checkoutTotal)}
                                     </span>
                                 )}
                             </Button>

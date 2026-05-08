@@ -173,7 +173,7 @@ export default function ReturnsPage() {
                                                         {req.orderItem?.product?.name || "Product"}
                                                     </p>
                                                     <p className="text-sm text-[#5C3A1E]">
-                                                        Qty: {req.orderItem?.quantity} Ã—{" "}
+                                                        Qty: {req.orderItem?.quantity} ×{" "}
                                                         {formatCurrency(req.orderItem?.price)}
                                                     </p>
 

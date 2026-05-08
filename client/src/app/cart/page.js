@@ -75,7 +75,7 @@ const CartItem = React.memo(
             if (!size) size = item.size?.name;
 
             if (color && size) {
-                return `${color} â€¢ ${size}`;
+                return `${color} • ${size}`;
             } else if (color) {
                 return color;
             } else if (size) {
@@ -160,7 +160,7 @@ const CartItem = React.memo(
                                 </span>
                                 {item.priceSource === 'FLASH_SALE' && item.flashSale && (
                                     <span className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                                        âš¡ {item.flashSale.discountPercentage}% OFF
+                                        ⚡ {item.flashSale.discountPercentage}% OFF
                                     </span>
                                 )}
                                 {item.priceSource && item.priceSource !== "DEFAULT" && item.priceSource !== "FLASH_SALE" && (
@@ -353,7 +353,7 @@ export default function CartPage() {
         // Ensure minimum amount is 1
         const calculatedAmount = totals.subtotal - totals.discount;
         if (calculatedAmount < 1) {
-            toast.info("Minimum order amount is â‚¹1");
+            toast.info("Minimum order amount is ₹1");
             return;
         }
 
@@ -470,7 +470,7 @@ export default function CartPage() {
                                     variant="outline"
                                     className="border-[#C9933A] text-[#3F1F00] hover:bg-[#C9933A] hover:text-[#3F1F00] transition-all duration-200 "
                                 >
-                                    â† Continue Shopping
+                                    ← Continue Shopping
                                 </Button>
                             </Link>
                         </div>
@@ -520,7 +520,7 @@ export default function CartPage() {
                                             <p className="text-sm font-semibold text-green-700 mb-1">
                                                 {coupon.discountType === "PERCENTAGE"
                                                     ? `${coupon.discountValue}% off`
-                                                    : `â‚¹${coupon.discountValue} off`}
+                                                    : `₹${coupon.discountValue} off`}
                                             </p>
                                             {coupon.applicableSubtotal && (
                                                 <p className="text-xs text-green-600 mt-1">
@@ -679,7 +679,7 @@ export default function CartPage() {
                                         <ShoppingBag className="h-5 w-5" />
                                         Checkout
                                         <span className="ml-2 font-bold">
-                                            â€¢ {formatCurrency(totals.total)}
+                                            {formatCurrency(totals.total)}
                                         </span>
                                     </>
                                 )}
