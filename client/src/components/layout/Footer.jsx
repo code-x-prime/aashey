@@ -19,7 +19,7 @@ import {
   RiHeartLine,
 } from "react-icons/ri";
 
-/* ── Data ──────────────────────────────────────────── */
+/* â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const socialLinks = [
   { name: "Instagram", href: "https://www.instagram.com/aashey.consumer.products?utm_source=qr&igsh=MThqY2JiNnpwOGc2bQ==", Icon: RiInstagramLine },
   { name: "Facebook",  href: "https://www.facebook.com/share/18TMgfmNSR/",                                                   Icon: RiFacebookCircleLine },
@@ -49,29 +49,29 @@ const trustBadges = [
   { icon: RiShieldCheckLine,   text: "Lab Tested Every Batch" },
   { icon: RiAwardLine,         text: "FSSAI Certified" },
   { icon: RiCheckboxCircleLine,text: "Zero Preservatives" },
-  { icon: RiTruckLine,         text: "Free Delivery ₹999+" },
+  { icon: RiTruckLine,         text: "Free Delivery â‚¹999+" },
 ];
 
 const avatarInitials = ["R", "P", "A", "S", "K"];
 
-/* ── Footer ─────────────────────────────────────────── */
+/* â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export const Footer = () => {
   return (
     <footer className="relative overflow-hidden bg-[#0A1F0F]">
 
-      {/* ── Top gold gradient bar ── */}
+      {/* â”€â”€ Top gold gradient bar â”€â”€ */}
       <div
         className="h-[2px] w-full"
         style={{ background: "linear-gradient(90deg, transparent 0%, #C9933A 30%, #F0C96B 50%, #C9933A 70%, transparent 100%)" }}
       />
 
-      {/* ══════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MAIN GRID
-      ══════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 md:gap-12">
 
-          {/* ── Brand col ──────────────────────── */}
+          {/* â”€â”€ Brand col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="lg:col-span-4 flex flex-col">
 
             {/* Logo */}
@@ -80,7 +80,7 @@ export const Footer = () => {
             </Link>
 
             {/* Quote */}
-            <p className="font-cormorant italic text-[#FDF6E3]/65 text-[19px] leading-snug mb-3">
+            <p className="font-sans italic text-[#FDF6E3]/65 text-[19px] leading-snug mb-3">
               &ldquo;Made with love, crafted with tradition.&rdquo;
             </p>
             <p className="font-sans text-[13px] text-[#FDF6E3]/45 leading-relaxed max-w-[260px]">
@@ -127,7 +127,7 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* ── Explore col ────────────────────── */}
+          {/* â”€â”€ Explore col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="lg:col-span-2">
             <FooterColHeader>Explore</FooterColHeader>
             <ul className="space-y-0.5">
@@ -143,7 +143,7 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* ── Policies col ───────────────────── */}
+          {/* â”€â”€ Policies col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="lg:col-span-3">
             <FooterColHeader>Policies & Help</FooterColHeader>
             <ul className="space-y-0.5">
@@ -159,16 +159,16 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* ── Contact col ────────────────────── */}
+          {/* â”€â”€ Contact col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
           <div className="lg:col-span-3">
             <FooterColHeader>Get In Touch</FooterColHeader>
             <ul className="space-y-4">
 
               {/* Address */}
               <ContactItem icon={RiMapPin2Line} label="Address">
-                Village — Takali, Shiv Shakti Nagar,<br />
-                Chalisgaon, Dist — Jalgaon,<br />
-                Maharashtra — 424102
+                Village â€” Takali, Shiv Shakti Nagar,<br />
+                Chalisgaon, Dist â€” Jalgaon,<br />
+                Maharashtra â€” 424102
               </ContactItem>
 
               {/* WhatsApp */}
@@ -192,9 +192,9 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           TRUST BADGES BAR
-      ══════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div className="border-t border-[#C9933A]/10">
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-5">
           <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
@@ -215,16 +215,16 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           COPYRIGHT BAR
-      ══════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div className="bg-[#061409] border-t border-white/[0.04]">
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
 
             {/* Copyright */}
             <p className="font-sans text-[11.5px] text-[#FDF6E3]/30">
-              © 2026{" "}
+              Â© 2026{" "}
               <span className="text-[#FDF6E3]/50 font-medium">Aashey Consumer Products Pvt. Ltd.</span>
               {" "}All rights reserved.
             </p>
@@ -239,7 +239,7 @@ export const Footer = () => {
             {/* Made in India + credit */}
             <div className="flex items-center gap-2 flex-wrap justify-center">
               <p className="font-sans text-[11.5px] text-[#FDF6E3]/30">
-                Crafted with ❤️ in India 🇮🇳
+                Crafted with â¤ï¸ in India ðŸ‡®ðŸ‡³
               </p>
               <span className="w-px h-3 bg-[#FDF6E3]/10 hidden sm:inline-block" />
               <a href="https://groxmedia.in/" target="_blank" rel="noopener noreferrer"
@@ -255,7 +255,7 @@ export const Footer = () => {
   );
 };
 
-/* ── Reusable sub-components ─────────────────────────── */
+/* â”€â”€ Reusable sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function FooterColHeader({ children }) {
   return (
@@ -278,7 +278,7 @@ function ContactItem({ icon: Icon, label, children }) {
         <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-[#FDF6E3]/30 mb-1">
           {label}
         </p>
-        <div className="font-sans text-[13px] text-[#FDF6E3]/55 leading-relaxed">
+        <div className="font-sans text-[13px] text-[#FDF6E3]/55 leading-relaxed break-all">
           {children}
         </div>
       </div>
@@ -287,3 +287,4 @@ function ContactItem({ icon: Icon, label, children }) {
 }
 
 export default Footer;
+

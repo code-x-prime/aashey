@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -148,3 +148,4 @@ export default function ProductQuickView({ product, open, onOpenChange }) {
     </Dialog>
   );
 }
+

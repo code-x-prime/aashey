@@ -274,3 +274,4 @@ export const getGuestCartItemCount = () => {
     const cart = getGuestCart();
     return cart.totalQuantity || 0;
 };
+

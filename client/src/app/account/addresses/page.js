@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { fetchApi } from "@/lib/utils";
@@ -114,3 +114,4 @@ export default function AddressesPage() {
         </div>
     );
 }
+

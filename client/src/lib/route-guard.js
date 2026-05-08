@@ -96,3 +96,4 @@ export function RouteGuard({ children }) {
     // Always render children - no more loading or unauthorized screens
     return children;
 }
+

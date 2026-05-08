@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
-/* ── react-icons ─────────────────────────────── */
+/* -- react-icons ------------------------------- */
 import { RiMailLine } from "react-icons/ri";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { RiUser3Line } from "react-icons/ri";
@@ -54,7 +54,7 @@ function AuthForm() {
     return (
         <div className="min-h-screen bg-[#FDF6E3] flex items-stretch">
 
-            {/* ── LEFT PANEL ─────────────────────────── */}
+            {/* -- LEFT PANEL --------------------------- */}
             <div className="hidden lg:flex lg:w-[45%] bg-[#3F1F00] flex-col items-center justify-center p-14 relative overflow-hidden">
                 {/* Decorative rings */}
                 <div className="absolute top-[-80px] right-[-80px] w-[340px] h-[340px] rounded-full border border-[#C9933A]/10" />
@@ -67,11 +67,11 @@ function AuthForm() {
                         <p className="text-[10px] tracking-[0.35em] font-sans font-medium text-[#C9933A]/60 uppercase mb-3">
                             Welcome to
                         </p>
-                        <h1 className="text-6xl font-cormorant italic font-bold text-[#C9933A] tracking-tight leading-none">
+                        <h1 className="text-6xl font-sans italic font-bold text-[#C9933A] tracking-tight leading-none">
                             Aashey
                         </h1>
                         <div className="w-10 h-px bg-[#C9933A]/40 mx-auto my-4" />
-                        <p className="font-cormorant italic text-[#FDF6E3]/70 text-lg">
+                        <p className="font-sans italic text-[#FDF6E3]/70 text-lg">
                             Pure A2 Cow Ghee
                         </p>
                     </div>
@@ -97,13 +97,13 @@ function AuthForm() {
                 </div>
             </div>
 
-            {/* ── RIGHT PANEL ────────────────────────── */}
+            {/* -- RIGHT PANEL -------------------------- */}
             <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
                 <div className="w-full max-w-[420px]">
 
                     {/* Mobile Brand */}
                     <div className="lg:hidden text-center mb-8">
-                        <h1 className="text-4xl font-cormorant italic font-bold text-[#C9933A]">
+                        <h1 className="text-4xl font-sans italic font-bold text-[#C9933A]">
                             Aashey
                         </h1>
                         <div className="w-8 h-px bg-[#C9933A]/40 mx-auto my-2" />
@@ -183,7 +183,7 @@ function LoginForm() {
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             <div className="mb-6">
-                <h2 className="font-cormorant text-[28px] font-semibold text-[#3F1F00] leading-tight">
+                <h2 className="font-sans text-[28px] font-semibold text-[#3F1F00] leading-tight">
                     Welcome back
                 </h2>
                 <p className="font-sans text-[13px] text-[#8B6040] mt-1">
@@ -248,7 +248,7 @@ function LoginForm() {
                     onClick={() => router.push("/auth?tab=register")}
                     className="font-semibold text-[#C9933A] hover:text-[#3F1F00] transition-colors"
                 >
-                    Create account →
+                    Create account
                 </button>
             </p>
         </form>
@@ -291,7 +291,7 @@ function RegisterForm() {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="mb-5">
-                <h2 className="font-cormorant text-[26px] font-semibold text-[#3F1F00] leading-tight">
+                <h2 className="font-sans text-[26px] font-semibold text-[#3F1F00] leading-tight">
                     Create account
                 </h2>
                 <p className="font-sans text-[13px] text-[#8B6040] mt-1">
@@ -435,7 +435,7 @@ export default function AuthPage() {
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center bg-[#FDF6E3]">
                 <div className="text-center">
-                    <p className="font-cormorant italic text-3xl text-[#C9933A]">Aashey</p>
+                    <p className="font-sans italic text-3xl text-[#C9933A]">Aashey</p>
                     <p className="font-sans text-xs text-[#8B6040] mt-2 tracking-widest uppercase">Loading...</p>
                 </div>
             </div>

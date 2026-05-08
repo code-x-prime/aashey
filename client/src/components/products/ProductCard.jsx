@@ -16,7 +16,7 @@ const calculateDiscountPercentage = (regularPrice, salePrice) => {
   return Math.round(((regularPrice - salePrice) / regularPrice) * 100);
 };
 
-// ── Shared price + wishlist logic hook ──────────────────────────────────────
+// â”€â”€ Shared price + wishlist logic hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function useProductCard(product) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -140,7 +140,7 @@ function useProductCard(product) {
   };
 }
 
-// ── Grid Card ────────────────────────────────────────────────────────────────
+// â”€â”€ Grid Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -207,13 +207,13 @@ export const ProductCard = ({ product }) => {
         {/* Badges */}
         <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
           {product.category && (
-            <span className="px-2.5 py-1 bg-[#FDF6E3]/95 backdrop-blur-sm text-xs font-bold text-[#3F1F00] rounded-md shadow-sm border border-[#C9933A]/30 uppercase tracking-wide w-fit font-display">
+            <span className="px-2.5 py-1 bg-[#FDF6E3]/95 backdrop-blur-sm text-xs font-bold text-[#3F1F00] rounded-md shadow-sm border border-[#C9933A]/30 uppercase tracking-wide w-fit font-sans">
               {typeof product.category === "object" ? product.category.name : product.category}
             </span>
           )}
           {showFlashSaleBadge && discountPercent > 0 && (
             <div className="px-2.5 py-1 bg-gradient-to-r from-[#C9933A] to-[#3F1F00] text-white text-xs font-bold rounded-md shadow-md w-fit animate-pulse">
-              🔥 {discountPercent}% OFF
+              ðŸ”¥ {discountPercent}% OFF
             </div>
           )}
           {!showFlashSaleBadge && hasSale && discountPercent > 0 && (
@@ -235,7 +235,7 @@ export const ProductCard = ({ product }) => {
       {/* Details */}
       <div className="p-4 flex flex-col flex-grow">
         <Link href={`/products/${product.slug}`} className="block">
-          <h3 className="font-semibold text-[#3F1F00] text-base mb-1.5 line-clamp-2 group-hover:text-[#C9933A] transition-colors leading-snug " title={product.name}>
+          <h3 className="font-sans font-semibold text-[#3F1F00] text-base mb-1.5 line-clamp-2 group-hover:text-[#C9933A] transition-colors leading-snug " title={product.name}>
             {product.name}
           </h3>
         </Link>
@@ -247,7 +247,7 @@ export const ProductCard = ({ product }) => {
         )}
         <div className="mt-auto pt-2.5 border-t border-[#C9933A]/15">
           {showPrice ? (
-            <div className="flex items-baseline gap-2.5">
+            <div className="flex items-baseline gap-2.5 font-sans">
               <span className={`text-lg font-bold  ${showFlashSaleBadge ? "text-[#C9933A]" : "text-[#3F1F00]"}`}>{formatCurrency(displayPrice)}</span>
               {(hasSale || showFlashSaleBadge) && originalPrice && (
                 <span className="text-sm text-[#7A4E2D] line-through ">{formatCurrency(originalPrice)}</span>
@@ -262,7 +262,7 @@ export const ProductCard = ({ product }) => {
   );
 };
 
-// ── List Card ────────────────────────────────────────────────────────────────
+// â”€â”€ List Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const ProductListCard = ({ product }) => {
   const {
     wishlistItems, isAddingToWishlist, handleAddToWishlist,
@@ -286,7 +286,7 @@ export const ProductListCard = ({ product }) => {
           sizes="144px"
         />
         {showFlashSaleBadge && discountPercent > 0 && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 bg-[#C9933A] text-white text-xs font-bold rounded">🔥 {discountPercent}%</div>
+          <div className="absolute top-2 left-2 px-2 py-0.5 bg-[#C9933A] text-white text-xs font-bold rounded">ðŸ”¥ {discountPercent}%</div>
         )}
         {!showFlashSaleBadge && hasSale && discountPercent > 0 && (
           <div className="absolute top-2 left-2 px-2 py-0.5 bg-[#3F1F00] text-[#FDF6E3] text-xs font-bold rounded">{discountPercent}% OFF</div>
@@ -297,14 +297,14 @@ export const ProductListCard = ({ product }) => {
       <div className="flex flex-col flex-1 p-3 sm:p-4 min-w-0">
         {/* Category */}
         {product.category && (
-          <span className="font-sc text-[10px] tracking-[0.1em] uppercase text-[#C9933A]/70 mb-1">
+          <span className="font-sans text-[10px] tracking-[0.1em] uppercase text-[#C9933A]/70 mb-1">
             {typeof product.category === "object" ? product.category.name : product.category}
           </span>
         )}
 
         {/* Name */}
         <Link href={`/products/${product.slug}`}>
-          <h3 className=" font-bold text-[#3F1F00] text-lg leading-snug mb-1.5 group-hover:text-[#C9933A] transition-colors line-clamp-2" title={product.name}>
+          <h3 className="font-sans font-bold text-[#3F1F00] text-lg leading-snug mb-1.5 group-hover:text-[#C9933A] transition-colors line-clamp-2" title={product.name}>
             {product.name}
           </h3>
         </Link>
@@ -326,7 +326,7 @@ export const ProductListCard = ({ product }) => {
 
         {/* Price + Wishlist */}
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#C9933A]/10">
-          <div>
+          <div className="font-sans">
             {showPrice ? (
               <div className="flex items-baseline gap-2.5">
                 <span className={`text-xl font-bold  ${showFlashSaleBadge ? "text-[#C9933A]" : "text-[#3F1F00]"}`}>{formatCurrency(displayPrice)}</span>
@@ -350,3 +350,4 @@ export const ProductListCard = ({ product }) => {
     </div>
   );
 };
+

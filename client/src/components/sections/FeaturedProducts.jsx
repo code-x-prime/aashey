@@ -13,7 +13,7 @@ export function FeaturedProducts() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(4);
 
-  /* ── Fetch ─────────────────────────────────── */
+  /* â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -28,7 +28,7 @@ export function FeaturedProducts() {
     fetchProducts();
   }, []);
 
-  /* ── Responsive slides-per-view ────────────── */
+  /* â”€â”€ Responsive slides-per-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const update = () => {
       if (window.innerWidth < 768) setSlidesPerView(2);
@@ -39,7 +39,7 @@ export function FeaturedProducts() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  /* ── Reset index when spv changes ──────────── */
+  /* â”€â”€ Reset index when spv changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => { setCurrentIndex(0); }, [slidesPerView]);
 
   const totalSlides = products.length;
@@ -51,7 +51,7 @@ export function FeaturedProducts() {
   const prev = () => setCurrentIndex((i) => Math.max(0, i - 1));
   const next = () => setCurrentIndex((i) => Math.min(maxIndex, i + 1));
 
-  /* ── Loading skeleton ───────────────────────── */
+  /* â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading) {
     return (
       <section className="py-10 md:py-14 bg-[#FDF6E3]">
@@ -87,12 +87,12 @@ export function FeaturedProducts() {
     <section className="py-10 md:py-14 bg-[#FDF6E3] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* ── Header ────────────────────────────── */}
+        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
           <div>
             <span className="section-eyebrow">Handpicked For You</span>
             <h2 className="section-title mt-2">Featured Products</h2>
-            <p className="font-cormorant italic text-[#6B4423] text-lg mt-1">
+            <p className="font-sans italic text-[#6B4423] text-lg mt-1">
               Exceptional quality, traditional craft
             </p>
             <div className="section-underline mt-4" />
@@ -138,7 +138,7 @@ export function FeaturedProducts() {
           </div>
         </div>
 
-        {/* ── Carousel Track ────────────────────── */}
+        {/* â”€â”€ Carousel Track â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="relative">
           <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
@@ -164,7 +164,7 @@ export function FeaturedProducts() {
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[#FDF6E3] to-transparent md:hidden" />
         </div>
 
-        {/* ── Mobile Bottom Controls removed as requested ─────────────── */}
+        {/* â”€â”€ Mobile Bottom Controls removed as requested â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">
@@ -182,3 +182,4 @@ export function FeaturedProducts() {
 }
 
 export default FeaturedProducts;
+

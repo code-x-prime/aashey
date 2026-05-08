@@ -1,4 +1,4 @@
-﻿import { Truck, Package, MapPin, Clock } from "lucide-react";
+import { Truck, Package, MapPin, Clock } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
 
 export const metadata = {
@@ -10,7 +10,7 @@ const shippingInfo = [
     {
         icon: Truck,
         title: "Free Shipping",
-        description: "Free delivery across India on orders above ₹25,000. For orders below ₹25,000, a flat shipping charge of ₹500 applies."
+        description: "Free delivery across India on orders above ?25,000. For orders below ?25,000, a flat shipping charge of ?500 applies."
     },
     {
         icon: Clock,
@@ -49,7 +49,7 @@ export default function ShippingPolicyPage() {
                                 <div className="w-11 h-11 bg-[#C9933A]/10 rounded-lg flex items-center justify-center mb-4">
                                     <info.icon className="h-5 w-5 text-[#C9933A]" />
                                 </div>
-                                <h3 className="font-playfair font-semibold text-base text-[#3F1F00] mb-2">{info.title}</h3>
+                                <h3 className="font-sans font-semibold text-base text-[#3F1F00] mb-2">{info.title}</h3>
                                 <p className="font-sans text-[#5C3A1E] text-sm leading-relaxed">{info.description}</p>
                             </div>
                         ))}
@@ -57,14 +57,14 @@ export default function ShippingPolicyPage() {
 
                     {/* Detailed Policy */}
                     <div className="prose prose-lg max-w-none">
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Shipping Charges</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Shipping Charges</h2>
                         <ul className="space-y-2 mb-8">
-                            <li>Orders above ₹25,000: <strong>Free Shipping</strong></li>
-                            <li>Orders below ₹25,000: <strong>₹500 flat shipping charge</strong></li>
+                            <li>Orders above ?25,000: <strong>Free Shipping</strong></li>
+                            <li>Orders below ?25,000: <strong>?500 flat shipping charge</strong></li>
                             <li>Bulk orders (10+ units): Contact us for special shipping rates</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Delivery Timeline</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Delivery Timeline</h2>
                         <p className="mb-4">Estimated delivery times from the date of order placement:</p>
                         <ul className="space-y-2 mb-8">
                             <li><strong>Metro Cities:</strong> 5-7 business days</li>
@@ -72,19 +72,19 @@ export default function ShippingPolicyPage() {
                             <li><strong>Remote Areas:</strong> 10-15 business days</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Order Tracking</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Order Tracking</h2>
                         <p className="mb-8">
                             Once your order is shipped, you will receive a tracking number via email and SMS.
                             You can track your order status using this tracking number on our courier partner&apos;s website.
                         </p>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Packaging</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Packaging</h2>
                         <p className="mb-8">
                             All products are carefully packed with protective materials to ensure safe delivery.
                             Heavy items are double-boxed with extra cushioning to prevent damage during transit.
                         </p>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Damaged/Lost Shipments</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Damaged/Lost Shipments</h2>
                         <p className="mb-4">
                             In the rare event that your order arrives damaged or goes missing during transit:
                         </p>
@@ -94,7 +94,7 @@ export default function ShippingPolicyPage() {
                             <li>For lost shipments, we will initiate a full refund or send a replacement</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">International Shipping</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">International Shipping</h2>
                         <p className="mb-8">
                             We ship to select international locations. Shipping charges and delivery times vary by country.
                             Please contact our support team at <strong>aashey@gmail.com</strong>
@@ -105,3 +105,4 @@ export default function ShippingPolicyPage() {
         </div>
     );
 }
+

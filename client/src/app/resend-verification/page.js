@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -67,9 +67,9 @@ export default function ResendVerificationPage() {
                 {/* Brand */}
                 <div className="text-center mb-8">
                     <Link href="/">
-                        <h1 className="font-cormorant italic text-4xl font-bold text-[#C9933A]">AASHEY</h1>
+                        <h1 className="font-sans italic text-4xl font-bold text-[#C9933A]">AASHEY</h1>
                     </Link>
-                    <p className="font-sc text-xs tracking-[0.2em] text-[#6B4423] uppercase mt-1">Pure A2 Cow Ghee</p>
+                    <p className="font-sans text-xs tracking-[0.2em] text-[#6B4423] uppercase mt-1">Pure A2 Cow Ghee</p>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(63,31,0,0.08)] border border-[#C9933A]/15 p-8">
@@ -80,7 +80,7 @@ export default function ResendVerificationPage() {
                                     <div className="w-14 h-14 bg-[#C9933A]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <Mail className="w-7 h-7 text-[#C9933A]" />
                                     </div>
-                                    <h1 className="font-cormorant text-2xl font-semibold text-[#3F1F00]">Resend OTP</h1>
+                                    <h1 className="font-sans text-2xl font-semibold text-[#3F1F00]">Resend OTP</h1>
                                     <p className="font-sans text-sm text-[#5C3A1E] mt-2">
                                         Enter your email address and we&apos;ll send a new 6-digit OTP.
                                     </p>
@@ -119,7 +119,7 @@ export default function ResendVerificationPage() {
 
                                 <div className="mt-6 text-center">
                                     <Link href="/auth" className="font-sans text-sm text-[#C9933A] hover:text-[#3F1F00] font-medium">
-                                        ← Back to Login
+                                        ? Back to Login
                                     </Link>
                                 </div>
                             </div>
@@ -159,3 +159,4 @@ export default function ResendVerificationPage() {
         </div>
     );
 }
+

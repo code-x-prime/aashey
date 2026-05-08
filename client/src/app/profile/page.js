@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -58,7 +58,7 @@ function ProfileContent() {
                                 <div className="w-20 h-20 bg-foreground text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-4">
                                     {user?.name?.charAt(0) || "U"}
                                 </div>
-                                <h2 className="font-cormorant font-bold text-lg">{user?.name || "User"}</h2>
+                                <h2 className="font-sans font-bold text-lg">{user?.name || "User"}</h2>
                                 <p className="text-sm text-[#6B4423]">{user?.email}</p>
                             </div>
 
@@ -94,7 +94,7 @@ function ProfileContent() {
                         {/* Orders Tab */}
                         {activeTab === "orders" && (
                             <div>
-                                <h1 className="font-cormorant text-2xl font-bold mb-6">My Orders</h1>
+                                <h1 className="font-sans text-2xl font-bold mb-6">My Orders</h1>
 
                                 {mockOrders.length > 0 ? (
                                     <div className="space-y-4">
@@ -131,7 +131,7 @@ function ProfileContent() {
 
                                                 <div className="flex items-center justify-between pt-4 border-t border-border">
                                                     <span className="font-bold">Total</span>
-                                                    <span className="font-cormorant font-bold text-lg">{formatPrice(order.total)}</span>
+                                                    <span className="font-sans font-bold text-lg">{formatPrice(order.total)}</span>
                                                 </div>
                                             </div>
                                         ))}
@@ -153,7 +153,7 @@ function ProfileContent() {
                         {activeTab === "addresses" && (
                             <div>
                                 <div className="flex items-center justify-between mb-6">
-                                    <h1 className="font-cormorant text-2xl font-bold">Saved Addresses</h1>
+                                    <h1 className="font-sans text-2xl font-bold">Saved Addresses</h1>
                                     <Button className="rounded-full gap-2">
                                         <Plus className="h-4 w-4" />
                                         Add Address
@@ -190,7 +190,7 @@ function ProfileContent() {
                         {/* Account Details Tab */}
                         {activeTab === "account" && (
                             <div>
-                                <h1 className="font-cormorant text-2xl font-bold mb-6">Account Details</h1>
+                                <h1 className="font-sans text-2xl font-bold mb-6">Account Details</h1>
 
                                 <div className="bg-white rounded-2xl p-6">
                                     <form className="space-y-6">
@@ -269,3 +269,4 @@ export default function ProfilePage() {
         </Suspense>
     );
 }
+

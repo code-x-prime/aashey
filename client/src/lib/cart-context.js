@@ -394,7 +394,7 @@ export function CartProvider({ children }) {
         }
     };
 
-    // Apply coupon — works for both guests and authenticated users
+    // Apply coupon â€” works for both guests and authenticated users
     const applyCoupon = async (code) => {
         setCouponLoading(true);
         setError(null);
@@ -537,3 +537,4 @@ export function CartProvider({ children }) {
 export function useCart() {
     return useContext(CartContext);
 }
+

@@ -13,9 +13,10 @@ export const BestSellersSection = () => {
                 products={bestSellers}
                 title="Best Sellers"
                 subtitle="Our most popular products"
-                badge="⭐ Top Rated"
+                badge="â­ Top Rated"
                 viewAllLink="/products"
             />
         </div>
     );
 };
+

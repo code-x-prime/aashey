@@ -13,7 +13,7 @@ export function BestSellers() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(4);
 
-  /* ── Fetch ─────────────────────────────────── */
+  /* â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -28,7 +28,7 @@ export function BestSellers() {
     fetchProducts();
   }, []);
 
-  /* ── Responsive slides-per-view ────────────── */
+  /* â”€â”€ Responsive slides-per-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const update = () => setSlidesPerView(window.innerWidth < 768 ? 2 : 4);
     update();
@@ -46,7 +46,7 @@ export function BestSellers() {
   const prev = () => setCurrentIndex((i) => Math.max(0, i - 1));
   const next = () => setCurrentIndex((i) => Math.min(maxIndex, i + 1));
 
-  /* ── Arrow button shared style ──────────────── */
+  /* â”€â”€ Arrow button shared style â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const arrowBtn = (enabled) =>
     `w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-200 ${
       enabled
@@ -54,7 +54,7 @@ export function BestSellers() {
         : "border-[#C9933A]/25 text-[#C9933A]/30 cursor-not-allowed"
     }`;
 
-  /* ── Loading skeleton ───────────────────────── */
+  /* â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading) {
     return (
       <section className="py-10 md:py-14 bg-white">
@@ -90,14 +90,14 @@ export function BestSellers() {
     <section className="py-10 md:py-14 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* ── Header ────────────────────────────── */}
+        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
           <div>
             <span className="section-eyebrow flex items-center gap-1.5">
               <RiFireLine className="w-3.5 h-3.5 text-[#C9933A]" /> Most Loved
             </span>
             <h2 className="section-title mt-2">Best Sellers</h2>
-            <p className="font-cormorant italic text-[#6B4423] text-lg mt-1">
+            <p className="font-sans italic text-[#6B4423] text-lg mt-1">
               Trusted by thousands across India
             </p>
             <div className="section-underline mt-4" />
@@ -123,7 +123,7 @@ export function BestSellers() {
           </div>
         </div>
 
-        {/* ── Carousel Track ────────────────────── */}
+        {/* â”€â”€ Carousel Track â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="relative">
           <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
@@ -145,11 +145,11 @@ export function BestSellers() {
             </div>
           </div>
 
-          {/* Right fade hint — mobile */}
+          {/* Right fade hint â€” mobile */}
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent md:hidden" />
         </div>
 
-        {/* ── Mobile Bottom Controls removed as requested ─────────────── */}
+        {/* â”€â”€ Mobile Bottom Controls removed as requested â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">
@@ -167,3 +167,4 @@ export function BestSellers() {
 }
 
 export default BestSellers;
+

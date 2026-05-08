@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -120,3 +120,4 @@ export default function OrdersPage() {
         </>
     );
 }
+

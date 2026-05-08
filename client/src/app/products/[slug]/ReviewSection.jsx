@@ -312,7 +312,7 @@ export default function ReviewSection({ product }) {
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
           {/* Big rating number */}
           <div className="text-center shrink-0">
-            <div className="text-5xl font-bold text-amber-600 font-playfair">{avgRating}</div>
+            <div className="text-5xl font-bold text-amber-600 font-sans">{avgRating}</div>
             <StarRating value={Math.round(parseFloat(avgRating))} readOnly size="sm" />
             <p className="text-xs text-gray-500 mt-1">{reviews.length} {reviews.length === 1 ? "review" : "reviews"}</p>
           </div>

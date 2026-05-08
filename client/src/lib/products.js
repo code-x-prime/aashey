@@ -89,3 +89,4 @@ export const formatPrice = (price) => {
         maximumFractionDigits: 0,
     }).format(price);
 };
+

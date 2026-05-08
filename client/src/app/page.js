@@ -11,8 +11,8 @@ import BannerCarousel from "@/components/sections/BannerCarousel";
 import BrandCarousel from "@/components/sections/BrandCarousel";
 
 export const metadata = {
-  title: "AASHEY | Pure A2 Cow Ghee — Traditionally Bilona Crafted",
-  description: "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method. 100% pure, lab tested, no preservatives. Free shipping on orders above ₹999.",
+  title: "AASHEY | Pure A2 Cow Ghee â€” Traditionally Bilona Crafted",
+  description: "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method. 100% pure, lab tested, no preservatives. Free shipping on orders above â‚¹999.",
   alternates: {
     canonical: "/",
   },
@@ -58,3 +58,4 @@ export default function Home() {
     </>
   );
 }
+

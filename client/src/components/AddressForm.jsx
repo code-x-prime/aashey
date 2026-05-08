@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { fetchApi } from "@/lib/utils";
@@ -108,3 +108,4 @@ export default function AddressForm({ onSuccess, onCancel, existingAddress = nul
         </div>
     );
 }
+

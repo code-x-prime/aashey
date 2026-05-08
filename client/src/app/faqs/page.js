@@ -130,9 +130,9 @@ export default function FAQsPage() {
                 <div className="container mx-auto px-4 text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#C9933A]/20 border border-[#C9933A]/30 rounded-full mb-6">
                         <HelpCircle className="w-4 h-4 text-[#C9933A]" />
-                        <span className="font-sc text-xs tracking-[0.12em] uppercase text-[#C9933A]">Help Center</span>
+                        <span className="font-sans text-xs tracking-[0.12em] uppercase text-[#C9933A]">Help Center</span>
                     </div>
-                    <h1 className="font-cormorant text-3xl md:text-5xl font-semibold text-[#FDF6E3] mb-4">
+                    <h1 className="font-sans text-3xl md:text-5xl font-semibold text-[#FDF6E3] mb-4">
                         Frequently Asked Questions
                     </h1>
                     <p className="font-sans text-[#FDF6E3]/70 text-base md:text-lg max-w-2xl mx-auto">
@@ -162,7 +162,7 @@ export default function FAQsPage() {
                                 <button
                                     key={category}
                                     onClick={() => handleCategoryChange(category)}
-                                    className={`px-4 py-2 rounded-lg font-sc text-xs tracking-[0.08em] uppercase font-medium transition-colors ${activeCategory === category
+                                    className={`px-4 py-2 rounded-lg font-sans text-xs tracking-[0.08em] uppercase font-medium transition-colors ${activeCategory === category
                                         ? "bg-[#3F1F00] text-[#FDF6E3]"
                                         : "bg-white border border-[#C9933A]/20 text-[#3F1F00] hover:border-[#C9933A]/40"
                                         }`}
@@ -183,7 +183,7 @@ export default function FAQsPage() {
                                         value={faq.id.toString()}
                                         className="border border-[#C9933A]/15 rounded-lg px-4 bg-white hover:border-[#C9933A]/30 transition-colors"
                                     >
-                                        <AccordionTrigger className="font-playfair text-base font-medium py-4 px-1 hover:no-underline text-[#3F1F00]">
+                                        <AccordionTrigger className="font-sans text-base font-medium py-4 px-1 hover:no-underline text-[#3F1F00]">
                                             {faq.question}
                                         </AccordionTrigger>
                                         <AccordionContent className="px-1 pb-4 pt-1 font-sans text-[#3F1F00] text-sm leading-relaxed">
@@ -195,7 +195,7 @@ export default function FAQsPage() {
                         ) : (
                             <div className="text-center py-10">
                                 <HelpCircle className="w-12 h-12 text-[#C9933A]/40 mx-auto mb-4" />
-                                <p className="font-cormorant text-lg font-semibold text-[#3F1F00] mb-2">
+                                <p className="font-sans text-lg font-semibold text-[#3F1F00] mb-2">
                                     No FAQs found for &quot;{searchQuery}&quot;
                                 </p>
                                 <span className="font-sans text-[#5C3A1E] text-sm">
@@ -216,7 +216,7 @@ export default function FAQsPage() {
 
                     {/* Contact section */}
                     <div className="mt-8 mb-16 bg-[#3F1F00] p-8 md:p-10 rounded-lg text-center">
-                        <h2 className="font-cormorant text-2xl font-semibold text-[#FDF6E3] mb-3">Still have questions?</h2>
+                        <h2 className="font-sans text-2xl font-semibold text-[#FDF6E3] mb-3">Still have questions?</h2>
                         <p className="font-sans text-[#FDF6E3]/70 text-sm mb-6 max-w-md mx-auto">
                             Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
                         </p>
@@ -240,3 +240,4 @@ export default function FAQsPage() {
         </main>
     );
 }
+

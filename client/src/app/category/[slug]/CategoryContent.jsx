@@ -135,7 +135,7 @@ export default function CategoryContent({ slug }) {
             <div className="min-h-screen bg-[#FDF6E3] flex items-center justify-center px-4">
                 <div className="bg-white border border-red-200 rounded-lg p-8 max-w-md w-full text-center">
                     <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-                    <h2 className="font-cormorant text-xl font-semibold text-[#3F1F00] mb-2">Category Not Found</h2>
+                    <h2 className="font-sans text-xl font-semibold text-[#3F1F00] mb-2">Category Not Found</h2>
                     <p className="font-sans text-[#5C3A1E] mb-6">{error}</p>
                     <Link href="/categories" className="inline-flex items-center px-5 py-2.5 bg-[#3F1F00] text-[#FDF6E3] rounded-lg font-sans font-semibold hover:bg-[#C9933A] transition-colors">
                         <ChevronLeft className="w-4 h-4 mr-1" /> Back to Categories
@@ -170,11 +170,11 @@ export default function CategoryContent({ slug }) {
                             </div>
                         )}
                         <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C9933A]/20 border border-[#C9933A]/30 rounded-full font-sc text-xs tracking-[0.1em] uppercase text-[#C9933A] font-medium mb-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C9933A]/20 border border-[#C9933A]/30 rounded-full font-sans text-xs tracking-[0.1em] uppercase text-[#C9933A] font-medium mb-2">
                                 <Package className="w-3.5 h-3.5" />
                                 {pagination.total} Products
                             </div>
-                            <h1 className="font-cormorant text-2xl md:text-4xl font-semibold text-white mb-1">{category?.name}</h1>
+                            <h1 className="font-sans text-2xl md:text-4xl font-semibold text-white mb-1">{category?.name}</h1>
                             {category?.description && <p className="font-sans text-white/70 max-w-2xl text-sm">{category.description}</p>}
                         </div>
                     </div>
@@ -237,7 +237,7 @@ export default function CategoryContent({ slug }) {
                         <div className="w-16 h-16 mx-auto mb-4 bg-[#C9933A]/10 rounded-lg flex items-center justify-center">
                             <Package className="w-8 h-8 text-[#C9933A]" />
                         </div>
-                        <h2 className="font-cormorant text-xl font-semibold text-[#3F1F00] mb-2">No Products Found</h2>
+                        <h2 className="font-sans text-xl font-semibold text-[#3F1F00] mb-2">No Products Found</h2>
                         <p className="font-sans text-[#5C3A1E] mb-6">This category doesn&apos;t have any products yet.</p>
                         <Link href="/products" className="inline-flex items-center px-6 py-3 bg-[#3F1F00] text-[#FDF6E3] rounded-lg font-sans font-semibold hover:bg-[#C9933A] transition-colors">
                             Browse All Products
@@ -274,7 +274,7 @@ export default function CategoryContent({ slug }) {
                                 <button
                                     key={page}
                                     onClick={() => handlePageChange(page)}
-                                    className={`w-10 h-10 rounded-lg font-cormorant font-semibold text-sm transition-colors ${currentPage === page ? "bg-[#3F1F00] text-[#FDF6E3]" : "bg-white border border-[#C9933A]/20 text-[#3F1F00] hover:border-[#C9933A]/40"}`}
+                                    className={`w-10 h-10 rounded-lg font-sans font-semibold text-sm transition-colors ${currentPage === page ? "bg-[#3F1F00] text-[#FDF6E3]" : "bg-white border border-[#C9933A]/20 text-[#3F1F00] hover:border-[#C9933A]/40"}`}
                                 >
                                     {page}
                                 </button>

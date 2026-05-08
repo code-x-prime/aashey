@@ -1,4 +1,4 @@
-﻿import { Shield, CheckCircle2, FileText, Phone } from "lucide-react";
+import { Shield, CheckCircle2, FileText, Phone } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
 
 export const metadata = {
@@ -49,7 +49,7 @@ export default function WarrantyPage() {
                                 <div className="w-11 h-11 bg-[#C9933A]/10 rounded-lg flex items-center justify-center mb-4">
                                     <feature.icon className="h-5 w-5 text-[#C9933A]" />
                                 </div>
-                                <h3 className="font-playfair font-semibold text-base text-[#3F1F00] mb-2">{feature.title}</h3>
+                                <h3 className="font-sans font-semibold text-base text-[#3F1F00] mb-2">{feature.title}</h3>
                                 <p className="font-sans text-[#5C3A1E] text-sm leading-relaxed">{feature.description}</p>
                             </div>
                         ))}
@@ -57,7 +57,7 @@ export default function WarrantyPage() {
 
                     {/* Detailed Warranty Policy */}
                     <div className="prose prose-lg max-w-none">
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Warranty Coverage</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Warranty Coverage</h2>
                         <p className="mb-4">
                             Our 1-year manufacturer warranty covers:
                         </p>
@@ -69,7 +69,7 @@ export default function WarrantyPage() {
                             <li>Power supply failures</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">What&apos;s Not Covered</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">What&apos;s Not Covered</h2>
                         <p className="mb-4">
                             The warranty does not cover:
                         </p>
@@ -82,7 +82,7 @@ export default function WarrantyPage() {
                             <li>Damage from commercial rental use</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">How to Claim Warranty</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">How to Claim Warranty</h2>
                         <p className="mb-4">
                             To claim warranty service:
                         </p>
@@ -95,7 +95,7 @@ export default function WarrantyPage() {
                             <li><strong>Repair/Replacement:</strong> Receive repaired or replacement product within 7-10 business days</li>
                         </ol>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Warranty Terms</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Warranty Terms</h2>
                         <ul className="space-y-2 mb-8">
                             <li>Warranty is valid only with original purchase invoice</li>
                             <li>Warranty is non-transferable to second owners</li>
@@ -104,7 +104,7 @@ export default function WarrantyPage() {
                             <li>Replacement products come with a fresh 1-year warranty</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Service Centers</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Service Centers</h2>
                         <p className="mb-4">
                             We have authorized service centers in major cities:
                         </p>
@@ -113,13 +113,13 @@ export default function WarrantyPage() {
                             <li><strong>Other Cities:</strong> Authorized service partners in Mumbai, Bangalore, Hyderabad, Chennai</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Extended Warranty</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Extended Warranty</h2>
                         <p className="mb-8">
                             Looking for additional coverage? Contact us about extended warranty plans available for purchase.
                             Extended warranties can provide coverage up to 3 years from purchase date.
                         </p>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Contact Warranty Support</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Contact Warranty Support</h2>
                         <p className="mb-4">
                             For warranty claims and support:
                         </p>
@@ -133,3 +133,4 @@ export default function WarrantyPage() {
         </div>
     );
 }
+

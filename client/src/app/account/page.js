@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -92,11 +92,11 @@ export default function AccountPage() {
                     <section className="py-12 bg-gradient-to-r from-[#3F1F00] to-[#092D15]">
                         <div className="section-container">
                             <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 bg-[#C9933A] rounded-full flex items-center justify-center text-white text-2xl font-bold font-cormorant shadow-lg ring-4 ring-[#C9933A]/30">
+                                <div className="w-20 h-20 bg-[#C9933A] rounded-full flex items-center justify-center text-white text-2xl font-bold font-sans shadow-lg ring-4 ring-[#C9933A]/30">
                                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
                                 </div>
                                 <div>
-                                    <h1 className="text-3xl md:text-4xl font-bold font-cormorant text-[#FDF6E3]">{user?.name || "User"}</h1>
+                                    <h1 className="text-3xl md:text-4xl font-bold font-sans text-[#FDF6E3]">{user?.name || "User"}</h1>
                                     <p className="text-[#FDF6E3]/80 text-base mt-1">{user?.email}</p>
                                 </div>
                             </div>
@@ -255,7 +255,7 @@ export default function AccountPage() {
                                                 <p className="text-xs text-[#6B4423]">Pending</p>
                                             </div>
                                             <div className="bg-white rounded-xl p-3 text-center border">
-                                                <p className="text-xl font-bold text-primary">₹{parseFloat(referralStats.totalEarnings || 0).toFixed(0)}</p>
+                                                <p className="text-xl font-bold text-primary">?{parseFloat(referralStats.totalEarnings || 0).toFixed(0)}</p>
                                                 <p className="text-xs text-[#6B4423]">Earnings</p>
                                             </div>
                                         </div>
@@ -269,3 +269,4 @@ export default function AccountPage() {
         </ProtectedRoute>
     );
 }
+

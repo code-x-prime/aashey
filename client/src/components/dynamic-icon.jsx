@@ -20,3 +20,4 @@ export function DynamicIcon({ name, className, ...props }) {
         </ClientOnly>
     );
 }
+

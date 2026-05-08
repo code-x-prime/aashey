@@ -22,9 +22,9 @@ import {
     RiStarLine,
 } from "react-icons/ri";
 
-/* ═══════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    SKELETON
-   ═══════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function ProductCardSkeleton() {
     return (
         <div className="bg-white overflow-hidden rounded-2xl animate-pulse border border-[#C9933A]/12">
@@ -51,9 +51,9 @@ function ListSkeleton() {
     );
 }
 
-/* ═══════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    FILTER SECTION ACCORDION
-   ═══════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function FilterSection({ title, isOpen, onToggle, children, hasActive }) {
     return (
         <div className="border-b border-[#C9933A]/10 last:border-b-0">
@@ -84,9 +84,9 @@ function FilterSection({ title, isOpen, onToggle, children, hasActive }) {
     );
 }
 
-/* ═══════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ACTIVE FILTER CHIP
-   ═══════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function FilterChip({ label, onRemove }) {
     return (
         <span className="inline-flex items-center gap-1 bg-[#3F1F00] text-[#FDF6E3] text-[11px] font-sans font-medium px-2.5 py-1 rounded-full">
@@ -98,9 +98,9 @@ function FilterChip({ label, onRemove }) {
     );
 }
 
-/* ═══════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CHECKBOX ITEM
-   ═══════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function CheckItem({ checked, label, onClick, color }) {
     return (
         <div
@@ -340,7 +340,7 @@ export default function ProductsListingContent() {
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#C9933A]/12 bg-[#FDF6E3]/50">
                 <div className="flex items-center gap-2">
                     <RiEqualizerLine className="w-4 h-4 text-[#C9933A]" />
-                    <span className="font-cormorant font-bold text-[#3F1F00] text-[16px]">Filters</span>
+                    <span className="font-sans font-bold text-[#3F1F00] text-[16px]">Filters</span>
                 </div>
                 <div className="flex items-center gap-2">
                     {hasActiveFilters && (
@@ -430,12 +430,12 @@ export default function ProductsListingContent() {
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C9933A]/20 backdrop-blur-sm border border-[#C9933A]/40 rounded-full text-[#C9933A] text-[11px] font-sans font-semibold tracking-wide w-fit mb-4">
                             <RiStarLine className="w-3 h-3" /> 100% Pure A2 Ghee
                         </div>
-                        <h1 className="font-cormorant text-3xl md:text-5xl font-bold text-[#FDF6E3] leading-tight mb-2">All Products</h1>
+                        <h1 className="font-sans text-3xl md:text-5xl font-bold text-[#FDF6E3] leading-tight mb-2">All Products</h1>
                         <p className="font-sans text-[13px] md:text-base text-[#FDF6E3]/70 leading-relaxed">Discover our collection of pure A2 ghee, handcrafted using the traditional Bilona method.</p>
                     </div>
                 </div>
                 <div className="md:hidden flex items-center justify-between mb-5">
-                    <p className="font-cormorant font-bold text-xl text-[#3F1F00]">{loading ? "Loading..." : `${pagination.total || 0} Products`}</p>
+                    <p className="font-sans font-bold text-xl text-[#3F1F00]">{loading ? "Loading..." : `${pagination.total || 0} Products`}</p>
                     <button onClick={() => setMobileFiltersOpen(true)} className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-sans text-[13px] font-medium transition-all ${hasActiveFilters ? "bg-[#3F1F00] text-[#FDF6E3] border-[#3F1F00]" : "bg-white text-[#3F1F00] border-[#C9933A]/30"}`}>
                         <RiFilterLine className="w-4 h-4" /> Filters {hasActiveFilters && <span className="bg-[#C9933A] text-[#3F1F00] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{[filters.search, filters.category, filters.subcategory, ...selectedColors, ...selectedSizes].filter(Boolean).length}</span>}
                     </button>
@@ -469,8 +469,8 @@ export default function ProductsListingContent() {
                                         <option value="newest">Featured</option>
                                         <option value="price-low">Price: Low to High</option>
                                         <option value="price-high">Price: High to Low</option>
-                                        <option value="name-asc">A → Z</option>
-                                        <option value="name-desc">Z → A</option>
+                                        <option value="name-asc">A â†’ Z</option>
+                                        <option value="name-desc">Z â†’ A</option>
                                         <option value="oldest">Oldest</option>
                                     </select>
                                 </div>
@@ -484,7 +484,7 @@ export default function ProductsListingContent() {
                                 {filters.subcategory && (() => { const cat = categories.find((c) => c.slug === filters.category); const sub = cat?.subCategories?.find((s) => s.slug === filters.subcategory); return <FilterChip label={sub?.name || filters.subcategory} onRemove={() => handleFilterChange("subcategory", "")} />; })()}
                                 {selectedColors.map((id) => <FilterChip key={id} label={colors.find((c) => c.id === id)?.name || id} onRemove={() => { setSelectedColors([]); handleFilterChange("color", ""); }} />)}
                                 {selectedSizes.map((id) => <FilterChip key={id} label={sizes.find((s) => s.id === id)?.display || sizes.find((s) => s.id === id)?.name || id} onRemove={() => { setSelectedSizes([]); handleFilterChange("size", ""); }} />)}
-                                {(filters.minPrice || filters.maxPrice) && <FilterChip label={`₹${filters.minPrice || 0} – ₹${filters.maxPrice || "∞"}`} onRemove={() => { handleFilterChange("minPrice", ""); handleFilterChange("maxPrice", ""); }} />}
+                                {(filters.minPrice || filters.maxPrice) && <FilterChip label={`â‚¹${filters.minPrice || 0} â€“ â‚¹${filters.maxPrice || "âˆž"}`} onRemove={() => { handleFilterChange("minPrice", ""); handleFilterChange("maxPrice", ""); }} />}
                                 <button onClick={clearFilters} className="font-sans text-[11px] font-semibold text-[#C9933A] hover:text-[#3F1F00] ml-1 transition-colors">Clear all</button>
                             </div>
                         )}
@@ -495,7 +495,7 @@ export default function ProductsListingContent() {
                         ) : products.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-[#C9933A]/12 text-center px-6">
                                 <div className="w-16 h-16 rounded-2xl bg-[#C9933A]/8 border border-[#C9933A]/15 flex items-center justify-center mb-4"><RiAlertLine className="w-7 h-7 text-[#C9933A]/60" /></div>
-                                <h2 className="font-cormorant font-bold text-2xl text-[#3F1F00] mb-2">No products found</h2>
+                                <h2 className="font-sans font-bold text-2xl text-[#3F1F00] mb-2">No products found</h2>
                                 <p className="font-sans text-[13px] text-[#8B6040] max-w-xs leading-relaxed mb-6">Try adjusting your filters or search term.</p>
                                 <button onClick={clearFilters} className="px-6 py-2.5 bg-[#3F1F00] text-white rounded-lg">Clear All Filters</button>
                             </div>
@@ -526,3 +526,4 @@ export default function ProductsListingContent() {
         </div>
     );
 }
+

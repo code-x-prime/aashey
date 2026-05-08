@@ -44,14 +44,14 @@ export default function ReturnPolicyPage() {
                 <div className="section-container max-w-4xl">
                     {/* Return Process */}
                     <div className="mb-12">
-                        <h2 className="font-cormorant text-2xl font-semibold text-[#3F1F00] text-center mb-8">Return Process</h2>
+                        <h2 className="font-sans text-2xl font-semibold text-[#3F1F00] text-center mb-8">Return Process</h2>
                         <div className="grid md:grid-cols-4 gap-5">
                             {returnSteps.map((item) => (
                                 <div key={item.step} className="text-center">
                                     <div className="w-14 h-14 bg-[#C9933A]/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <span className="font-cormorant font-bold text-xl text-[#C9933A]">{item.step}</span>
+                                        <span className="font-sans font-bold text-xl text-[#C9933A]">{item.step}</span>
                                     </div>
-                                    <h3 className="font-playfair font-semibold text-sm text-[#3F1F00] mb-1">{item.title}</h3>
+                                    <h3 className="font-sans font-semibold text-sm text-[#3F1F00] mb-1">{item.title}</h3>
                                     <p className="font-sans text-xs text-[#6B4423]">{item.description}</p>
                                 </div>
                             ))}
@@ -60,7 +60,7 @@ export default function ReturnPolicyPage() {
 
                     {/* Detailed Policy */}
                     <div className="prose prose-lg max-w-none">
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Return Eligibility</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Return Eligibility</h2>
                         <p className="mb-4">You can return products within 7 days of delivery if:</p>
                         <ul className="space-y-2 mb-8">
                             <li>Product is unused and in original packaging</li>
@@ -69,7 +69,7 @@ export default function ReturnPolicyPage() {
                             <li>Product was not damaged due to misuse</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Non-Returnable Items</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Non-Returnable Items</h2>
                         <p className="mb-4">The following items cannot be returned:</p>
                         <ul className="space-y-2 mb-8">
                             <li>Products damaged due to misuse or mishandling</li>
@@ -78,7 +78,7 @@ export default function ReturnPolicyPage() {
                             <li>Customized or special order products</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Refund Process</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Refund Process</h2>
                         <p className="mb-4">
                             Once we receive your returned product, our quality team will inspect it within 2-3 business days.
                         </p>
@@ -89,7 +89,7 @@ export default function ReturnPolicyPage() {
                             <li>Shipping charges are non-refundable (unless product is defective)</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Exchange Policy</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Exchange Policy</h2>
                         <p className="mb-4">
                             If you want to exchange a product for a different model or variant:
                         </p>
@@ -100,7 +100,7 @@ export default function ReturnPolicyPage() {
                             <li>Original shipping charges are non-refundable</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Damaged/Defective Products</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Damaged/Defective Products</h2>
                         <p className="mb-4">
                             If you receive a damaged or defective product:
                         </p>
@@ -111,7 +111,7 @@ export default function ReturnPolicyPage() {
                             <li>No questions asked - your satisfaction is our priority</li>
                         </ul>
 
-                        <h2 className="font-cormorant text-2xl font-bold mb-4">Contact Support</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Contact Support</h2>
                         <p className="mb-4">
                             For return requests or queries, contact us at:
                         </p>
@@ -126,3 +126,4 @@ export default function ReturnPolicyPage() {
         </div>
     );
 }
+

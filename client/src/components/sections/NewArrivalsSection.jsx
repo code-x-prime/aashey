@@ -13,9 +13,10 @@ export const NewArrivalsSection = () => {
                 products={newArrivals}
                 title="New Arrivals"
                 subtitle="Check out our latest products"
-                badge="🆕 Just Launched"
+                badge="ðŸ†• Just Launched"
                 viewAllLink="/products"
             />
         </div>
     );
 };
+

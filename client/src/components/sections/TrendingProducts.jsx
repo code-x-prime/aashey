@@ -14,7 +14,7 @@ export const TrendingProducts = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(4);
 
-  /* ── Fetch ─────────────────────────────────── */
+  /* â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -31,7 +31,7 @@ export const TrendingProducts = () => {
     fetchProducts();
   }, []);
 
-  /* ── Responsive slides-per-view ────────────── */
+  /* â”€â”€ Responsive slides-per-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const update = () => setSlidesPerView(window.innerWidth < 768 ? 2 : 4);
     update();
@@ -58,7 +58,7 @@ export const TrendingProducts = () => {
 
   if (error) return null;
 
-  /* ── Loading skeleton ───────────────────────── */
+  /* â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading) {
     return (
       <section className="py-10 md:py-14 bg-[#FDF6E3]">
@@ -94,14 +94,14 @@ export const TrendingProducts = () => {
     <section className="py-10 md:py-14 bg-[#FDF6E3] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* ── Header ────────────────────────────── */}
+        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
           <div>
             <span className="section-eyebrow flex items-center gap-1.5">
               <RiLineChartLine className="w-3.5 h-3.5 text-[#C9933A]" /> What&apos;s Hot
             </span>
             <h2 className="section-title mt-2">Trending Now</h2>
-            <p className="font-cormorant italic text-[#6B4423] text-lg mt-1">
+            <p className="font-sans italic text-[#6B4423] text-lg mt-1">
               Smart choices from our community
             </p>
             <div className="section-underline mt-4" />
@@ -127,7 +127,7 @@ export const TrendingProducts = () => {
           </div>
         </div>
 
-        {/* ── Carousel Track ────────────────────── */}
+        {/* â”€â”€ Carousel Track â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="relative">
           <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
@@ -149,11 +149,11 @@ export const TrendingProducts = () => {
             </div>
           </div>
 
-          {/* Right fade hint — mobile */}
+          {/* Right fade hint â€” mobile */}
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[#FDF6E3] to-transparent md:hidden" />
         </div>
 
-        {/* ── Mobile Bottom Controls removed as requested ─────────────── */}
+        {/* â”€â”€ Mobile Bottom Controls removed as requested â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">
@@ -171,3 +171,4 @@ export const TrendingProducts = () => {
 };
 
 export default TrendingProducts;
+

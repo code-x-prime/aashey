@@ -1,4 +1,4 @@
-﻿import { CheckCircle2, Star, ThumbsUp, Zap, Award, BadgeCheck } from "lucide-react";
+import { CheckCircle2, Star, ThumbsUp, Zap, Award, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -38,7 +38,7 @@ export const WhyChooseSection = () => {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Why Choose Us</span>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
+          <h2 className="font-sans text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
             Trusted by 50,000+ Customers
           </h2>
           <p className="text-[#6B4423]">
@@ -61,7 +61,7 @@ export const WhyChooseSection = () => {
 
         {/* Customer Reviews */}
         <div className="bg-muted rounded-2xl p-8 md:p-10">
-          <h3 className="font-display text-2xl font-bold text-foreground text-center mb-8">
+          <h3 className="font-sans text-2xl font-bold text-foreground text-center mb-8">
             What Our Customers Say
           </h3>
           <div className="grid md:grid-cols-3 gap-6">
@@ -99,3 +99,4 @@ export const WhyChooseSection = () => {
     </section>
   );
 };
+

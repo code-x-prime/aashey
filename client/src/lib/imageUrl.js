@@ -53,3 +53,4 @@ export const getCategoryImageUrl = (image) => {
 };
 
 export default getImageUrl;
+

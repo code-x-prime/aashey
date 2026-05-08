@@ -19,3 +19,4 @@ const Headtext = ({ text, className }) => {
 };
 
 export default Headtext;
+

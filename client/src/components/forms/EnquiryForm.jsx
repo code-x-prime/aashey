@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,7 @@ export const EnquiryForm = ({ productName = "", productUrl = "" }) => {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Send className="h-8 w-8 text-green-600" />
         </div>
-        <h3 className="font-display text-xl font-semibold text-green-800 mb-2">
+        <h3 className="font-sans text-xl font-semibold text-green-800 mb-2">
           Enquiry Sent Successfully!
         </h3>
         <p className="text-green-600">
@@ -196,3 +196,4 @@ export const EnquiryForm = ({ productName = "", productUrl = "" }) => {
     </form>
   );
 };
+

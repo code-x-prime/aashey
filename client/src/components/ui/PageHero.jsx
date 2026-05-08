@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 export const PageHero = ({ 
@@ -60,7 +60,7 @@ export const PageHero = ({
         )}
 
         {/* Title */}
-        <h1 className={`font-cormorant text-3xl md:text-4xl lg:text-5xl font-semibold mb-3 max-w-4xl ${
+        <h1 className={`font-sans text-3xl md:text-4xl lg:text-5xl font-semibold mb-3 max-w-4xl ${
           isLight ? "text-[#3F1F00]" : "text-[#FDF6E3]"
         }`}>
           {title}
@@ -80,3 +80,4 @@ export const PageHero = ({
 };
 
 export default PageHero;
+

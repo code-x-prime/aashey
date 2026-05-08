@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 const Headtext = ({ text, className }) => {
   return (
     <h2
-      className={`text-2xl md:text-3xl font-cormorant font-semibold tracking-tight text-brand-brown ${className}`}
+      className={`text-2xl md:text-3xl font-sans font-semibold tracking-tight text-brand-brown ${className}`}
     >
       <span className="relative inline-block">
         {text}
@@ -19,3 +19,4 @@ const Headtext = ({ text, className }) => {
 };
 
 export default Headtext;
+

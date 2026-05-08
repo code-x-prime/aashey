@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Instagram, Facebook, Youtube, Play, Heart, Users, ArrowRight } from "lucide-react";
 
@@ -123,3 +123,4 @@ export const SocialMediaSection = () => {
 };
 
 export default SocialMediaSection;
+

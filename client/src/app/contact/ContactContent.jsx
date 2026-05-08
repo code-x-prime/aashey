@@ -51,7 +51,7 @@ export default function ContactContent() {
                         <MessageSquare className="w-5 h-5" />
                         Get in Touch
                     </span>
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-cormorant font-bold text-[#3F1F00] mb-5 tracking-tight">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-sans font-bold text-[#3F1F00] mb-5 tracking-tight">
                         Contact <span className="text-[#C9933A]">Us</span>
                     </h1>
                     <p className="text-[#1A0A00] text-lg md:text-xl max-w-2xl mx-auto">
@@ -83,7 +83,7 @@ export default function ContactContent() {
                         </div>
                         <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Address</h3>
                         <p className="text-[#3F1F00] text-sm leading-relaxed">
-                            Village — Takali, Shiv Shakti Nagar, Chalisgaon, Dist — Jalgaon, Maharashtra — 424102
+                            Village â€” Takali, Shiv Shakti Nagar, Chalisgaon, Dist â€” Jalgaon, Maharashtra â€” 424102
                         </p>
                     </div>
                     <a href="https://www.facebook.com/share/18TMgfmNSR/" target="_blank" rel="noopener noreferrer" className="card-premium p-6 text-center hover:border-[#1877F2]/40 group transition-all">
@@ -91,14 +91,14 @@ export default function ContactContent() {
                             <RiFacebookCircleLine className="h-7 w-7 text-[#1877F2] group-hover:text-white" />
                         </div>
                         <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Facebook</h3>
-                        <p className="text-[#1877F2] font-semibold text-sm">@aashey</p>
+                        <p className="text-[#1877F2] font-semibold text-sm break-all">@aashey</p>
                     </a>
                     <a href="https://www.instagram.com/aashey.consumer.products?utm_source=qr&igsh=MThqY2JiNnpwOGc2bQ==" target="_blank" rel="noopener noreferrer" className="card-premium p-6 text-center hover:border-[#E1306C]/40 group transition-all">
                         <div className="w-14 h-14 bg-[#E1306C]/10 rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:bg-gradient-to-br group-hover:from-[#F58529] group-hover:via-[#E1306C] group-hover:to-[#833AB4] transition-colors">
                             <RiInstagramLine className="h-7 w-7 text-[#E1306C] group-hover:text-white" />
                         </div>
                         <h3 className="font-bold text-[#3F1F00] text-lg mb-1">Instagram</h3>
-                        <p className="text-[#E1306C] font-semibold text-sm">@aashey.consumer.products</p>
+                        <p className="text-[#E1306C] font-semibold text-sm break-all">@aashey.consumer.products</p>
                     </a>
                 </div>
             </section>
@@ -206,3 +206,4 @@ export default function ContactContent() {
         </div>
     );
 }
+

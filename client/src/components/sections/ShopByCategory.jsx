@@ -27,7 +27,7 @@ export function ShopByCategory() {
     fetchCategories();
   }, []);
 
-  /* ── Loading ─────────────────────────────────── */
+  /* â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading) {
     return (
       <section className="py-10 md:py-16 bg-[#3F1F00]">
@@ -58,16 +58,16 @@ export function ShopByCategory() {
     <section className="py-10 md:py-16 bg-[#3F1F00] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* ── Header ─────────────────────────────── */}
+        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
           <div>
             <span className="font-sans text-[10px] font-semibold tracking-[0.28em] uppercase text-[#C9933A]/60 flex items-center gap-2 mb-3">
               <RiGridLine className="w-3 h-3" /> Explore
             </span>
-            <h2 className="font-cormorant text-4xl md:text-5xl font-semibold text-[#FDF6E3] leading-tight">
+            <h2 className="font-sans text-4xl md:text-5xl font-semibold text-[#FDF6E3] leading-tight">
               Shop By Category
             </h2>
-            <p className="font-cormorant italic text-[#FDF6E3]/60 text-xl mt-1">
+            <p className="font-sans italic text-[#FDF6E3]/60 text-xl mt-1">
               Find your perfect ghee
             </p>
             <div className="w-12 h-px bg-gradient-to-r from-[#C9933A]/70 to-transparent mt-4" />
@@ -81,10 +81,10 @@ export function ShopByCategory() {
           )}
         </div>
 
-        {/* ── Bento Grid ─────────────────────────── */}
+        {/* â”€â”€ Bento Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-[180px] md:auto-rows-[200px] gap-3 md:gap-4">
 
-          {/* ── Featured card (tall, col+row span) ── */}
+          {/* â”€â”€ Featured card (tall, col+row span) â”€â”€ */}
           <CategoryCard
             category={featured}
             className="col-span-1 row-span-2 md:col-span-1 md:row-span-2"
@@ -93,7 +93,7 @@ export function ShopByCategory() {
             size="large"
           />
 
-          {/* ── Rest of cards ── */}
+          {/* â”€â”€ Rest of cards â”€â”€ */}
           {rest.map((cat, i) => (
             <CategoryCard
               key={cat.id}
@@ -106,7 +106,7 @@ export function ShopByCategory() {
           ))}
         </div>
 
-        {/* ── Mobile: View All ───────────────────── */}
+        {/* â”€â”€ Mobile: View All â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {categories.length > 7 && (
           <div className="mt-8 text-center md:hidden">
             <Link 
@@ -122,7 +122,7 @@ export function ShopByCategory() {
   );
 }
 
-/* ── Category Card ───────────────────────────────── */
+/* â”€â”€ Category Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function CategoryCard({ category, className = "", isHovered, onHover, size = "small" }) {
   return (
     <Link
@@ -169,7 +169,7 @@ function CategoryCard({ category, className = "", isHovered, onHover, size = "sm
       {/* Text content */}
       <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
         {/* Category name */}
-        <h3 className={`font-cormorant font-bold text-white leading-tight transition-colors duration-300 ${isHovered ? "text-[#C9933A]" : ""} ${size === "large" ? "text-2xl md:text-3xl" : "text-lg md:text-xl"}`}>
+        <h3 className={`font-sans font-bold text-white leading-tight transition-colors duration-300 ${isHovered ? "text-[#C9933A]" : ""} ${size === "large" ? "text-2xl md:text-3xl" : "text-lg md:text-xl"}`}>
           {category.name}
         </h3>
 
@@ -194,3 +194,4 @@ function CategoryCard({ category, className = "", isHovered, onHover, size = "sm
 }
 
 export default ShopByCategory;
+

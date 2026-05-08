@@ -75,7 +75,7 @@ const CartItem = React.memo(
             if (!size) size = item.size?.name;
 
             if (color && size) {
-                return `${color} • ${size}`;
+                return `${color} â€¢ ${size}`;
             } else if (color) {
                 return color;
             } else if (size) {
@@ -160,7 +160,7 @@ const CartItem = React.memo(
                                 </span>
                                 {item.priceSource === 'FLASH_SALE' && item.flashSale && (
                                     <span className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                                        ⚡ {item.flashSale.discountPercentage}% OFF
+                                        âš¡ {item.flashSale.discountPercentage}% OFF
                                     </span>
                                 )}
                                 {item.priceSource && item.priceSource !== "DEFAULT" && item.priceSource !== "FLASH_SALE" && (
@@ -194,7 +194,7 @@ const CartItem = React.memo(
                                 <Minus className="h-4 w-4" />
                             </button>
                         )}
-                        <span className="px-4 py-2 min-w-[3rem] text-center font-cormorant font-bold text-lg bg-white border-x border-[#C9933A]/25">
+                        <span className="px-4 py-2 min-w-[3rem] text-center font-sans font-bold text-lg bg-white border-x border-[#C9933A]/25">
                             {isLoading ? (
                                 <Loader2 className="h-4 w-4 animate-spin inline" />
                             ) : (
@@ -353,7 +353,7 @@ export default function CartPage() {
         // Ensure minimum amount is 1
         const calculatedAmount = totals.subtotal - totals.discount;
         if (calculatedAmount < 1) {
-            toast.info("Minimum order amount is ₹1");
+            toast.info("Minimum order amount is â‚¹1");
             return;
         }
 
@@ -366,7 +366,7 @@ export default function CartPage() {
         return (
             <div className="container mx-auto px-4 py-8 bg-[#FDF6E3] min-h-screen">
                 <div className="mb-8">
-                    <h1 className="font-cormorant text-3xl md:text-4xl font-semibold text-[#3F1F00] mb-2">
+                    <h1 className="font-sans text-3xl md:text-4xl font-semibold text-[#3F1F00] mb-2">
                         Your Cart
                     </h1>
                     <div className="w-20 h-1 bg-gradient-to-r from-[#C9933A] to-[#F0C96B]"></div>
@@ -383,7 +383,7 @@ export default function CartPage() {
         return (
             <div className="container mx-auto px-4 py-12 bg-[#FDF6E3] min-h-screen">
                 <div className="mb-8">
-                    <h1 className="font-cormorant text-3xl md:text-4xl font-semibold text-[#3F1F00] mb-2">
+                    <h1 className="font-sans text-3xl md:text-4xl font-semibold text-[#3F1F00] mb-2">
                         Your Cart
                     </h1>
                     <div className="w-20 h-1 bg-gradient-to-r from-[#C9933A] to-[#F0C96B]"></div>
@@ -392,7 +392,7 @@ export default function CartPage() {
                     <div className="inline-flex justify-center items-center bg-[#C9933A]/10 p-6 rounded-2xl mb-6">
                         <ShoppingBag className="h-16 w-16 text-[#C9933A]" />
                     </div>
-                    <h2 className="font-cormorant text-2xl font-semibold mb-3 text-[#3F1F00]">
+                    <h2 className="font-sans text-2xl font-semibold mb-3 text-[#3F1F00]">
                         Your cart is empty
                     </h2>
                     <p className=" text-[#3F1F00]/70 mb-8 text-base">
@@ -429,23 +429,23 @@ export default function CartPage() {
                 {/* Cart Items Section */}
                 <div className="lg:col-span-2">
                     <div className="mb-8">
-                        <h1 className="font-cormorant text-3xl md:text-4xl font-semibold text-[#3F1F00] mb-2">
+                        <h1 className="font-sans text-3xl md:text-4xl font-semibold text-[#3F1F00] mb-2">
                             Your Cart
                         </h1>
                         <div className="w-20 h-1 bg-gradient-to-r from-[#C9933A] to-[#F0C96B]"></div>
                     </div>
                     <div className="bg-white rounded-2xl shadow-md border border-[#C9933A]/20 overflow-hidden hover:shadow-lg transition-shadow duration-300">
                         <div className="hidden md:grid grid-cols-12 gap-4 p-4 border-b bg-gradient-to-r from-[#FDF6E3] to-[#FDF6E3]/80">
-                            <div className="col-span-6 font-sc text-xs tracking-[0.15em] uppercase text-[#3F1F00]">
+                            <div className="col-span-6 font-sans text-xs tracking-[0.15em] uppercase text-[#3F1F00]">
                                 Product
                             </div>
-                            <div className="col-span-2 font-sc text-xs tracking-[0.15em] uppercase text-[#3F1F00] text-center">
+                            <div className="col-span-2 font-sans text-xs tracking-[0.15em] uppercase text-[#3F1F00] text-center">
                                 Price
                             </div>
-                            <div className="col-span-2 font-sc text-xs tracking-[0.15em] uppercase text-[#3F1F00] text-center">
+                            <div className="col-span-2 font-sans text-xs tracking-[0.15em] uppercase text-[#3F1F00] text-center">
                                 Quantity
                             </div>
-                            <div className="col-span-2 font-sc text-xs tracking-[0.15em] uppercase text-[#3F1F00] text-center">
+                            <div className="col-span-2 font-sans text-xs tracking-[0.15em] uppercase text-[#3F1F00] text-center">
                                 Subtotal
                             </div>
                         </div>
@@ -470,7 +470,7 @@ export default function CartPage() {
                                     variant="outline"
                                     className="border-[#C9933A] text-[#3F1F00] hover:bg-[#C9933A] hover:text-[#3F1F00] transition-all duration-200 "
                                 >
-                                    ← Continue Shopping
+                                    â† Continue Shopping
                                 </Button>
                             </Link>
                         </div>
@@ -481,7 +481,7 @@ export default function CartPage() {
                 <div className="lg:col-span-1">
                     <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(63,31,0,0.08)] border border-[#C9933A]/15 p-3 md:p-6 sticky top-4 hover:shadow-lg transition-shadow duration-300">
                         <div className="mb-6">
-                            <h2 className="font-cormorant text-xl font-semibold text-[#3F1F00] mb-2">
+                            <h2 className="font-sans text-xl font-semibold text-[#3F1F00] mb-2">
                                 Cart Summary
                             </h2>
                             <div className="w-16 h-1 bg-[#C9933A]"></div>
@@ -520,7 +520,7 @@ export default function CartPage() {
                                             <p className="text-sm font-semibold text-green-700 mb-1">
                                                 {coupon.discountType === "PERCENTAGE"
                                                     ? `${coupon.discountValue}% off`
-                                                    : `₹${coupon.discountValue} off`}
+                                                    : `â‚¹${coupon.discountValue} off`}
                                             </p>
                                             {coupon.applicableSubtotal && (
                                                 <p className="text-xs text-green-600 mt-1">
@@ -679,7 +679,7 @@ export default function CartPage() {
                                         <ShoppingBag className="h-5 w-5" />
                                         Checkout
                                         <span className="ml-2 font-bold">
-                                            • {formatCurrency(totals.total)}
+                                            â€¢ {formatCurrency(totals.total)}
                                         </span>
                                     </>
                                 )}
@@ -708,3 +708,4 @@ export default function CartPage() {
         </div>
     );
 }
+

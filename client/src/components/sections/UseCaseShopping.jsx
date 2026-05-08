@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { ArrowRight, PartyPopper, Music2, Church, GraduationCap } from "lucide-react";
 
 const useCases = [
@@ -41,7 +41,7 @@ export const UseCaseShopping = () => {
           <p className="text-sm font-medium text-primary uppercase tracking-wide mb-2">
             Solutions For
           </p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground">
+          <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground">
             Shop by Use Case
           </h2>
         </div>
@@ -58,7 +58,7 @@ export const UseCaseShopping = () => {
                 <useCase.icon className="h-7 w-7 text-foreground" />
               </div>
               
-              <h3 className="font-display text-xl font-bold text-foreground mb-2">
+              <h3 className="font-sans text-xl font-bold text-foreground mb-2">
                 {useCase.title}
               </h3>
               <p className="text-[#6B4423] mb-4">
@@ -76,3 +76,4 @@ export const UseCaseShopping = () => {
     </section>
   );
 };
+

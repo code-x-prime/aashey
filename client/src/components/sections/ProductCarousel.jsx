@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRef } from "react";
 import Link from "next/link";
@@ -41,7 +41,7 @@ export const ProductCarousel = ({ products, title, subtitle, viewAllLink = "/pro
                                 {badge}
                             </span>
                         )}
-                        <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+                        <h2 className="font-sans text-2xl md:text-3xl font-bold text-foreground">
                             {title}
                         </h2>
                         {subtitle && (
@@ -156,3 +156,4 @@ export const ProductCarousel = ({ products, title, subtitle, viewAllLink = "/pro
         </section>
     );
 };
+

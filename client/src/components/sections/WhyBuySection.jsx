@@ -1,4 +1,4 @@
-﻿import { Factory, Shield, Headphones, Truck } from "lucide-react";
+import { Factory, Shield, Headphones, Truck } from "lucide-react";
 
 const features = [
   {
@@ -19,7 +19,7 @@ const features = [
   {
     icon: Truck,
     title: "Free Shipping",
-    description: "Free delivery across India on orders above ₹25,000. Fast and secure shipping."
+    description: "Free delivery across India on orders above ?25,000. Fast and secure shipping."
   }
 ];
 
@@ -32,7 +32,7 @@ export const WhyBuySection = () => {
           <p className="text-sm font-medium text-primary uppercase tracking-wide mb-2">
             Why Aashey
           </p>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="font-sans text-4xl md:text-5xl font-bold text-foreground mb-4">
             The Smart Choice
           </h2>
           <p className="text-lg text-[#6B4423]">
@@ -47,7 +47,7 @@ export const WhyBuySection = () => {
               <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6 group-hover:bg-primary transition-colors">
                 <feature.icon className="h-7 w-7 text-foreground group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-display text-xl font-bold text-foreground mb-3">
+              <h3 className="font-sans text-xl font-bold text-foreground mb-3">
                 {feature.title}
               </h3>
               <p className="text-[#6B4423] leading-relaxed">
@@ -60,3 +60,4 @@ export const WhyBuySection = () => {
     </section>
   );
 };
+

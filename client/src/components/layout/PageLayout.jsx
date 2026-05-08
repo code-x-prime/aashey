@@ -28,3 +28,4 @@ export const Section = ({ children, variant = "white", className = "" }) => {
     </section>
   );
 };
+

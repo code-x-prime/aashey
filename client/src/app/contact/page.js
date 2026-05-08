@@ -16,3 +16,4 @@ export const metadata = {
 export default function ContactPage() {
     return <ContactContent />;
 }
+

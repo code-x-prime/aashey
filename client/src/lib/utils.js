@@ -202,3 +202,4 @@ export async function fetchProductsByType(productType, limit = 8) {
     throw error;
   }
 }
+

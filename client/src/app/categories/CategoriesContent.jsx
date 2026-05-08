@@ -57,7 +57,7 @@ const CategoryCard = ({ category, index }) => {
                                     <Link href={`/products?category=${encodeURIComponent(category.slug)}&subcategory=${encodeURIComponent(sub.slug)}`} className="flex items-start gap-1.5 text-xs text-[#1A0A00] hover:text-[#C9933A]">
                                         <ArrowIcon className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                         <span className="font-medium">{sub.name}</span>
-                                        {sub.description && <span className="text-[10px] text-[#6B4423] line-clamp-1"> — {sub.description}</span>}
+                                        {sub.description && <span className="text-[10px] text-[#6B4423] line-clamp-1"> â€” {sub.description}</span>}
                                     </Link>
                                 </li>
                             ))}
@@ -116,7 +116,7 @@ export default function CategoriesContent() {
                         <GridIcon className="w-4 h-4" />
                         Browse Categories
                     </span>
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-cormorant font-bold text-[#3F1F00] mb-4">
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-sans font-bold text-[#3F1F00] mb-4">
                         Shop by <span className="text-[#C9933A]">Category</span>
                     </h1>
                     <p className="text-[#3F1F00] max-w-xl mx-auto">
@@ -218,3 +218,4 @@ export default function CategoriesContent() {
         </div>
     );
 }
+

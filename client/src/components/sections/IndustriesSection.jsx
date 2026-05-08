@@ -1,4 +1,4 @@
-﻿import { Music2, Radio, Mic2, PartyPopper, Building2, Truck } from "lucide-react";
+import { Music2, Radio, Mic2, PartyPopper, Building2, Truck } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -48,7 +48,7 @@ export const IndustriesSection = () => {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Shop By Use Case</span>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
+          <h2 className="font-sans text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
             Find the Perfect Sound System
           </h2>
           <p className="text-[#6B4423]">
@@ -89,3 +89,4 @@ export const IndustriesSection = () => {
     </section>
   );
 };
+

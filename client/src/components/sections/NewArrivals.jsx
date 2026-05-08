@@ -13,7 +13,7 @@ export function NewArrivals() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(4);
 
-  /* ── Fetch ─────────────────────────────────── */
+  /* â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -28,7 +28,7 @@ export function NewArrivals() {
     fetchProducts();
   }, []);
 
-  /* ── Responsive slides-per-view ────────────── */
+  /* â”€â”€ Responsive slides-per-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const update = () => setSlidesPerView(window.innerWidth < 768 ? 2 : 4);
     update();
@@ -46,7 +46,7 @@ export function NewArrivals() {
   const prev = () => setCurrentIndex((i) => Math.max(0, i - 1));
   const next = () => setCurrentIndex((i) => Math.min(maxIndex, i + 1));
 
-  /* ── Arrow style — inverted for dark bg ─────── */
+  /* â”€â”€ Arrow style â€” inverted for dark bg â”€â”€â”€â”€â”€â”€â”€ */
   const arrowCls = (enabled) =>
     `rounded-full border flex items-center justify-center transition-all duration-200 ${
       enabled
@@ -54,7 +54,7 @@ export function NewArrivals() {
         : "border-[#C9933A]/20 text-[#C9933A]/25 cursor-not-allowed"
     }`;
 
-  /* ── Loading skeleton ───────────────────────── */
+  /* â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading) {
     return (
       <section className="py-12 md:py-16 bg-[#092D15]">
@@ -77,16 +77,16 @@ export function NewArrivals() {
     <section className="py-12 md:py-16 bg-[#092D15] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* ── Header ────────────────────────────── */}
+        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12 md:mb-14">
           <div>
             <span className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-[#C9933A]/80 flex items-center gap-1.5 mb-2">
               <RiSparklingLine className="w-3.5 h-3.5" /> Just Dropped
             </span>
-            <h2 className="font-cormorant text-4xl md:text-5xl font-semibold text-[#FDF6E3] leading-tight">
+            <h2 className="font-sans text-4xl md:text-5xl font-semibold text-[#FDF6E3] leading-tight">
               New Arrivals
             </h2>
-            <p className="font-cormorant italic text-[#FDF6E3]/75 text-xl mt-1">
+            <p className="font-sans italic text-[#FDF6E3]/75 text-xl mt-1">
               Freshly crafted, just for you
             </p>
             <div className="w-12 h-0.5 bg-gradient-to-r from-[#C9933A]/60 to-transparent mt-4" />
@@ -112,7 +112,7 @@ export function NewArrivals() {
           </div>
         </div>
 
-        {/* ── Carousel Track ────────────────────── */}
+        {/* â”€â”€ Carousel Track â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="relative">
           <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
@@ -134,11 +134,11 @@ export function NewArrivals() {
             </div>
           </div>
 
-          {/* Right fade — dark bg */}
+          {/* Right fade â€” dark bg */}
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[#092D15] to-transparent md:hidden" />
         </div>
 
-        {/* ── Mobile Bottom Controls removed as requested ─────────────── */}
+        {/* â”€â”€ Mobile Bottom Controls removed as requested â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 
         {/* Mobile + Desktop bottom: View All */}
         <div className="text-center mt-10 md:mt-12">
@@ -156,3 +156,4 @@ export function NewArrivals() {
 }
 
 export default NewArrivals;
+

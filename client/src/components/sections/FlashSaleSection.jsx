@@ -39,11 +39,11 @@ const CountdownTimer = ({ endTime }) => {
     const TimeBlock = ({ value, label }) => (
         <div className="flex flex-col items-center">
             <div className="bg-[#FDF6E3]/10 rounded-2xl px-4 py-3 min-w-[60px]">
-                <span className="font-cormorant text-4xl md:text-5xl font-bold text-[#C9933A] block text-center">
+                <span className="font-sans text-4xl md:text-5xl font-bold text-[#C9933A] block text-center">
                     {String(value).padStart(2, '0')}
                 </span>
             </div>
-            <span className="font-sc text-xs text-[#FDF6E3]/80 tracking-widest mt-1.5 uppercase">{label}</span>
+            <span className="font-sans text-xs text-[#FDF6E3]/80 tracking-widest mt-1.5 uppercase">{label}</span>
         </div>
     );
 
@@ -52,13 +52,13 @@ const CountdownTimer = ({ endTime }) => {
             {timeLeft.days > 0 && (
                 <>
                     <TimeBlock value={timeLeft.days} label="Days" />
-                    <span className="font-cormorant text-3xl font-bold text-[#C9933A]">:</span>
+                    <span className="font-sans text-3xl font-bold text-[#C9933A]">:</span>
                 </>
             )}
             <TimeBlock value={timeLeft.hours} label="Hours" />
-            <span className="font-cormorant text-3xl font-bold text-[#C9933A]">:</span>
+            <span className="font-sans text-3xl font-bold text-[#C9933A]">:</span>
             <TimeBlock value={timeLeft.minutes} label="Mins" />
-            <span className="font-cormorant text-3xl font-bold text-[#C9933A]">:</span>
+            <span className="font-sans text-3xl font-bold text-[#C9933A]">:</span>
             <TimeBlock value={timeLeft.seconds} label="Secs" />
         </div>
     );
@@ -188,8 +188,8 @@ export function FlashSaleSection() {
                     <span className="section-eyebrow">Limited Time</span>
 
                     {/* Title */}
-                    <h2 className="font-cormorant text-5xl md:text-6xl font-semibold text-[#FDF6E3] mt-3 mb-2">
-                        ⚡ Flash Sale
+                    <h2 className="font-sans text-5xl md:text-6xl font-semibold text-[#FDF6E3] mt-3 mb-2">
+                        âš¡ Flash Sale
                     </h2>
                     <p className="font-sans text-[#FDF6E3]/70 mb-8 text-base">{currentSale.name}</p>
 
@@ -197,7 +197,7 @@ export function FlashSaleSection() {
                     <div className="inline-flex flex-col items-center gap-4">
                         <div className="flex items-center gap-2 text-[#FDF6E3]">
                             <Timer className="w-4 h-4 text-[#C9933A]" />
-                            <span className="font-sc text-xs tracking-widest uppercase text-[#FDF6E3]/70">Hurry! Offer ends in</span>
+                            <span className="font-sans text-xs tracking-widest uppercase text-[#FDF6E3]/70">Hurry! Offer ends in</span>
                         </div>
                         <CountdownTimer endTime={currentSale.endTime} />
                     </div>
@@ -233,3 +233,4 @@ export function FlashSaleSection() {
 }
 
 export default FlashSaleSection;
+

@@ -1,4 +1,4 @@
-﻿import { ArrowRight, Speaker, Radio, Music2, Headphones, Mic2, Volume1 } from "lucide-react";
+import { ArrowRight, Speaker, Radio, Music2, Headphones, Mic2, Volume1 } from "lucide-react";
 import Link from "next/link";
 
 const productCategories = [
@@ -65,7 +65,7 @@ export const ProductsSection = () => {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Our Products</span>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
+          <h2 className="font-sans text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
             Comprehensive Range of P.A Equipment
           </h2>
           <p className="text-[#6B4423]">
@@ -85,7 +85,7 @@ export const ProductsSection = () => {
               <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary transition-colors">
                 <product.icon className="h-7 w-7 text-primary group-hover:text-primary-foreground transition-colors" />
               </div>
-              <h3 className="font-display font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
+              <h3 className="font-sans font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
                 {product.name}
               </h3>
               <p className="text-sm text-[#6B4423] mb-4">
@@ -113,3 +113,4 @@ export const ProductsSection = () => {
     </section>
   );
 };
+

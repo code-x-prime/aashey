@@ -18,31 +18,31 @@
   }
 
   h1 {
-    font-family: var(--font-cormorant), serif;
-    font-weight: 600;
+    font-family: var(--font-poppins), sans-serif;
+    font-weight: 700;
     font-size: clamp(3rem, 7vw, 6rem);
     line-height: 1.05;
     letter-spacing: -0.02em;
     color: #3F1F00;
   }
   h2 {
-    font-family: var(--font-cormorant), serif;
-    font-weight: 600;
+    font-family: var(--font-poppins), sans-serif;
+    font-weight: 700;
     font-size: clamp(2.25rem, 5vw, 4rem);
     line-height: 1.1;
     letter-spacing: -0.015em;
     color: #3F1F00;
   }
   h3 {
-    font-family: var(--font-playfair), serif;
+    font-family: var(--font-poppins), sans-serif;
     font-weight: 600;
     font-size: clamp(1.35rem, 2.5vw, 1.875rem);
     line-height: 1.25;
     color: #3F1F00;
   }
   h4, h5, h6 {
-    font-family: var(--font-playfair), serif;
-    font-weight: 500;
+    font-family: var(--font-poppins), sans-serif;
+    font-weight: 600;
     color: #3F1F00;
   }
   p {
@@ -88,13 +88,13 @@
 
   /* ── SECTION TITLE SYSTEM ── */
   .section-title {
-    @apply font-cormorant font-semibold 
+    @apply font-sans font-bold 
            text-4xl md:text-5xl lg:text-6xl 
            text-[#3F1F00] leading-tight tracking-tight;
   }
   .section-subtitle {
-    @apply font-cormorant italic text-xl md:text-2xl 
-           text-[#C9933A] font-normal leading-relaxed;
+    @apply font-sans text-xl md:text-2xl 
+           text-[#C9933A] font-medium leading-relaxed;
   }
   .section-eyebrow {
     @apply font-sans text-xs md:text-sm tracking-[0.2em] 
@@ -168,11 +168,11 @@
     @apply p-5 space-y-2;
   }
   .product-card-name {
-    @apply font-playfair font-bold text-xl 
+    @apply font-sans font-bold text-xl 
            text-[#3F1F00] leading-snug;
   }
   .product-card-price {
-    @apply font-playfair font-bold text-2xl 
+    @apply font-sans font-bold text-2xl 
            text-[#C9933A];
   }
   .product-card-btn {
@@ -225,12 +225,12 @@
            bg-[#3F1F00] overflow-hidden;
   }
   .page-hero-title {
-    @apply font-cormorant font-semibold 
+    @apply font-sans font-bold 
            text-5xl md:text-7xl text-[#FDF6E3] 
            leading-tight tracking-tight text-center;
   }
   .page-hero-sub {
-    @apply font-cormorant italic text-xl md:text-2xl
+    @apply font-sans text-xl md:text-2xl
            text-[#C9933A] text-center mt-4;
   }
 

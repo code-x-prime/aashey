@@ -14,12 +14,12 @@ export const CTASection = () => {
       <div className="section-container relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
+            <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
               Ready to Experience{" "}
               <span className="text-primary">Premium Sound?</span>
             </h2>
             <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
-              Shop now and get free shipping on orders above ₹25,000. 
+              Shop now and get free shipping on orders above â‚¹25,000. 
               1 year warranty on all products.
             </p>
           </div>
@@ -40,7 +40,7 @@ export const CTASection = () => {
               <Truck className="h-6 w-6 text-primary" />
               <div>
                 <p className="text-white font-medium">Free Shipping</p>
-                <p className="text-white/60 text-sm">On orders ₹25,000+</p>
+                <p className="text-white/60 text-sm">On orders â‚¹25,000+</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -63,3 +63,4 @@ export const CTASection = () => {
     </section>
   );
 };
+

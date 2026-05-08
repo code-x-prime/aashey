@@ -143,7 +143,7 @@ export default function ReturnsPage() {
                                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
                                             <div className="flex items-center gap-3">
                                                 <p className="font-semibold text-[#1A0A00]">Order #{req.order.orderNumber}</p>
-                                                <span className="text-gray-300">·</span>
+                                                <span className="text-gray-300">Â·</span>
                                                 <p className="text-sm text-[#5C3A1E]">{formatDate(req.createdAt)}</p>
                                             </div>
                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border ${cfg.color}`}>
@@ -173,7 +173,7 @@ export default function ReturnsPage() {
                                                         {req.orderItem?.product?.name || "Product"}
                                                     </p>
                                                     <p className="text-sm text-[#5C3A1E]">
-                                                        Qty: {req.orderItem?.quantity} ×{" "}
+                                                        Qty: {req.orderItem?.quantity} Ã—{" "}
                                                         {formatCurrency(req.orderItem?.price)}
                                                     </p>
 
@@ -273,3 +273,4 @@ export default function ReturnsPage() {
         </ProtectedRoute>
     );
 }
+

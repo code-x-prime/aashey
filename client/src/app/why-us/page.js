@@ -3,8 +3,8 @@ import Link from "next/link";
 import { TestimonialsCarousel } from "@/components/sections/TestimonialsCarousel";
 
 export const metadata = {
-    title: "Why Choose Aashey | Pure A2 Cow Ghee – More Than Ghee, A Commitment",
-    description: "Choosing ghee is about trust. Discover why thousands of families choose Aashey — small-batch, Bilona-churned, A2 milk, zero preservatives.",
+    title: "Why Choose Aashey | Pure A2 Cow Ghee â€“ More Than Ghee, A Commitment",
+    description: "Choosing ghee is about trust. Discover why thousands of families choose Aashey â€” small-batch, Bilona-churned, A2 milk, zero preservatives.",
 };
 
 const commitments = [
@@ -18,12 +18,12 @@ const commitments = [
         icon: Droplets,
         title: "Traditional Bilona Method",
         tagline: "Curd-churning, not cream shortcuts.",
-        description: "We hand-churn curd the ancient way — not the industrial cream method. This preserves the natural aroma, granular texture, and true nutrition of A2 ghee.",
+        description: "We hand-churn curd the ancient way â€” not the industrial cream method. This preserves the natural aroma, granular texture, and true nutrition of A2 ghee.",
     },
     {
         icon: Leaf,
         title: "Indigenous A2 Cow Milk",
-        tagline: "Gir, Sahiwal, Tharparkar — pure.",
+        tagline: "Gir, Sahiwal, Tharparkar â€” pure.",
         description: "We source only from trusted local farmers raising indigenous Indian cows. No mixing with A1 or buffalo milk. Ever. Direct farm tie-ups ensure traceability.",
     },
     {
@@ -36,13 +36,13 @@ const commitments = [
         icon: FlaskConical,
         title: "No Compromise Policy",
         tagline: "Zero preservatives. Zero additives.",
-        description: "No preservatives, no artificial flavoring, no additives of any kind. What goes into our ghee is A2 milk curd — and nothing else.",
+        description: "No preservatives, no artificial flavoring, no additives of any kind. What goes into our ghee is A2 milk curd â€” and nothing else.",
     },
     {
         icon: Heart,
         title: "A Mother's Foundation",
         tagline: "Built on the intention to serve the best.",
-        description: "AASHEY was founded in 2020 by Smt. Asha Deshmukh at age 64 — not to build a business, but to serve her family. That intent shapes every jar we fill.",
+        description: "AASHEY was founded in 2020 by Smt. Asha Deshmukh at age 64 â€” not to build a business, but to serve her family. That intent shapes every jar we fill.",
     },
 ];
 
@@ -50,7 +50,7 @@ const reasons = [
     {
         icon: Beaker,
         title: "Lab Tested Every Batch",
-        description: "Every batch undergoes rigorous lab testing for purity, fat content, and adulteration — and the report is included with your order.",
+        description: "Every batch undergoes rigorous lab testing for purity, fat content, and adulteration â€” and the report is included with your order.",
     },
     {
         icon: Award,
@@ -59,13 +59,13 @@ const reasons = [
     },
     {
         icon: Truck,
-        title: "Free Delivery ₹999+",
-        description: "Free delivery across India on orders above ₹999. Secure, insulated packaging to preserve freshness during transit.",
+        title: "Free Delivery â‚¹999+",
+        description: "Free delivery across India on orders above â‚¹999. Secure, insulated packaging to preserve freshness during transit.",
     },
     {
         icon: Droplets,
         title: "Authentic Granular Texture",
-        description: "Real Bilona ghee solidifies with a natural grainy texture at room temperature. That granularity is the proof of purity — you can see it.",
+        description: "Real Bilona ghee solidifies with a natural grainy texture at room temperature. That granularity is the proof of purity â€” you can see it.",
     },
 ];
 
@@ -80,7 +80,7 @@ export default function WhyUsPage() {
     return (
         <div className="min-h-screen bg-[#FDF6E3]">
 
-            {/* ── HERO ── */}
+            {/* â”€â”€ HERO â”€â”€ */}
             <section className="relative bg-[#3F1F00] py-10 md:py-16 overflow-hidden">
                 <div className="absolute inset-0 opacity-[0.04]"
                     style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #C9933A 1px, transparent 0)", backgroundSize: "32px 32px" }}
@@ -90,24 +90,24 @@ export default function WhyUsPage() {
                         <Award className="w-4 h-4 text-[#C9933A]" />
                         <span className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#C9933A]">Why Aashey</span>
                     </span>
-                    <h1 className="font-cormorant text-5xl md:text-6xl lg:text-7xl font-bold text-[#FDF6E3] leading-tight mb-4">
+                    <h1 className="font-sans text-5xl md:text-6xl lg:text-7xl font-bold text-[#FDF6E3] leading-tight mb-4">
                         More Than Ghee.<br />
                         <span className="text-[#C9933A] italic">A Commitment to Purity.</span>
                     </h1>
                     <p className="font-sans text-[#FDF6E3]/65 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-                        Choosing ghee is not just about taste — it is about trust. Here is why thousands
+                        Choosing ghee is not just about taste â€” it is about trust. Here is why thousands
                         of families choose Aashey, every single day.
                     </p>
                 </div>
             </section>
 
-            {/* ── STATS ── */}
+            {/* â”€â”€ STATS â”€â”€ */}
             <section className="bg-[#092D15] py-10 md:py-12">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                         {stats.map((stat, i) => (
                             <div key={i} className="py-2">
-                                <p className="font-playfair text-3xl md:text-4xl font-bold text-[#C9933A] leading-none mb-2">{stat.value}</p>
+                                <p className="font-sans text-3xl md:text-4xl font-bold text-[#C9933A] leading-none mb-2">{stat.value}</p>
                                 <p className="font-sans text-sm text-[#FDF6E3]/65">{stat.label}</p>
                             </div>
                         ))}
@@ -115,12 +115,12 @@ export default function WhyUsPage() {
                 </div>
             </section>
 
-            {/* ── 6 CORE COMMITMENTS ── */}
+            {/* â”€â”€ 6 CORE COMMITMENTS â”€â”€ */}
             <section className="py-16 md:py-24">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
                     <div className="text-center mb-14">
                         <span className="font-sans text-xs font-semibold tracking-[0.2em] text-[#C9933A] uppercase block mb-4">Our Promise</span>
-                        <h2 className="font-cormorant text-4xl md:text-5xl font-bold text-[#3F1F00] leading-tight">
+                        <h2 className="font-sans text-4xl md:text-5xl font-bold text-[#3F1F00] leading-tight">
                             What Sets Aashey Apart
                         </h2>
                         <div className="w-14 h-0.5 bg-[#C9933A] mx-auto mt-5 mb-5" />
@@ -141,7 +141,7 @@ export default function WhyUsPage() {
                                         <item.icon className="h-5 w-5 text-[#C9933A] group-hover:text-[#3F1F00] transition-colors duration-300" />
                                     </div>
                                     <div>
-                                        <h3 className="font-playfair font-bold text-[#3F1F00] text-lg leading-snug">{item.title}</h3>
+                                        <h3 className="font-sans font-bold text-[#3F1F00] text-lg leading-snug">{item.title}</h3>
                                         <p className="font-sans text-xs font-semibold text-[#C9933A] mt-0.5">{item.tagline}</p>
                                     </div>
                                 </div>
@@ -160,7 +160,7 @@ export default function WhyUsPage() {
                             ].map((phrase, i) => (
                                 <div key={i} className="flex items-center gap-2">
                                     <CheckCircle className="w-4 h-4 text-[#C9933A] flex-shrink-0" />
-                                    <span className="font-playfair italic text-[#FDF6E3] text-lg">{phrase}</span>
+                                    <span className="font-sans italic text-[#FDF6E3] text-lg">{phrase}</span>
                                 </div>
                             ))}
                         </div>
@@ -168,12 +168,12 @@ export default function WhyUsPage() {
                 </div>
             </section>
 
-            {/* ── 4 ADDITIONAL REASONS ── */}
+            {/* â”€â”€ 4 ADDITIONAL REASONS â”€â”€ */}
             <section className="py-14 md:py-18 bg-white">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
                     <div className="text-center mb-12">
                         <span className="font-sans text-xs font-semibold tracking-[0.2em] text-[#C9933A] uppercase block mb-4">Also Worth Knowing</span>
-                        <h2 className="font-cormorant text-3xl md:text-4xl font-bold text-[#3F1F00]">
+                        <h2 className="font-sans text-3xl md:text-4xl font-bold text-[#3F1F00]">
                             Built for Your Peace of Mind
                         </h2>
                         <div className="w-14 h-0.5 bg-[#C9933A] mx-auto mt-5" />
@@ -184,7 +184,7 @@ export default function WhyUsPage() {
                                 <div className="w-10 h-10 bg-[#C9933A]/10 rounded-lg flex items-center justify-center mb-4">
                                     <r.icon className="h-5 w-5 text-[#C9933A]" />
                                 </div>
-                                <h3 className="font-playfair font-semibold text-[#3F1F00] text-base mb-2">{r.title}</h3>
+                                <h3 className="font-sans font-semibold text-[#3F1F00] text-base mb-2">{r.title}</h3>
                                 <p className="font-sans text-sm text-[#5C3A1E] leading-relaxed">{r.description}</p>
                             </div>
                         ))}
@@ -192,19 +192,19 @@ export default function WhyUsPage() {
                 </div>
             </section>
 
-            {/* ── TESTIMONIALS ── */}
+            {/* â”€â”€ TESTIMONIALS â”€â”€ */}
             <TestimonialsCarousel bg="cream" showStats={false} />
 
-            {/* ── CTA ── */}
+            {/* â”€â”€ CTA â”€â”€ */}
             <section className="py-14 md:py-16 bg-[#3F1F00]">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 text-center">
                     <span className="font-sans text-xs font-semibold tracking-[0.2em] text-[#C9933A] uppercase block mb-4">Make the Switch</span>
-                    <h2 className="font-cormorant text-3xl md:text-4xl font-bold text-[#FDF6E3] mb-3 leading-tight">
+                    <h2 className="font-sans text-3xl md:text-4xl font-bold text-[#FDF6E3] mb-3 leading-tight">
                         Ready to Experience Pure A2 Ghee?
                     </h2>
                     <p className="font-sans text-[#FDF6E3]/60 text-sm max-w-xl mx-auto mb-8 leading-relaxed">
                         Join thousands of families who have made the switch.
-                        Free delivery on orders above ₹999.
+                        Free delivery on orders above â‚¹999.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link href="/products" className="btn-gold gap-2 inline-flex items-center justify-center">
@@ -220,3 +220,4 @@ export default function WhyUsPage() {
         </div>
     );
 }
+

@@ -21,8 +21,9 @@ export const TrendingSection = () => {
             products={trending.length > 0 ? trending : initialProducts}
             title="Trending Now"
             subtitle="Popular picks from our customers"
-            badge="🔥 Hot"
+            badge="ðŸ”¥ Hot"
             viewAllLink="/products"
         />
     );
 };
+

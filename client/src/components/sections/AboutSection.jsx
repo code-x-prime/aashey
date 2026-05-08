@@ -1,4 +1,4 @@
-﻿import { ShoppingBag, Truck, Shield, Headphones,  CreditCard } from "lucide-react";
+import { ShoppingBag, Truck, Shield, Headphones,  CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -6,7 +6,7 @@ const features = [
   {
     icon: Truck,
     title: "Free Shipping",
-    description: "Free delivery on orders above ₹25,000",
+    description: "Free delivery on orders above ?25,000",
   },
   {
     icon: Shield,
@@ -39,7 +39,7 @@ export const AboutSection = () => {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Why Shop With Us</span>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
+          <h2 className="font-sans text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
             India&apos;s Trusted Audio Equipment Store
           </h2>
           <p className="text-[#6B4423] text-lg">
@@ -65,7 +65,7 @@ export const AboutSection = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <p className="text-3xl md:text-4xl font-display font-bold text-primary">{stat.value}</p>
+                <p className="text-3xl md:text-4xl font-sans font-bold text-primary">{stat.value}</p>
                 <p className="text-white/70 text-sm mt-1">{stat.label}</p>
               </div>
             ))}
@@ -85,3 +85,4 @@ export const AboutSection = () => {
     </section>
   );
 };
+

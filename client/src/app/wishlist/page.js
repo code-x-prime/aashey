@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -78,7 +78,7 @@ export default function WishlistPage() {
                             <Heart className="w-4 h-4" />
                             My Wishlist
                         </span>
-                        <h1 className="text-3xl md:text-4xl font-cormorant font-bold text-[#1A0A00]">
+                        <h1 className="text-3xl md:text-4xl font-sans font-bold text-[#1A0A00]">
                             Saved Items
                         </h1>
                         <p className="text-[#5C3A1E] mt-2">
@@ -141,3 +141,4 @@ export default function WishlistPage() {
         </ClientOnly>
     );
 }
+

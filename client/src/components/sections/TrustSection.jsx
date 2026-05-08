@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Truck, Shield, RotateCcw, CreditCard, Headphones, Award } from "lucide-react";
 
@@ -6,7 +6,7 @@ const trustItems = [
   {
     icon: Truck,
     title: "Free Shipping",
-    description: "Free delivery on orders above ₹999",
+    description: "Free delivery on orders above ?999",
   },
   {
     icon: Shield,
@@ -51,3 +51,4 @@ export function TrustSection() {
 }
 
 export default TrustSection;
+

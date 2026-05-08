@@ -1,4 +1,4 @@
-﻿import { Music2, PartyPopper, Building2, Church, School, Truck, ArrowRight } from "lucide-react";
+import { Music2, PartyPopper, Building2, Church, School, Truck, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/ui/PageHero";
@@ -77,7 +77,7 @@ export default function IndustriesPage() {
                                 <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary transition-colors">
                                     <industry.icon className="h-8 w-8 text-primary group-hover:text-white transition-colors" />
                                 </div>
-                                <h3 className="font-cormorant font-bold text-xl text-foreground mb-3">
+                                <h3 className="font-sans font-bold text-xl text-foreground mb-3">
                                     {industry.name}
                                 </h3>
                                 <p className="text-[#6B4423] mb-6 leading-relaxed">
@@ -105,7 +105,7 @@ export default function IndustriesPage() {
             <section className="bg-muted/30 section-padding">
                 <div className="section-container">
                     <div className="max-w-3xl mx-auto text-center">
-                        <h2 className="font-cormorant text-3xl font-bold text-foreground mb-4">
+                        <h2 className="font-sans text-3xl font-bold text-foreground mb-4">
                             Need Help Choosing?
                         </h2>
                         <p className="text-lg text-[#6B4423] mb-8">
@@ -129,3 +129,4 @@ export default function IndustriesPage() {
         </div>
     );
 }
+

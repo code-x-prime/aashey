@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -71,9 +71,9 @@ function VerifyOtpContent() {
                 {/* Brand */}
                 <div className="text-center mb-8">
                     <Link href="/">
-                        <h1 className="font-cormorant italic text-4xl font-bold text-[#C9933A]">AASHEY</h1>
+                        <h1 className="font-sans italic text-4xl font-bold text-[#C9933A]">AASHEY</h1>
                     </Link>
-                    <p className="font-sc text-xs tracking-[0.2em] text-[#6B4423] uppercase mt-1">Pure A2 Cow Ghee</p>
+                    <p className="font-sans text-xs tracking-[0.2em] text-[#6B4423] uppercase mt-1">Pure A2 Cow Ghee</p>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(63,31,0,0.08)] border border-[#C9933A]/15 p-8 space-y-6">
@@ -81,7 +81,7 @@ function VerifyOtpContent() {
                         <div className="w-14 h-14 bg-[#C9933A]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Shield className="w-7 h-7 text-[#C9933A]" />
                         </div>
-                        <h1 className="font-cormorant text-2xl font-semibold text-[#3F1F00]">Verify Email</h1>
+                        <h1 className="font-sans text-2xl font-semibold text-[#3F1F00]">Verify Email</h1>
                         <p className="font-sans text-sm text-[#5C3A1E] mt-2">
                             Enter the 6-digit OTP sent to your email
                         </p>
@@ -117,7 +117,7 @@ function VerifyOtpContent() {
                                 onChange={(e) => setOtp(e.target.value.replace(/[^\d]/g, ""))}
                                 placeholder="Enter 6-digit OTP"
                                 required
-                                className="brand-input text-center font-cormorant text-2xl tracking-[0.5em]"
+                                className="brand-input text-center font-sans text-2xl tracking-[0.5em]"
                             />
                         </div>
 
@@ -156,3 +156,4 @@ export default function VerifyOtpPage() {
         </Suspense>
     );
 }
+
