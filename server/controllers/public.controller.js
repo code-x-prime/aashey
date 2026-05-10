@@ -174,7 +174,11 @@ export const getBrandBySlug = asyncHandler(async (req, res) => {
         },
       },
     },
-    orderBy: [{ [sort]: order }],
+    orderBy: [
+      sort === "price"
+        ? { variants: { _min: { price: order } } }
+        : { [sort]: order }
+    ],
     skip: (parseInt(page) - 1) * parseInt(limit),
     take: parseInt(limit),
   });

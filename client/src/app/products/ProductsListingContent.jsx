@@ -328,7 +328,7 @@ export default function ProductsListingContent() {
 
     const handleSortChange = (e) => {
         const v = e.target.value;
-        const map = { newest: ["createdAt", "desc"], oldest: ["createdAt", "asc"], "price-low": ["createdAt", "asc"], "price-high": ["createdAt", "desc"], "name-asc": ["name", "asc"], "name-desc": ["name", "desc"] };
+        const map = { newest: ["createdAt", "desc"], oldest: ["createdAt", "asc"], "price-low": ["price", "asc"], "price-high": ["price", "desc"], "name-asc": ["name", "asc"], "name-desc": ["name", "desc"] };
         const [sort, order] = map[v] || ["createdAt", "desc"];
         const nf = { ...filters, sort, order }; setFilters(nf); updateURL(nf);
     };

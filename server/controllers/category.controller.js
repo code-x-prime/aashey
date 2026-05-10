@@ -168,7 +168,12 @@ export const getProductsByCategory = asyncHandler(async (req, res) => {
         },
       },
     },
-    orderBy: [{ ourProduct: "desc" }, { [sort]: order }],
+    orderBy: [
+      { ourProduct: "desc" },
+      sort === "price"
+        ? { variants: { _min: { price: order } } }
+        : { [sort]: order }
+    ],
     skip: (parseInt(page) - 1) * parseInt(limit),
     take: parseInt(limit),
   });
