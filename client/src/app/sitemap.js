@@ -16,7 +16,7 @@ export default async function sitemap() {
     "/categories",
     "/products",
   ].map((route) => ({
-    url: `${baseUrl}${route}`,
+    url: route === "" ? `${baseUrl}/` : `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: "daily",
     priority: route === "" ? 1 : 0.8,

@@ -66,9 +66,7 @@ export const metadata = {
     address: false,
     telephone: false,
   },
-  alternates: {
-    canonical: "/",
-  },
+
   openGraph: {
     title: "AASHEY | Pure A2 Cow Ghee — Traditionally Bilona Crafted",
     description:
