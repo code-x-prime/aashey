@@ -134,6 +134,7 @@ export default function ProductsListingContent() {
     const sortParam = searchParams.get("sort") || "createdAt";
     const orderParam = searchParams.get("order") || "desc";
     const viewMode = searchParams.get("view") || "grid";
+    const attributeValueIdsParam = searchParams.get("attributeValueIds") || "";
 
     const handleViewChange = (mode) => {
         const p = new URLSearchParams(searchParams.toString());
@@ -160,7 +161,16 @@ export default function ProductsListingContent() {
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const [selectedColors, setSelectedColors] = useState(colorId ? [colorId] : []);
     const [selectedSizes, setSelectedSizes] = useState(sizeId ? [sizeId] : []);
-    const [selectedAttributes, setSelectedAttributes] = useState({});
+    const [selectedAttributes, setSelectedAttributes] = useState(() => {
+        const initial = {};
+        if (attributeValueIdsParam) {
+            // We'll refine this once allAttributes are loaded, 
+            // but for now we store them in a special 'loaded' key or similar
+            // Actually, better to just store them and let the UI match them by ID
+            initial["_url_ids"] = attributeValueIdsParam.split(",");
+        }
+        return initial;
+    });
     const [maxPossiblePrice, setMaxPossiblePrice] = useState(1000);
     const [searchInput, setSearchInput] = useState(searchQuery);
 
@@ -189,19 +199,30 @@ export default function ProductsListingContent() {
             setFilters(next);
             setSelectedColors(colorId ? [colorId] : []);
             setSelectedSizes(sizeId ? [sizeId] : []);
+            if (attributeValueIdsParam) {
+                setSelectedAttributes(p => ({ ...p, "_url_ids": attributeValueIdsParam.split(",") }));
+            }
             setPagination((p) => ({ ...p, page: 1 }));
         }
-    }, [searchQuery, categorySlug, subcategorySlug, productType, colorId, sizeId, minPrice, maxPrice, sortParam, orderParam, filters.search, filters.category, filters.subcategory, filters.productType, filters.color, filters.size, filters.minPrice, filters.maxPrice, filters.sort, filters.order]);
+    }, [searchQuery, categorySlug, subcategorySlug, productType, colorId, sizeId, minPrice, maxPrice, sortParam, orderParam, attributeValueIdsParam]);
 
     const toggleFilterSection = (section) => setActiveFilterSection((p) => (p === section ? "" : section));
 
-    const updateURL = (newFilters) => {
+    const updateURL = (newFilters, newSelectedAttrs = selectedAttributes) => {
         const pairs = [];
         const add = (k, v) => { if (v !== undefined && v !== null && v !== "") pairs.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v)).replace(/%20/g, "+")}`); };
         add("search", newFilters.search); add("category", newFilters.category); add("subcategory", newFilters.subcategory);
         add("productType", newFilters.productType); add("color", newFilters.color); add("size", newFilters.size);
         add("minPrice", newFilters.minPrice); add("maxPrice", newFilters.maxPrice);
         if (newFilters.sort !== "createdAt" || newFilters.order !== "desc") { add("sort", newFilters.sort); add("order", newFilters.order); }
+        
+        // Add custom attributes
+        const allIds = new Set();
+        Object.entries(newSelectedAttrs).forEach(([k, v]) => {
+            if (k !== "_url_ids") v?.forEach(id => allIds.add(id));
+        });
+        if (allIds.size > 0) add("attributeValueIds", [...allIds].join(","));
+
         const qs = pairs.join("&");
         router.push(qs ? `?${qs}` : window.location.pathname, { scroll: false });
     };
@@ -286,6 +307,27 @@ export default function ProductsListingContent() {
         fetchFilterOptions();
     }, []);
 
+    // Process URL-based attribute IDs once attributes are loaded
+    useEffect(() => {
+        if (allAttributes.length > 0 && selectedAttributes["_url_ids"]) {
+            const ids = selectedAttributes["_url_ids"];
+            const next = { ...selectedAttributes };
+            delete next["_url_ids"];
+
+            ids.forEach(id => {
+                allAttributes.forEach(attr => {
+                    const found = attr.values.find(v => v.id === id);
+                    if (found) {
+                        const key = attr.name.toLowerCase();
+                        if (!next[key]) next[key] = [];
+                        if (!next[key].includes(id)) next[key].push(id);
+                    }
+                });
+            });
+            setSelectedAttributes(next);
+        }
+    }, [allAttributes]);
+
     useEffect(() => {
         fetchApi("/public/products/max-price")
             .then((r) => setMaxPossiblePrice(Math.ceil((r.data.maxPrice || 1000) / 100) * 100))
@@ -314,10 +356,26 @@ export default function ProductsListingContent() {
     const handleAttributeValueChange = (attributeName, attributeValueId) => {
         const key = attributeName.toLowerCase();
         const cur = selectedAttributes[key] || [];
-        const updated = cur.includes(attributeValueId) ? cur.filter((id) => id !== attributeValueId) : [attributeValueId];
-        setSelectedAttributes((p) => ({ ...p, [key]: updated }));
-        if (key === "color") { setSelectedColors(updated); handleFilterChange("color", updated[0] || ""); }
-        else if (key === "size") { setSelectedSizes(updated); handleFilterChange("size", updated[0] || ""); }
+        const updated = cur.includes(attributeValueId)
+            ? cur.filter((id) => id !== attributeValueId)
+            : [...cur, attributeValueId];
+        
+        const newSelected = { ...selectedAttributes, [key]: updated };
+        setSelectedAttributes(newSelected);
+        
+        if (key === "color") { 
+            setSelectedColors(updated); 
+            // handleFilterChange will call updateURL
+            handleFilterChange("color", updated[0] || ""); 
+        }
+        else if (key === "size") { 
+            setSelectedSizes(updated); 
+            handleFilterChange("size", updated[0] || ""); 
+        }
+        else {
+            updateURL(filters, newSelected);
+            setPagination((p) => ({ ...p, page: 1 }));
+        }
     };
 
     const clearFilters = () => {
@@ -338,9 +396,11 @@ export default function ProductsListingContent() {
         setPagination((p) => ({ ...p, page }));
     };
 
-    const hasActiveFilters = !!(filters.search || filters.category || filters.subcategory || selectedColors.length || selectedSizes.length || filters.minPrice || filters.maxPrice);
+    const hasActiveFilters = !!(filters.search || filters.category || filters.subcategory || selectedColors.length || selectedSizes.length || filters.minPrice || filters.maxPrice || Object.values(selectedAttributes).some(v => v?.length > 0));
 
     const sortValue = (() => {
+        if (filters.sort === "price" && filters.order === "asc") return "price-low";
+        if (filters.sort === "price" && filters.order === "desc") return "price-high";
         if (filters.sort === "name" && filters.order === "asc") return "name-asc";
         if (filters.sort === "name" && filters.order === "desc") return "name-desc";
         if (filters.sort === "createdAt" && filters.order === "asc") return "oldest";
@@ -495,9 +555,16 @@ export default function ProductsListingContent() {
                                 {filters.search && <FilterChip label={`"${filters.search}"`} onRemove={() => handleFilterChange("search", "")} />}
                                 {filters.category && <FilterChip label={categories.find((c) => c.slug === filters.category)?.name || filters.category} onRemove={() => { handleFilterChange("category", ""); handleFilterChange("subcategory", ""); }} />}
                                 {filters.subcategory && (() => { const cat = categories.find((c) => c.slug === filters.category); const sub = cat?.subCategories?.find((s) => s.slug === filters.subcategory); return <FilterChip label={sub?.name || filters.subcategory} onRemove={() => handleFilterChange("subcategory", "")} />; })()}
-                                {selectedColors.map((id) => <FilterChip key={id} label={colors.find((c) => c.id === id)?.name || id} onRemove={() => { setSelectedColors([]); handleFilterChange("color", ""); }} />)}
-                                {selectedSizes.map((id) => <FilterChip key={id} label={sizes.find((s) => s.id === id)?.display || sizes.find((s) => s.id === id)?.name || id} onRemove={() => { setSelectedSizes([]); handleFilterChange("size", ""); }} />)}
-                                {filters.minPrice || filters.maxPrice && <FilterChip label={`₹${filters.minPrice || 0} – ₹${filters.maxPrice || "∞"}`} onRemove={() => { handleFilterChange("minPrice", ""); handleFilterChange("maxPrice", ""); }} />}
+                                {selectedColors.map((id) => <FilterChip key={id} label={colors.find((c) => c.id === id)?.name || id} onRemove={() => { setSelectedColors([]); setSelectedAttributes(p => ({ ...p, color: [] })); handleFilterChange("color", ""); }} />)}
+                                {selectedSizes.map((id) => <FilterChip key={id} label={sizes.find((s) => s.id === id)?.display || sizes.find((s) => s.id === id)?.name || id} onRemove={() => { setSelectedSizes([]); setSelectedAttributes(p => ({ ...p, size: [] })); handleFilterChange("size", ""); }} />)}
+                                {Object.entries(selectedAttributes).filter(([k, v]) => k !== "color" && k !== "size" && v?.length > 0).flatMap(([attrKey, ids]) =>
+                                    ids.map(id => {
+                                        const attr = allAttributes.find(a => a.name.toLowerCase() === attrKey);
+                                        const val = attr?.values.find(v => v.id === id);
+                                        return <FilterChip key={id} label={val?.name || id} onRemove={() => setSelectedAttributes(p => ({ ...p, [attrKey]: (p[attrKey] || []).filter(i => i !== id) }))} />;
+                                    })
+                                )}
+                                {(filters.minPrice || filters.maxPrice) && <FilterChip label={`₹${filters.minPrice || 0} – ₹${filters.maxPrice || "∞"}`} onRemove={() => { handleFilterChange("minPrice", ""); handleFilterChange("maxPrice", ""); }} />}
                                 <button onClick={clearFilters} className="font-sans text-[11px] font-semibold text-[#C9933A] hover:text-[#3F1F00] ml-1 transition-colors">Clear all</button>
                             </div>
                         )}
