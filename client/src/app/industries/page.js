@@ -1,4 +1,4 @@
-import { Music2, PartyPopper, Building2, Church, School, Truck, ArrowRight } from "lucide-react";
+import { HeartPulse, Coffee, Store, Flame, Home, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/ui/PageHero";
