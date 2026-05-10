@@ -19,7 +19,7 @@ import {
   RiHeartLine,
 } from "react-icons/ri";
 
-/* â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Data ────────────────────────────────────── */
 const socialLinks = [
   { name: "Instagram", href: "https://www.instagram.com/aashey.consumer.products?utm_source=qr&igsh=MThqY2JiNnpwOGc2bQ==", Icon: RiInstagramLine },
   { name: "Facebook",  href: "https://www.facebook.com/share/18TMgfmNSR/",                                                   Icon: RiFacebookCircleLine },
@@ -49,17 +49,17 @@ const trustBadges = [
   { icon: RiShieldCheckLine,   text: "Lab Tested Every Batch" },
   { icon: RiAwardLine,         text: "FSSAI Certified" },
   { icon: RiCheckboxCircleLine,text: "Zero Preservatives" },
-  { icon: RiTruckLine,         text: "Free Delivery â‚¹999+" },
+  { icon: RiTruckLine,         text: "Free Delivery ₹999+" },
 ];
 
 const avatarInitials = ["R", "P", "A", "S", "K"];
 
-/* â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Footer ──────────────────────────────────── */
 export const Footer = () => {
   return (
     <footer className="relative overflow-hidden bg-[#0A1F0F]">
 
-      {/* â”€â”€ Top gold gradient bar â”€â”€ */}
+      {/* ── Top gold gradient bar ── */}
       <div
         className="h-[2px] w-full"
         style={{ background: "linear-gradient(90deg, transparent 0%, #C9933A 30%, #F0C96B 50%, #C9933A 70%, transparent 100%)" }}
@@ -71,7 +71,7 @@ export const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 md:gap-12">
 
-          {/* â”€â”€ Brand col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ── Brand col ────────────────────────── */}
           <div className="lg:col-span-4 flex flex-col">
 
             {/* Logo */}
@@ -127,7 +127,7 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* â”€â”€ Explore col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ── Explore col ──────────────────────── */}
           <div className="lg:col-span-2">
             <FooterColHeader>Explore</FooterColHeader>
             <ul className="space-y-0.5">
@@ -143,7 +143,7 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* â”€â”€ Policies col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ── Policies col ─────────────────────── */}
           <div className="lg:col-span-3">
             <FooterColHeader>Policies & Help</FooterColHeader>
             <ul className="space-y-0.5">
@@ -159,16 +159,16 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* â”€â”€ Contact col â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ── Contact col ──────────────────────── */}
           <div className="lg:col-span-3">
             <FooterColHeader>Get In Touch</FooterColHeader>
             <ul className="space-y-4">
 
               {/* Address */}
               <ContactItem icon={RiMapPin2Line} label="Address">
-                Village â€” Takali, Shiv Shakti Nagar,<br />
-                Chalisgaon, Dist â€” Jalgaon,<br />
-                Maharashtra â€” 424102
+                Village — Takali, Shiv Shakti Nagar,<br />
+                Chalisgaon, Dist — Jalgaon,<br />
+                Maharashtra — 424102
               </ContactItem>
 
               {/* WhatsApp */}
@@ -224,7 +224,7 @@ export const Footer = () => {
 
             {/* Copyright */}
             <p className="font-sans text-[11.5px] text-[#FDF6E3]/30">
-              Â© 2026{" "}
+              © 2026{" "}
               <span className="text-[#FDF6E3]/50 font-medium">Aashey Consumer Products Pvt. Ltd.</span>
               {" "}All rights reserved.
             </p>
@@ -255,7 +255,7 @@ export const Footer = () => {
   );
 };
 
-/* â”€â”€ Reusable sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Reusable sub-components ────────────────── */
 
 function FooterColHeader({ children }) {
   return (
