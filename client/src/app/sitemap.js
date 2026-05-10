@@ -1,4 +1,5 @@
 import { API_URL } from "@/lib/utils";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -24,45 +25,45 @@ export default async function sitemap() {
     priority: route === "" ? 1 : 0.8,
   }));
 
-  // 2. Dynamic Categories
   let categoryRoutes = [];
+  let productRoutes = [];
+
   try {
+    console.log("Sitemap: Fetching categories from", `${API_URL}/public/categories`);
     const response = await fetch(`${API_URL}/public/categories`, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
+      next: { revalidate: 0 },
     });
     const data = await response.json();
     if (data.success && data.data?.categories) {
       categoryRoutes = data.data.categories.map((cat) => ({
         url: `${baseUrl}/category/${cat.slug}`,
-        lastModified: new Date(cat.updatedAt || new Date()),
+        lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.7,
       }));
     }
   } catch (error) {
-    console.error("Sitemap: Failed to fetch categories", error);
+    console.error("Sitemap category fetch error:", error.message);
   }
 
-  // 3. Dynamic Products
-  let productRoutes = [];
   try {
-    // Fetch products with a high limit to get all slugs
+    console.log("Sitemap: Fetching products from", `${API_URL}/public/products?limit=1000`);
     const response = await fetch(`${API_URL}/public/products?limit=1000`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 0 },
     });
     const data = await response.json();
     if (data.success && data.data?.products) {
       productRoutes = data.data.products.map((prod) => ({
         url: `${baseUrl}/products/${prod.slug}`,
-        lastModified: new Date(prod.updatedAt || new Date()),
-        changeFrequency: "daily",
+        lastModified: new Date(),
+        changeFrequency: "weekly",
         priority: 0.9,
       }));
     }
   } catch (error) {
-    console.error("Sitemap: Failed to fetch products", error);
+    console.error("Sitemap product fetch error:", error.message);
   }
 
+  // Return all routes
   return [...staticRoutes, ...categoryRoutes, ...productRoutes];
 }
-
