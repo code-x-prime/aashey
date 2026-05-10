@@ -47,6 +47,13 @@ export const metadata = {
     "Experience the purest A2 Cow Ghee, crafted using the traditional Bilona method. 100% pure, lab tested, no preservatives. Free shipping on orders above ₹999.",
   keywords: [
     "aashey",
+    "A2 Bilona Ghee",
+    "Desi Cow Ghee",
+    "Pure Ghee India",
+    "Traditional Ghee",
+    "Handmade Ghee",
+    "Healthiest Ghee",
+
     "A2 cow ghee",
     "bilona ghee",
     "pure ghee",

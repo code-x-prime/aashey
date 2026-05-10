@@ -1,31 +1,31 @@
-import { Shield, CheckCircle2, FileText, Phone } from "lucide-react";
+import { Shield, CheckCircle2, FileText, Phone, Leaf, Award, HeartPulse, RefreshCw } from "lucide-react";
 import { PageHero } from "@/components/ui/PageHero";
 
 export const metadata = {
-    title: "Warranty Policy | Aashey",
-    description: "Learn about our comprehensive 1-year warranty on all products.",
+    title: "Quality Guarantee | Aashey - Pure A2 Bilona Ghee",
+    description: "Learn about our commitment to purity, traditional Bilona method, and quality guarantee.",
 };
 
-const warrantyFeatures = [
+const guaranteeFeatures = [
+    {
+        icon: Leaf,
+        title: "100% Pure A2 Ghee",
+        description: "We guarantee that our ghee is made exclusively from the milk of A2 desi cows."
+    },
+    {
+        icon: Award,
+        title: "Traditional Bilona Method",
+        description: "Hand-churned in small batches using the ancient Vedic Bilona method for maximum nutrition."
+    },
     {
         icon: Shield,
-        title: "1 Year Comprehensive Warranty",
-        description: "All products come with a full 1-year manufacturer warranty from the date of purchase."
+        title: "Lab Tested Purity",
+        description: "Every batch is tested for purity, fat content, and zero adulteration."
     },
     {
-        icon: CheckCircle2,
-        title: "Free Repair/Replacement",
-        description: "Manufacturing defects are covered with free repair or replacement during warranty period."
-    },
-    {
-        icon: FileText,
-        title: "Easy Claims",
-        description: "Simple warranty claim process with quick turnaround time of 7-10 business days."
-    },
-    {
-        icon: Phone,
-        title: "Dedicated Support",
-        description: "Our technical support team is available to assist you throughout the warranty period."
+        icon: HeartPulse,
+        title: "Zero Preservatives",
+        description: "No additives, no flavors, and no preservatives. Just 100% pure ghee."
     }
 ];
 
@@ -33,18 +33,18 @@ export default function WarrantyPage() {
     return (
         <div className="min-h-screen bg-[#FDF6E3]">
             <PageHero
-                title="Warranty Policy"
-                description="1-year comprehensive warranty on all products"
-                breadcrumbs={[{ label: "Warranty" }]}
+                title="Quality Guarantee"
+                description="Our commitment to purity and tradition in every jar"
+                breadcrumbs={[{ label: "Guarantee" }]}
                 variant="default"
                 size="sm"
             />
 
             <section className="bg-white py-12 md:py-16">
                 <div className="section-container max-w-4xl">
-                    {/* Warranty Features */}
+                    {/* Guarantee Features */}
                     <div className="grid md:grid-cols-2 gap-6 mb-12">
-                        {warrantyFeatures.map((feature, index) => (
+                        {guaranteeFeatures.map((feature, index) => (
                             <div key={index} className="bg-[#FDF6E3] border border-[#C9933A]/12 rounded-lg p-6">
                                 <div className="w-11 h-11 bg-[#C9933A]/10 rounded-lg flex items-center justify-center mb-4">
                                     <feature.icon className="h-5 w-5 text-[#C9933A]" />
@@ -55,73 +55,57 @@ export default function WarrantyPage() {
                         ))}
                     </div>
 
-                    {/* Detailed Warranty Policy */}
+                    {/* Detailed Quality Policy */}
                     <div className="prose prose-lg max-w-none">
-                        <h2 className="font-sans text-2xl font-bold mb-4">Warranty Coverage</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Our Purity Promise</h2>
                         <p className="mb-4">
-                            Our 1-year manufacturer warranty covers:
+                            At Aashey, we believe that ghee is not just a food product, but a source of life and health. Our quality guarantee covers:
                         </p>
                         <ul className="space-y-2 mb-8">
-                            <li>Manufacturing defects in materials and workmanship</li>
-                            <li>Electronics component failures under normal use</li>
-                            <li>Speaker driver defects and failures</li>
-                            <li>Amplifier circuit issues</li>
-                            <li>Power supply failures</li>
+                            <li>Authentic A2 Cow Milk sourcing from certified farms</li>
+                            <li>Traditional Bilona method (Curd -{">"} Churn -{">"} Butter -{">"} Ghee)</li>
+                            <li>Slow-cooking in earthen or brass pots for better aroma</li>
+                            <li>Hygienic glass-jar packaging to preserve nutrition</li>
+                            <li>Zero use of machines for churning butter</li>
                         </ul>
 
-                        <h2 className="font-sans text-2xl font-bold mb-4">What&apos;s Not Covered</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Quality Assurance Process</h2>
                         <p className="mb-4">
-                            The warranty does not cover:
+                            Every jar of Aashey ghee undergoes a rigorous quality check:
                         </p>
                         <ul className="space-y-2 mb-8">
-                            <li>Physical damage from mishandling, accidents, or drops</li>
-                            <li>Damage from improper installation or incorrect voltage</li>
-                            <li>Water damage or exposure to extreme conditions</li>
-                            <li>Damage from unauthorized repairs or modifications</li>
-                            <li>Normal wear and tear (cosmetic scratches, fading)</li>
-                            <li>Damage from commercial rental use</li>
+                            <li><strong>Milk Testing:</strong> Tested for A2 beta-casein protein and zero antibiotics.</li>
+                            <li><strong>Traditional Churning:</strong> Curd is churned before sunrise as per Vedic traditions.</li>
+                            <li><strong>Manual Clarification:</strong> Controlled heating to ensure the perfect granular texture.</li>
+                            <li><strong>Aroma & Taste:</strong> Sensory evaluation to ensure the signature nutty aroma.</li>
+                            <li><strong>Lab Certification:</strong> Batch-wise testing for fat percentage and nutritional profile.</li>
                         </ul>
 
-                        <h2 className="font-sans text-2xl font-bold mb-4">How to Claim Warranty</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">What If You Are Not Satisfied?</h2>
                         <p className="mb-4">
-                            To claim warranty service:
+                            We take immense pride in our craft. However, if you feel the quality is not up to our promise:
                         </p>
                         <ol className="space-y-3 mb-8 list-decimal list-inside">
-                            <li><strong>Contact Support:</strong> Email us at aashey@gmail.com </li>
-                            <li><strong>Provide Details:</strong> Share your order number, purchase invoice, and description of the issue</li>
-                            <li><strong>Send Photos/Videos:</strong> Share clear photos or videos showing the defect</li>
-                            <li><strong>Get Authorization:</strong> Our team will provide a warranty claim authorization code</li>
-                            <li><strong>Ship Product:</strong> Ship the product to our service center (we&apos;ll share the address)</li>
-                            <li><strong>Repair/Replacement:</strong> Receive repaired or replacement product within 7-10 business days</li>
+                            <li><strong>Contact Us:</strong> Email us at aashey@gmail.com within 7 days of delivery.</li>
+                            <li><strong>Share Feedback:</strong> Let us know your concern with photos of the product and batch number.</li>
+                            <li><strong>Quality Check:</strong> Our master craftsman will review your feedback.</li>
+                            <li><strong>Resolution:</strong> We will provide a replacement or a refund if a quality issue is verified.</li>
                         </ol>
 
-                        <h2 className="font-sans text-2xl font-bold mb-4">Warranty Terms</h2>
-                        <ul className="space-y-2 mb-8">
-                            <li>Warranty is valid only with original purchase invoice</li>
-                            <li>Warranty is non-transferable to second owners</li>
-                            <li>Shipping charges for warranty claims may apply (both ways)</li>
-                            <li>Repaired products carry the remaining original warranty period</li>
-                            <li>Replacement products come with a fresh 1-year warranty</li>
-                        </ul>
-
-                        <h2 className="font-sans text-2xl font-bold mb-4">Service Centers</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Storage Tips for Longevity</h2>
                         <p className="mb-4">
-                            We have authorized service centers in major cities:
+                            Pure Bilona ghee has a long shelf life, but proper storage is key:
                         </p>
                         <ul className="space-y-2 mb-8">
-                            <li><strong>Delhi NCR:</strong> Our main service center (address provided on claim approval)</li>
-                            <li><strong>Other Cities:</strong> Authorized service partners in Mumbai, Bangalore, Hyderabad, Chennai</li>
+                            <li>Store in a cool, dry place away from direct sunlight.</li>
+                            <li>Always use a clean, dry spoon to avoid moisture contamination.</li>
+                            <li>Do not refrigerate, as it may affect the texture and aroma.</li>
+                            <li>Keep the lid tightly closed when not in use.</li>
                         </ul>
 
-                        <h2 className="font-sans text-2xl font-bold mb-4">Extended Warranty</h2>
-                        <p className="mb-8">
-                            Looking for additional coverage? Contact us about extended warranty plans available for purchase.
-                            Extended warranties can provide coverage up to 3 years from purchase date.
-                        </p>
-
-                        <h2 className="font-sans text-2xl font-bold mb-4">Contact Warranty Support</h2>
+                        <h2 className="font-sans text-2xl font-bold mb-4">Contact Quality Support</h2>
                         <p className="mb-4">
-                            For warranty claims and support:
+                            For any queries regarding our process or product quality:
                         </p>
                         <ul className="space-y-2">
                             <li>Email: <strong>aashey@gmail.com</strong></li>
@@ -133,4 +117,3 @@ export default function WarrantyPage() {
         </div>
     );
 }
-

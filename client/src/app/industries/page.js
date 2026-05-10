@@ -4,52 +4,45 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/ui/PageHero";
 
 export const metadata = {
-    title: "Industries We Serve | Aashey Audio Equipment",
-    description: "Professional audio solutions for events, DJs, venues, schools, houses of worship, and more.",
+    title: "Industries We Serve | Aashey - Pure A2 Cow Ghee",
+    description: "Discover how Aashey Pure A2 Bilona Ghee serves various industries, from wellness centers to premium restaurants.",
 };
 
 const industries = [
     {
-        icon: PartyPopper,
-        name: "Events & Weddings",
-        description: "Make every celebration memorable with powerful, crystal-clear sound systems.",
-        features: ["High-output speakers", "Portable solutions", "Professional amplifiers"],
-        link: "/products?category=dj-speakers",
+        icon: HeartPulse,
+        name: "Wellness & Spa",
+        description: "Pure A2 Ghee is a cornerstone of Ayurvedic treatments and wellness therapies.",
+        features: ["Massages & Udvartana", "Nutritional detox", "Skin treatments"],
+        link: "/products",
     },
     {
-        icon: Music2,
-        name: "DJs & Performers",
-        description: "Professional-grade equipment trusted by top performers across India.",
-        features: ["NEO Series", "Challenger Series", "Trolley Speakers"],
-        link: "/products?category=neo-series",
+        icon: Coffee,
+        name: "Premium Restaurants",
+        description: "Enhance the flavor of gourmet dishes with traditionally crafted Bilona ghee.",
+        features: ["Authentic flavor profile", "High smoke point", "Bulk availability"],
+        link: "/products",
     },
     {
-        icon: Building2,
-        name: "Venues & Clubs",
-        description: "Permanent installations built to perform night after night.",
-        features: ["PA Systems", "Driver Units", "Power Amplifiers"],
-        link: "/products?category=pa-series",
+        icon: Store,
+        name: "Ayurvedic Clinics",
+        description: "Medically consistent purity for practitioners and patients.",
+        features: ["Sattvic quality", "No preservatives", "Lab tested purity"],
+        link: "/products",
     },
     {
-        icon: Church,
-        name: "Houses of Worship",
-        description: "Clear speech and music systems designed for religious venues.",
-        features: ["PA Series", "PD Series", "Column Speakers"],
-        link: "/products?category=pd-series",
+        icon: Flame,
+        name: "Temples & Rituals",
+        description: "Purity for sacred ceremonies and traditional lamps.",
+        features: ["Pure cow ghee", "Spiritual authenticity", "High quality"],
+        link: "/products",
     },
     {
-        icon: School,
-        name: "Schools & Colleges",
-        description: "Auditorium and PA systems for educational institutions.",
-        features: ["Megaphones", "PA Systems", "Ceiling Speakers"],
-        link: "/products?category=megaphones",
-    },
-    {
-        icon: Truck,
-        name: "Mobile Sound",
-        description: "Portable battery-powered solutions for DJs on the go.",
-        features: ["Trolley Speakers", "Battery Systems", "Wireless Mics"],
-        link: "/products?category=trolley-speakers",
+        icon: Home,
+        name: "Home Cooks",
+        description: "Bringing health and tradition to every family kitchen.",
+        features: ["Daily nutrition", "A2 benefits", "Traditional taste"],
+        link: "/products",
     },
 ];
 
@@ -58,7 +51,7 @@ export default function IndustriesPage() {
         <div className="bg-page min-h-screen">
             <PageHero
                 title="Industries We Serve"
-                description="Professional audio solutions tailored for your specific needs"
+                description="Pure A2 Bilona Ghee solutions tailored for your health and business needs"
                 breadcrumbs={[{ label: "Industries" }]}
                 variant="default"
                 size="md"
@@ -109,7 +102,7 @@ export default function IndustriesPage() {
                             Need Help Choosing?
                         </h2>
                         <p className="text-lg text-[#6B4423] mb-8">
-                            Our audio experts can recommend the perfect equipment setup for your specific use case and budget.
+                            Our team can recommend the perfect product range for your specific use case, whether for home use or bulk business needs.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link href="/contact">

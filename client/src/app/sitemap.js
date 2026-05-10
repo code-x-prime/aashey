@@ -1,4 +1,6 @@
 import { API_URL } from "@/lib/utils";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function sitemap() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://aashey.com";
@@ -16,7 +18,7 @@ export default async function sitemap() {
     "/categories",
     "/products",
   ].map((route) => ({
-    url: route === "" ? `${baseUrl}/` : `${baseUrl}${route}`,
+    url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: "daily",
     priority: route === "" ? 1 : 0.8,
