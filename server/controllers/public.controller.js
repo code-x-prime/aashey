@@ -39,6 +39,15 @@ export const getBrandBySlug = asyncHandler(async (req, res) => {
     limit = 15,
   } = req.query;
 
+  // Normalize sort and order (handle sort=price-asc etc.)
+  let normalizedSort = sort;
+  let normalizedOrder = order;
+  if (sort && sort.includes("-")) {
+    const parts = sort.split("-");
+    normalizedSort = parts[0];
+    normalizedOrder = parts[1];
+  }
+
   // Find the brand
   const brand = await prisma.brand.findUnique({
     where: { slug },
@@ -175,9 +184,9 @@ export const getBrandBySlug = asyncHandler(async (req, res) => {
       },
     },
     orderBy: [
-      sort === "price"
-        ? { variants: { _min: { price: order } } }
-        : { [sort]: order }
+      normalizedSort === "price"
+        ? { variants: { _min: { price: normalizedOrder } } }
+        : { [normalizedSort]: normalizedOrder }
     ],
     skip: (parseInt(page) - 1) * parseInt(limit),
     take: parseInt(limit),

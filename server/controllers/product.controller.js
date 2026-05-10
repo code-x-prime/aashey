@@ -27,6 +27,15 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     attributeValueIds, // Comma-separated attribute value IDs for filtering
   } = req.query;
 
+  // Normalize sort and order (handle sort=price-asc etc.)
+  let normalizedSort = sort;
+  let normalizedOrder = order;
+  if (sort && sort.includes("-")) {
+    const parts = sort.split("-");
+    normalizedSort = parts[0];
+    normalizedOrder = parts[1];
+  }
+
   // Normalize search: treat + as space (when querystrings use + for spaces)
   const normalizedSearch =
     typeof search === "string" ? search.replace(/\+/g, " ") : "";
@@ -267,11 +276,11 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     },
     orderBy: [
       { ourProduct: "desc" },
-      sort === "price"
-        ? { variants: { _min: { price: order } } }
-        : sort === "newest"
-          ? { createdAt: order }
-          : { [sort]: order }
+      normalizedSort === "price"
+        ? { variants: { _min: { price: normalizedOrder } } }
+        : normalizedSort === "newest"
+          ? { createdAt: normalizedOrder }
+          : { [normalizedSort]: normalizedOrder }
     ],
     skip: (parseInt(page) - 1) * parseInt(limit),
     take: parseInt(limit),
@@ -967,6 +976,15 @@ export const getProductsByType = asyncHandler(async (req, res) => {
     order = "desc",
   } = req.query;
 
+  // Normalize sort and order (handle sort=price-asc etc.)
+  let normalizedSort = sort;
+  let normalizedOrder = order;
+  if (sort && sort.includes("-")) {
+    const parts = sort.split("-");
+    normalizedSort = parts[0];
+    normalizedOrder = parts[1];
+  }
+
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   // Build filter conditions for product type
@@ -1026,9 +1044,9 @@ export const getProductsByType = asyncHandler(async (req, res) => {
     },
     orderBy: [
       { ourProduct: "desc" },
-      sort === "price"
-        ? { variants: { _min: { price: order } } }
-        : { [sort]: order }
+      normalizedSort === "price"
+        ? { variants: { _min: { price: normalizedOrder } } }
+        : { [normalizedSort]: normalizedOrder }
     ],
     skip,
     take: parseInt(limit),
