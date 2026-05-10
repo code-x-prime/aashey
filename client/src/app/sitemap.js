@@ -1,23 +1,13 @@
-import { API_URL } from "@/lib/utils";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// app/sitemap.js
+export const revalidate = 21600;
 
 export default async function sitemap() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://aashey.com";
+  const baseUrl = "https://aashey.com";
 
-  // 1. Static Routes
   const staticRoutes = [
-    "",
-    "/about",
-    "/contact",
-    "/faqs",
-    "/why-us",
-    "/return-policy",
-    "/shipping-policy",
-    "/warranty",
-    "/categories",
-    "/products",
+    "", "/about", "/contact", "/faqs", "/why-us",
+    "/return-policy", "/shipping-policy", "/warranty",
+    "/categories", "/products",
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
@@ -29,11 +19,13 @@ export default async function sitemap() {
   let productRoutes = [];
 
   try {
-    console.log("Sitemap: Fetching categories from", `${API_URL}/public/categories`);
-    const response = await fetch(`${API_URL}/public/categories`, {
-      next: { revalidate: 0 },
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 4000); // 4 sec hard timeout
+
+    const res = await fetch(`https://api.aashey.com/api/public/categories`, {
+      signal: controller.signal,
     });
-    const data = await response.json();
+    const data = await res.json();
     if (data.success && data.data?.categories) {
       categoryRoutes = data.data.categories.map((cat) => ({
         url: `${baseUrl}/category/${cat.slug}`,
@@ -42,16 +34,18 @@ export default async function sitemap() {
         priority: 0.7,
       }));
     }
-  } catch (error) {
-    console.error("Sitemap category fetch error:", error.message);
+  } catch (e) {
+    console.error("Sitemap categories failed:", e.message);
   }
 
   try {
-    console.log("Sitemap: Fetching products from", `${API_URL}/public/products?limit=1000`);
-    const response = await fetch(`${API_URL}/public/products?limit=1000`, {
-      next: { revalidate: 0 },
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(`https://api.aashey.com/api/public/products?limit=1000`, {
+      signal: controller.signal,
     });
-    const data = await response.json();
+    const data = await res.json();
     if (data.success && data.data?.products) {
       productRoutes = data.data.products.map((prod) => ({
         url: `${baseUrl}/products/${prod.slug}`,
@@ -60,10 +54,9 @@ export default async function sitemap() {
         priority: 0.9,
       }));
     }
-  } catch (error) {
-    console.error("Sitemap product fetch error:", error.message);
+  } catch (e) {
+    console.error("Sitemap products failed:", e.message);
   }
 
-  // Return all routes
   return [...staticRoutes, ...categoryRoutes, ...productRoutes];
 }
