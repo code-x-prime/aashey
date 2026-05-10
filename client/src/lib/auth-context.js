@@ -393,7 +393,7 @@ export function AuthProvider({ children }) {
         }
     };
 
-    // Directly set user state (used after guest auto-register â€” cookies already set by backend)
+    // Directly set user state (used after guest auto-register — cookies already set by backend)
     const autoLogin = (userData) => {
         setUser(userData);
         if (typeof window !== "undefined") {

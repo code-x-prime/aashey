@@ -15,7 +15,7 @@ export default function CategoriesCarousel() {
   const posRef = useRef(0);
   const rafRef = useRef(null);
 
-  // â”€â”€ API â”€â”€
+  // ──── API ────
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -30,7 +30,7 @@ export default function CategoriesCarousel() {
     fetchCategories();
   }, []);
 
-  // â”€â”€ Auto-scroll (requestAnimationFrame infinite loop) â”€â”€
+  // ──── Auto-scroll (requestAnimationFrame infinite loop) ────
   useEffect(() => {
     const track = trackRef.current;
     if (!track || categories.length === 0) return;
@@ -51,14 +51,14 @@ export default function CategoriesCarousel() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [categories, isPaused]);
 
-  // â”€â”€ Manual arrow scroll â”€â”€
+  // ──── Manual arrow scroll ────
   const scrollManual = useCallback((dir) => {
     const itemWidth = 196; // circle width + gap
     posRef.current += dir === "left" ? -itemWidth : itemWidth;
     if (posRef.current < 0) posRef.current = 0;
   }, []);
 
-  // â”€â”€ LOADING skeleton â”€â”€
+  // ──── LOADING skeleton ────
   if (loading) {
     return (
       <section className="py-16 md:py-20 bg-[#FDF6E3]">
@@ -86,14 +86,14 @@ export default function CategoriesCarousel() {
   return (
     <section className="py-10 md:py-14 bg-[#FDF6E3] overflow-hidden">
 
-      {/* â”€â”€ Section Header â”€â”€ */}
+      {/* ──── Section Header ──── */}
       <div className="text-center mb-12 md:mb-16 px-4">
         <span className="section-eyebrow block mb-3">Explore Our Range</span>
         <h2 className="section-title">Shop By Category</h2>
         <div className="section-underline-center mt-5" />
       </div>
 
-      {/* â”€â”€ Carousel â”€â”€ */}
+      {/* ──── Carousel ──── */}
       <div className="relative max-w-7xl mx-auto">
 
         {/* Left gradient fade */}

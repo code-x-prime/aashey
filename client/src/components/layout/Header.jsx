@@ -114,7 +114,7 @@ export function Navbar() {
     router.push("/");
   };
 
-  // â”€â”€ Reusable nav item for the drawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ──── Reusable nav item for the drawer ────────────────────────────────────────────────────
   // Matches the "About Us / Why Choose Us" style but with an icon dot accent
   const DrawerNavItem = ({ href, icon: Icon, iconActive: IconActive, svg, label, badge }) => {
     const active = pathname === href;
@@ -130,7 +130,7 @@ export function Navbar() {
         )}
       >
         <span className="flex items-center gap-3">
-          {/* â”€â”€ slim icon pill â”€â”€ */}
+          {/* ──── slim icon pill ──── */}
           <span
             className={cn(
               "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
@@ -146,7 +146,7 @@ export function Navbar() {
             )}
           </span>
 
-          {/* â”€â”€ label â€” same as Company section â”€â”€ */}
+          {/* ──── label — same as Company section ──── */}
           <span
             className={cn(
               "font-sans text-[14px] font-medium",
@@ -193,7 +193,7 @@ export function Navbar() {
                       ) : (
                         <span className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{item.text}</span>
                       )}
-                      <span className="text-[#C9933A]/60 font-light ml-12">Â·</span>
+                      <span className="text-[#C9933A]/60 font-light ml-12">·</span>
                     </div>
                   ))}
                 </div>
@@ -213,18 +213,18 @@ export function Navbar() {
             <div className="flex whitespace-nowrap overflow-hidden w-full relative h-full items-center">
               <div className="flex w-max items-center h-full animate-marquee-infinite gap-12 pr-12">
                 {[
-                  "Free Delivery above â‚¹999",
+                  "Free Delivery above ₹999",
                   "100% Pure A2 Ghee",
                   "Traditionally Bilona Crafted",
                   "Lab Tested",
-                  "Free Delivery above â‚¹999",
+                  "Free Delivery above ₹999",
                   "100% Pure A2 Ghee",
                   "Traditionally Bilona Crafted",
                   "Lab Tested"
                 ].map((text, i) => (
                   <div key={`fallback-${i}`} className="flex items-center flex-shrink-0">
                     <span className="font-sans text-[10px] sm:text-[11px] font-medium tracking-[0.08em] text-[#FDF6E3]/90">{text}</span>
-                    <span className="text-[#C9933A]/60 font-light ml-12">Â·</span>
+                    <span className="text-[#C9933A]/60 font-light ml-12">·</span>
                   </div>
                 ))}
               </div>
@@ -352,7 +352,7 @@ export function Navbar() {
                                 {cat.subCategories.map((sub) => (
                                   <li key={sub.id}>
                                     <Link href={`/products?category=${encodeURIComponent(cat.slug)}&subcategory=${encodeURIComponent(sub.slug)}`} className="block py-1 font-sans text-xs text-[#5C3A1E] hover:text-[#C9933A] hover:pl-1 transition-all" onClick={() => setActiveDropdown(null)}>
-                                      â†’ {sub.name}
+                                      → {sub.name}
                                     </Link>
                                   </li>
                                 ))}
@@ -363,7 +363,7 @@ export function Navbar() {
                       </div>
                       <div className="border-t border-[#C9933A]/20 mt-4 pt-4 text-center">
                         <Link href="/categories" className="inline-block font-sans text-sm font-semibold text-[#C9933A] hover:text-[#3F1F00] transition-colors" onClick={() => setActiveDropdown(null)}>
-                          View All Categories â†’
+                          View All Categories →
                         </Link>
                       </div>
                     </div>
@@ -407,16 +407,16 @@ export function Navbar() {
         </div>
       )}
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ═══════════════════════════════════════════════
           MOBILE MENU DRAWER
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      ═══════════════════════════════════════════════ */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
           <div className="absolute inset-0 bg-[#3F1F00]/40 backdrop-blur-[2px]" onClick={() => setIsMenuOpen(false)} />
 
           <div className="absolute left-0 top-0 bottom-0 w-[85%] max-w-[360px] bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-left duration-300">
 
-            {/* â”€â”€ New Drawer Header â”€â”€ */}
+            {/* ──── New Drawer Header ──── */}
             <div className="flex-shrink-0 flex items-center justify-between px-4 h-16 border-b border-[#C9933A]/10">
               <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#3F1F00]">
                 <RiCloseLine className="w-6 h-6" />
@@ -441,10 +441,10 @@ export function Navbar() {
               </div>
             </div>
 
-            {/* â”€â”€ Scrollable Nav â”€â”€ */}
+            {/* ──── Scrollable Nav ──── */}
             <div className="flex-1 min-h-0 overflow-y-auto bg-white py-2">
 
-              {/* â”€â”€ NAVIGATION Section â”€â”€ */}
+              {/* ──── NAVIGATION Section ──── */}
               <p className="px-6 pt-4 pb-2 text-[10px] font-sans font-bold tracking-[0.2em] text-[#C9933A] uppercase">
                 Main Menu
               </p>
@@ -509,13 +509,13 @@ export function Navbar() {
                     <Link href="/categories"
                       className="flex items-center gap-2 px-5 py-3 font-sans text-[13px] font-semibold text-[#C9933A] hover:bg-white transition-all border-t border-[#C9933A]/5"
                       onClick={() => setIsMenuOpen(false)}>
-                      View All Categories â†’
+                      View All Categories →
                     </Link>
                   </div>
                 )}
               </div>
 
-              {/* â”€â”€ COMPANY Section â”€â”€ */}
+              {/* ──── COMPANY Section ──── */}
               <p className="px-6 pt-6 pb-2 text-[10px] font-sans font-bold tracking-[0.2em] text-[#C9933A] uppercase">
                 Company
               </p>
@@ -539,7 +539,7 @@ export function Navbar() {
                 </Link>
               ))}
 
-              {/* â”€â”€ MY ACCOUNT Section â”€â”€ */}
+              {/* ──── MY ACCOUNT Section ──── */}
               <ClientOnly>
                 {isAuthenticated && (
                   <>
@@ -590,7 +590,7 @@ export function Navbar() {
                 </div>
               )}
 
-              {/* â”€â”€ Footer â”€â”€ */}
+              {/* ──── Footer ──── */}
               <div className="px-6 py-8 mt-4 border-t border-gray-50">
                 <div className="flex items-center gap-5 mb-8">
                   <a href="https://www.instagram.com/aashey.consumer.products?utm_source=qr&igsh=MThqY2JiNnpwOGc2bQ==" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-900 hover:bg-[#C9933A] hover:text-white transition-all"><RiInstagramLine className="w-5 h-5" /></a>

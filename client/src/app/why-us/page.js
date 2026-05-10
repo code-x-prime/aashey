@@ -80,7 +80,7 @@ export default function WhyUsPage() {
     return (
         <div className="min-h-screen bg-[#FDF6E3]">
 
-            {/* â”€â”€ HERO â”€â”€ */}
+            {/* ──── HERO ──── */}
             <section className="relative bg-[#3F1F00] py-10 md:py-16 overflow-hidden">
                 <div className="absolute inset-0 opacity-[0.04]"
                     style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #C9933A 1px, transparent 0)", backgroundSize: "32px 32px" }}
@@ -101,7 +101,7 @@ export default function WhyUsPage() {
                 </div>
             </section>
 
-            {/* â”€â”€ STATS â”€â”€ */}
+            {/* ──── STATS ──── */}
             <section className="bg-[#092D15] py-10 md:py-12">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
@@ -115,7 +115,7 @@ export default function WhyUsPage() {
                 </div>
             </section>
 
-            {/* â”€â”€ 6 CORE COMMITMENTS â”€â”€ */}
+            {/* ──── 6 CORE COMMITMENTS ──── */}
             <section className="py-16 md:py-24">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
                     <div className="text-center mb-14">
@@ -168,7 +168,7 @@ export default function WhyUsPage() {
                 </div>
             </section>
 
-            {/* â”€â”€ 4 ADDITIONAL REASONS â”€â”€ */}
+            {/* ──── 4 ADDITIONAL REASONS ──── */}
             <section className="py-14 md:py-18 bg-white">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
                     <div className="text-center mb-12">
@@ -192,10 +192,10 @@ export default function WhyUsPage() {
                 </div>
             </section>
 
-            {/* â”€â”€ TESTIMONIALS â”€â”€ */}
+            {/* ──── TESTIMONIALS ──── */}
             <TestimonialsCarousel bg="cream" showStats={false} />
 
-            {/* â”€â”€ CTA â”€â”€ */}
+            {/* ──── CTA ──── */}
             <section className="py-14 md:py-16 bg-[#3F1F00]">
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 text-center">
                     <span className="font-sans text-xs font-semibold tracking-[0.2em] text-[#C9933A] uppercase block mb-4">Make the Switch</span>

@@ -14,7 +14,7 @@ export const TrendingProducts = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(4);
 
-  /* â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Fetch ────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -36,7 +36,7 @@ export const TrendingProducts = () => {
     fetchProducts();
   }, []);
 
-  /* â”€â”€ Responsive slides-per-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Responsive slides-per-view ──────────────────────────── */
   useEffect(() => {
     const update = () => setSlidesPerView(window.innerWidth < 768 ? 2 : 4);
     update();
@@ -63,7 +63,7 @@ export const TrendingProducts = () => {
 
   if (error) return null;
 
-  /* â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Loading skeleton ────────────────────────────────────────────────── */
   if (loading) {
     return (
       <section className="py-10 md:py-14 bg-[#FDF6E3]">
@@ -99,7 +99,7 @@ export const TrendingProducts = () => {
     <section className="py-10 md:py-14 bg-[#FDF6E3] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Header ──────────────────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
           <div>
             <span className="section-eyebrow flex items-center gap-1.5">
@@ -132,7 +132,7 @@ export const TrendingProducts = () => {
           </div>
         </div>
 
-        {/* â”€â”€ Carousel Track â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Carousel Track ──────────────────────────────────────────── */}
         <div className="relative">
           <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
@@ -154,11 +154,11 @@ export const TrendingProducts = () => {
             </div>
           </div>
 
-          {/* Right fade hint â€” mobile */}
+          {/* Right fade hint — mobile */}
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[#FDF6E3] to-transparent md:hidden" />
         </div>
 
-        {/* â”€â”€ Mobile Bottom Controls removed as requested â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Mobile Bottom Controls removed as requested ────────────────────────────── */}
 
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">

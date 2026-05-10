@@ -16,11 +16,11 @@ export const CTASection = () => {
           <div className="text-center mb-10">
             <h2 className="font-sans text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
               Ready to Experience{" "}
-              <span className="text-primary">Premium Sound?</span>
+              <span className="text-primary">Pure A2 Ghee?</span>
             </h2>
             <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
-              Shop now and get free shipping on orders above â‚¹25,000. 
-              1 year warranty on all products.
+              Shop now and get free shipping on orders above ₹999. 
+              Quality guarantee in every drop.
             </p>
           </div>
 
@@ -40,14 +40,14 @@ export const CTASection = () => {
               <Truck className="h-6 w-6 text-primary" />
               <div>
                 <p className="text-white font-medium">Free Shipping</p>
-                <p className="text-white/60 text-sm">On orders â‚¹25,000+</p>
+                <p className="text-white/60 text-sm">On orders ₹999+</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Shield className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-white font-medium">1 Year Warranty</p>
-                <p className="text-white/60 text-sm">Full coverage</p>
+                <p className="text-white font-medium">Quality Guarantee</p>
+                <p className="text-white/60 text-sm">Lab tested purity</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

@@ -55,10 +55,10 @@ export function NewsletterCTA() {
   return (
     <section className="relative py-0 bg-[#FDF6E3] overflow-hidden">
 
-      {/* â”€â”€ Full-bleed two-panel layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ──── Full-bleed two-panel layout ────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[440px]">
 
-        {/* â”€â”€ LEFT â€” dark decorative panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── LEFT — dark decorative panel ────────────────────── */}
         <div className="relative bg-[#3F1F00] flex flex-col items-start justify-center px-8 py-14 md:px-14 md:py-16 overflow-hidden">
 
           {/* Dot-grid texture */}
@@ -90,7 +90,7 @@ export function NewsletterCTA() {
             </h2>
 
             <p className="font-sans text-[13.5px] text-[#FDF6E3]/55 leading-relaxed max-w-xs mb-8">
-              Exclusive recipes, wellness tips, seasonal offers & early access to new arrivals â€” straight to your inbox.
+              Exclusive recipes, wellness tips, seasonal offers & early access to new arrivals — straight to your inbox.
             </p>
 
             {/* Trust pills */}
@@ -113,7 +113,7 @@ export function NewsletterCTA() {
             <div className="mt-10 pt-6 border-t border-[#C9933A]/15 flex items-center gap-6">
               {[
                 { val: "50K+", label: "Subscribers" },
-                { val: "4.9â˜…", label: "Avg Rating" },
+                { val: "4.9★", label: "Avg Rating" },
               ].map(({ val, label }) => (
                 <div key={label}>
                   <p className="font-sans font-bold text-2xl text-[#C9933A] leading-none">{val}</p>
@@ -124,7 +124,7 @@ export function NewsletterCTA() {
           </div>
         </div>
 
-        {/* â”€â”€ RIGHT â€” form panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── RIGHT — form panel ────────────────────────────────────────── */}
         <div className="relative bg-white flex flex-col justify-center px-8 py-14 md:px-14 md:py-16">
 
           {/* Subtle top-right accent */}
@@ -133,7 +133,7 @@ export function NewsletterCTA() {
             <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-[#C9933A]/20 to-transparent" />
           </div>
 
-          {/* â”€â”€ Success state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+          {/* ──── Success state ────────────────────────────────────────────── */}
           {isSuccess ? (
             <div className="flex flex-col items-center text-center py-6">
               <div className="w-16 h-16 rounded-full bg-[#C9933A]/10 border border-[#C9933A]/25 flex items-center justify-center mb-5">
@@ -151,7 +151,7 @@ export function NewsletterCTA() {
                 onClick={() => setStatus("idle")}
                 className="mt-6 font-sans text-[12px] text-[#C9933A] hover:text-[#3F1F00] transition-colors underline underline-offset-2"
               >
-                Subscribe another email â†’
+                Subscribe another email →
               </button>
             </div>
           ) : (

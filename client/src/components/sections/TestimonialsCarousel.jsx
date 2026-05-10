@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RiStarFill, RiStarHalfFill } from "react-icons/ri";
+import { RiStarFill } from "react-icons/ri";
 
 const TESTIMONIALS = [
   {
@@ -11,7 +11,7 @@ const TESTIMONIALS = [
     rating: 5,
     time: "2 weeks ago",
     review:
-      "The purest ghee I've ever tasted! You can truly feel the difference â€” the aroma, the texture, everything reminds me of my grandmother's homemade ghee.",
+      "The purest ghee I've ever tasted! You can truly feel the difference - the aroma, the texture, everything reminds me of my grandmother's homemade ghee.",
     avatar: "#C2523C",
     initial: "R",
   },
@@ -44,7 +44,7 @@ const TESTIMONIALS = [
     rating: 5,
     time: "5 days ago",
     review:
-      "Love the rich golden color and amazing fragrance. Free delivery above â‚¹999 is a great bonus. This ghee is now a permanent staple in my kitchen.",
+      "Love the rich golden color and amazing fragrance. Free delivery above ₹999 is a great bonus. This ghee is now a permanent staple in my kitchen.",
     avatar: "#0F9D58",
     initial: "S",
   },
@@ -94,7 +94,7 @@ const TESTIMONIALS = [
   },
 ];
 
-/* â”€â”€ Google "G" SVG Logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Google "G" SVG Logo ────────────────────────────────────── */
 function GoogleLogo({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -106,7 +106,7 @@ function GoogleLogo({ size = 16 }) {
   );
 }
 
-/* â”€â”€ Stars row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Stars row ───────────────────────────────────────────────── */
 function Stars({ rating }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -117,19 +117,19 @@ function Stars({ rating }) {
   );
 }
 
-/* â”€â”€ Single Google-style Review Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Single Google-style Review Card ─────────────────────────── */
 function GoogleReviewCard({ item }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = item.review.length > 120;
   const displayText = !expanded && isLong
-    ? item.review.slice(0, 120) + "â€¦"
+    ? item.review.slice(0, 120) + "..."
     : item.review;
 
   return (
     <div className="flex-shrink-0 w-[300px] md:w-[320px] bg-white rounded-2xl p-5 flex flex-col gap-3 border border-gray-100"
       style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.05)" }}>
 
-      {/* â”€â”€ Top row: avatar + name + Google logo â”€â”€ */}
+      {/* ── Top row: avatar + name + Google logo ────────── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           {/* Avatar */}
@@ -155,13 +155,13 @@ function GoogleReviewCard({ item }) {
         </div>
       </div>
 
-      {/* â”€â”€ Stars + time â”€â”€ */}
+      {/* ── Stars + time ─────────────────────────────── */}
       <div className="flex items-center gap-2">
         <Stars rating={item.rating} />
         <span className="font-sans text-[11px] text-gray-400">{item.time}</span>
       </div>
 
-      {/* â”€â”€ Review text â”€â”€ */}
+      {/* ── Review text ──────────────────────────────── */}
       <p className="font-sans text-[13px] text-gray-600 leading-relaxed">
         {displayText}
         {isLong && (
@@ -175,7 +175,7 @@ function GoogleReviewCard({ item }) {
         )}
       </p>
 
-      {/* â”€â”€ "Posted on Google" footer â”€â”€ */}
+      {/* ── "Posted on Google" footer ────────────────── */}
       <div className="flex items-center gap-1.5 pt-2 border-t border-gray-100 mt-auto">
         <GoogleLogo size={12} />
         <span className="font-sans text-[10.5px] text-gray-400 tracking-wide">
@@ -186,7 +186,7 @@ function GoogleReviewCard({ item }) {
   );
 }
 
-/* â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Main Component ──────────────────────────────────────────── */
 export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
   const [isPaused, setIsPaused] = useState(false);
   const trackRef = useRef(null);
@@ -196,7 +196,7 @@ export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
   const bgClass = bg === "white" ? "bg-white" : "bg-[#FDF6E3]";
   const fadeColor = bg === "white" ? "#ffffff" : "#FDF6E3";
 
-  /* â”€â”€ Infinite auto-scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Infinite auto-scroll ─────────────────────────────────── */
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
@@ -222,7 +222,7 @@ export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
     <section className={`py-10 md:py-14 ${bgClass} overflow-hidden`}>
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── Header ───────────────────────────────────────────────── */}
         <div className="text-center mb-10 md:mb-12">
           <span className="section-eyebrow">Real Stories</span>
           <h2 className="section-title mt-3">What Our Customers Say</h2>
@@ -249,7 +249,7 @@ export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
         </div>
       </div>
 
-      {/* â”€â”€ Carousel â€” full bleed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Carousel — full bleed ─────────────────────── */}
       <div className="relative">
         {/* Left fade */}
         <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
@@ -275,13 +275,13 @@ export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
         </div>
       </div>
 
-      {/* â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Stats ─────────────────────────────────────────────────── */}
       {showStats && (
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
           <div className="mt-14 pt-10 border-t border-[#C9933A]/20 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
               { number: "50K+", label: "Happy Customers" },
-              { number: "4.9â˜…", label: "Google Rating" },
+              { number: "4.9★", label: "Google Rating" },
               { number: "99%", label: "Satisfaction Rate" },
               { number: "25+", label: "Years Legacy" },
             ].map((stat, i) => (
@@ -302,4 +302,3 @@ export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
 }
 
 export default TestimonialsCarousel;
-

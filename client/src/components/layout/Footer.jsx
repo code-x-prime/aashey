@@ -65,9 +65,9 @@ export const Footer = () => {
         style={{ background: "linear-gradient(90deg, transparent 0%, #C9933A 30%, #F0C96B 50%, #C9933A 70%, transparent 100%)" }}
       />
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ══════════════════════════════════════════
           MAIN GRID
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      ══════════════════════════════════════════ */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-16 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 md:gap-12">
 
@@ -192,9 +192,9 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ══════════════════════════════════════════
           TRUST BADGES BAR
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      ══════════════════════════════════════════ */}
       <div className="border-t border-[#C9933A]/10">
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-5">
           <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
@@ -215,9 +215,9 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ══════════════════════════════════════════
           COPYRIGHT BAR
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      ══════════════════════════════════════════ */}
       <div className="bg-[#061409] border-t border-white/[0.04]">
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
@@ -239,7 +239,7 @@ export const Footer = () => {
             {/* Made in India + credit */}
             <div className="flex items-center gap-2 flex-wrap justify-center">
               <p className="font-sans text-[11.5px] text-[#FDF6E3]/30">
-                Crafted with â¤ï¸ in India ðŸ‡®ðŸ‡³
+                Crafted with ❤️ in India 🇮🇳
               </p>
               <span className="w-px h-3 bg-[#FDF6E3]/10 hidden sm:inline-block" />
               <a href="https://groxmedia.in/" target="_blank" rel="noopener noreferrer"

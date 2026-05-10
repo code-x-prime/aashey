@@ -13,7 +13,7 @@ export function NewArrivals() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(4);
 
-  /* â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Fetch ────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -33,7 +33,7 @@ export function NewArrivals() {
     fetchProducts();
   }, []);
 
-  /* â”€â”€ Responsive slides-per-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Responsive slides-per-view ──────────────────────────── */
   useEffect(() => {
     const update = () => setSlidesPerView(window.innerWidth < 768 ? 2 : 4);
     update();
@@ -51,7 +51,7 @@ export function NewArrivals() {
   const prev = () => setCurrentIndex((i) => Math.max(0, i - 1));
   const next = () => setCurrentIndex((i) => Math.min(maxIndex, i + 1));
 
-  /* â”€â”€ Arrow style â€” inverted for dark bg â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Arrow style — inverted for dark bg ────────────── */
   const arrowCls = (enabled) =>
     `rounded-full border flex items-center justify-center transition-all duration-200 ${
       enabled
@@ -59,7 +59,7 @@ export function NewArrivals() {
         : "border-[#C9933A]/20 text-[#C9933A]/25 cursor-not-allowed"
     }`;
 
-  /* â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Loading skeleton ────────────────────────────────────────────────── */
   if (loading) {
     return (
       <section className="py-12 md:py-16 bg-[#092D15]">
@@ -82,7 +82,7 @@ export function NewArrivals() {
     <section className="py-12 md:py-16 bg-[#092D15] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Header ──────────────────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12 md:mb-14">
           <div>
             <span className="font-sans text-xs font-semibold tracking-[0.15em] uppercase text-[#C9933A]/80 flex items-center gap-1.5 mb-2">
@@ -117,7 +117,7 @@ export function NewArrivals() {
           </div>
         </div>
 
-        {/* â”€â”€ Carousel Track â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Carousel Track ──────────────────────────────────────────── */}
         <div className="relative">
           <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
@@ -139,11 +139,11 @@ export function NewArrivals() {
             </div>
           </div>
 
-          {/* Right fade â€” dark bg */}
+          {/* Right fade — dark bg */}
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[#092D15] to-transparent md:hidden" />
         </div>
 
-        {/* â”€â”€ Mobile Bottom Controls removed as requested â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Mobile Bottom Controls removed as requested ────────────────────────────── */}
 
         {/* Mobile + Desktop bottom: View All */}
         <div className="text-center mt-10 md:mt-12">

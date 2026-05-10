@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/utils";
 import { ProductCard } from "@/components/products/ProductCard";
@@ -13,7 +13,7 @@ export function FeaturedProducts() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(4);
 
-  /* â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Fetch ────────────────────────────────────────────────────────────────────── */
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -34,7 +34,7 @@ export function FeaturedProducts() {
     fetchProducts();
   }, []);
 
-  /* â”€â”€ Responsive slides-per-view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Responsive slides-per-view ────────────────────────────── */
   useEffect(() => {
     const update = () => {
       if (window.innerWidth < 768) setSlidesPerView(2);
@@ -45,19 +45,18 @@ export function FeaturedProducts() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  /* â”€â”€ Reset index when spv changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Reset index when spv changes ──────────────────────────── */
   useEffect(() => { setCurrentIndex(0); }, [slidesPerView]);
 
   const totalSlides = products.length;
   const maxIndex = Math.max(0, totalSlides - slidesPerView);
   const canPrev = currentIndex > 0;
   const canNext = currentIndex < maxIndex;
-  const totalDots = maxIndex + 1;
 
   const prev = () => setCurrentIndex((i) => Math.max(0, i - 1));
   const next = () => setCurrentIndex((i) => Math.min(maxIndex, i + 1));
 
-  /* â”€â”€ Loading skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Loading skeleton ─────────────────────────────────────────── */
   if (loading) {
     return (
       <section className="py-10 md:py-14 bg-[#FDF6E3]">
@@ -93,7 +92,7 @@ export function FeaturedProducts() {
     <section className="py-10 md:py-14 bg-[#FDF6E3] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── Header ──────────────────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
           <div>
             <span className="section-eyebrow">Handpicked For You</span>
@@ -144,9 +143,9 @@ export function FeaturedProducts() {
           </div>
         </div>
 
-        {/* â”€â”€ Carousel Track â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── Carousel Track ────────────────────────────────────────── */}
         <div className="relative">
-          <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="snap-x snap-mandatory overflow-x-auto md:overflow-hidden touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
               className="flex md:transition-transform md:duration-500 md:ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
               style={{
@@ -170,8 +169,6 @@ export function FeaturedProducts() {
           <div className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-[#FDF6E3] to-transparent md:hidden" />
         </div>
 
-        {/* â”€â”€ Mobile Bottom Controls removed as requested â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-
         {/* Mobile: View All */}
         <div className="mt-5 flex justify-center md:hidden">
           <Link 
@@ -188,4 +185,3 @@ export function FeaturedProducts() {
 }
 
 export default FeaturedProducts;
-

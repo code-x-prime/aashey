@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { fetchApi, formatCurrency } from "@/lib/utils";
 import { getImageUrl } from "@/lib/imageUrl";
-import { Clock, Zap, ChevronRight, Loader2, Flame, Timer, ShoppingBag } from "lucide-react";
+import {  ChevronRight, Loader2, Flame, Timer, ShoppingBag } from "lucide-react";
 
 // Helper function to format image URLs
 
@@ -189,7 +189,7 @@ export function FlashSaleSection() {
 
                     {/* Title */}
                     <h2 className="font-sans text-5xl md:text-6xl font-semibold text-[#FDF6E3] mt-3 mb-2">
-                        âš¡ Flash Sale
+                        ⚡ Flash Sale
                     </h2>
                     <p className="font-sans text-[#FDF6E3]/70 mb-8 text-base">{currentSale.name}</p>
 

@@ -27,7 +27,7 @@ export function ShopByCategory() {
     fetchCategories();
   }, []);
 
-  /* â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ──── Loading ────────────────────────────────────────────────────────────────────── */
   if (loading) {
     return (
       <section className="py-10 md:py-16 bg-[#3F1F00]">
@@ -58,7 +58,7 @@ export function ShopByCategory() {
     <section className="py-10 md:py-16 bg-[#3F1F00] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
 
-        {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Header ────────────────────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10 md:mb-12">
           <div>
             <span className="font-sans text-[10px] font-semibold tracking-[0.28em] uppercase text-[#C9933A]/60 flex items-center gap-2 mb-3">
@@ -81,10 +81,10 @@ export function ShopByCategory() {
           )}
         </div>
 
-        {/* â”€â”€ Bento Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Bento Grid ────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-[180px] md:auto-rows-[200px] gap-3 md:gap-4">
 
-          {/* â”€â”€ Featured card (tall, col+row span) â”€â”€ */}
+          {/* ──── Featured card (tall, col+row span) ──── */}
           <CategoryCard
             category={featured}
             className="col-span-1 row-span-2 md:col-span-1 md:row-span-2"
@@ -93,7 +93,7 @@ export function ShopByCategory() {
             size="large"
           />
 
-          {/* â”€â”€ Rest of cards â”€â”€ */}
+          {/* ──── Rest of cards ──── */}
           {rest.map((cat, i) => (
             <CategoryCard
               key={cat.id}
@@ -106,7 +106,7 @@ export function ShopByCategory() {
           ))}
         </div>
 
-        {/* â”€â”€ Mobile: View All â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ──── Mobile: View All ────────────────────────────────────────── */}
         {categories.length > 7 && (
           <div className="mt-8 text-center md:hidden">
             <Link 
@@ -122,7 +122,7 @@ export function ShopByCategory() {
   );
 }
 
-/* â”€â”€ Category Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ──── Category Card ────────────────────────────────────────────────────────────────── */
 function CategoryCard({ category, className = "", isHovered, onHover, size = "small" }) {
   return (
     <Link

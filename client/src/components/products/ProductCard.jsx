@@ -16,7 +16,7 @@ const calculateDiscountPercentage = (regularPrice, salePrice) => {
   return Math.round(((regularPrice - salePrice) / regularPrice) * 100);
 };
 
-// â”€â”€ Shared price + wishlist logic hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──── Shared price + wishlist logic hook ────────────────────────────────────────────────────────────────────────────
 function useProductCard(product) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -140,7 +140,7 @@ function useProductCard(product) {
   };
 }
 
-// â”€â”€ Grid Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──── Grid Card ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -262,7 +262,7 @@ export const ProductCard = ({ product }) => {
   );
 };
 
-// â”€â”€ List Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──── List Card ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 export const ProductListCard = ({ product }) => {
   const {
     wishlistItems, isAddingToWishlist, handleAddToWishlist,
