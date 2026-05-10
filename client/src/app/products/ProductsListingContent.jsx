@@ -228,7 +228,7 @@ export default function ProductsListingContent() {
                 } else {
                     const qp = new URLSearchParams();
                     qp.append("page", String(pagination.page)); qp.append("limit", String(pagination.limit));
-                    const validSort = ["createdAt", "updatedAt", "name", "featured"];
+                    const validSort = ["createdAt", "updatedAt", "name", "featured", "price"];
                     qp.append("sort", validSort.includes(filters.sort) ? filters.sort : "createdAt");
                     qp.append("order", filters.order);
                     if (filters.search) qp.append("search", filters.search);

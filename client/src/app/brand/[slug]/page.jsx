@@ -96,7 +96,7 @@ function BrandPageContent({ slug }) {
                 queryParams.append("page", pagination.page);
                 queryParams.append("limit", pagination.limit);
 
-                const validSortFields = ["createdAt", "updatedAt", "name", "featured"];
+                const validSortFields = ["createdAt", "updatedAt", "name", "featured", "price"];
                 let sortField = filters.sort;
                 if (!validSortFields.includes(sortField)) sortField = "createdAt";
 
@@ -127,8 +127,8 @@ function BrandPageContent({ slug }) {
         const map = {
             newest: ["createdAt", "desc"],
             oldest: ["createdAt", "asc"],
-            "price-low": ["createdAt", "asc"],
-            "price-high": ["createdAt", "desc"],
+            "price-low": ["price", "asc"],
+            "price-high": ["price", "desc"],
             "name-asc": ["name", "asc"],
             "name-desc": ["name", "desc"],
         };
@@ -149,6 +149,8 @@ function BrandPageContent({ slug }) {
     };
 
     const currentSort = () => {
+        if (filters.sort === "price" && filters.order === "asc") return "price-low";
+        if (filters.sort === "price" && filters.order === "desc") return "price-high";
         if (filters.sort === "name" && filters.order === "asc") return "name-asc";
         if (filters.sort === "name" && filters.order === "desc") return "name-desc";
         if (filters.sort === "createdAt" && filters.order === "asc") return "oldest";

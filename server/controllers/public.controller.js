@@ -149,28 +149,19 @@ export const getBrandBySlug = asyncHandler(async (req, res) => {
     where: whereConditions,
   });
 
-  // Get products with pagination, sorting
-  const products = await prisma.product.findMany({
+  // Prisma doesn't support _min orderBy on relations — sort in JS for price
+  const isPriceSort = normalizedSort === "price";
+
+  let products = await prisma.product.findMany({
     where: whereConditions,
     include: {
-      categories: {
-        include: { category: true },
-      },
-      images: {
-        where: { isPrimary: true },
-        take: 1,
-      },
+      categories: { include: { category: true } },
+      images: { where: { isPrimary: true }, take: 1 },
       variants: {
         where: { isActive: true },
         include: {
           attributes: {
-            include: {
-              attributeValue: {
-                include: {
-                  attribute: true,
-                },
-              },
-            },
+            include: { attributeValue: { include: { attribute: true } } },
           },
           images: { orderBy: { order: "asc" } },
         },
@@ -183,14 +174,29 @@ export const getBrandBySlug = asyncHandler(async (req, res) => {
         },
       },
     },
-    orderBy: [
-      normalizedSort === "price"
-        ? { variants: { _min: { price: normalizedOrder } } }
-        : { [normalizedSort]: normalizedOrder }
-    ],
-    skip: (parseInt(page) - 1) * parseInt(limit),
-    take: parseInt(limit),
+    orderBy: isPriceSort
+      ? [{ ourProduct: "desc" }]
+      : [{ [normalizedSort]: normalizedOrder }],
+    ...(isPriceSort ? {} : {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit),
+    }),
   });
+
+  if (isPriceSort) {
+    const getMinPrice = (p) =>
+      p.variants.length > 0
+        ? Math.min(...p.variants.map((v) => parseFloat(v.salePrice ?? v.price)))
+        : Infinity;
+    products.sort((a, b) => {
+      if (a.ourProduct !== b.ourProduct) return a.ourProduct ? -1 : 1;
+      const diff = getMinPrice(a) - getMinPrice(b);
+      return normalizedOrder === "asc" ? diff : -diff;
+    });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    products = products.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+  }
 
   // Batch fetch active flash sales for products
   const now = new Date();

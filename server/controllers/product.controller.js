@@ -232,59 +232,59 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     where: whereConditions,
   });
 
-  // Get products with pagination, sorting
-  const products = await prisma.product.findMany({
+  // Prisma doesn't support _min orderBy on relations — sort in JS for price
+  const isPriceSort = normalizedSort === "price";
+
+  let products = await prisma.product.findMany({
     where: whereConditions,
     include: {
-      categories: {
-        include: {
-          category: true,
-        },
-      },
-      images: {
-        where: { isPrimary: true },
-        take: 1,
-      },
+      categories: { include: { category: true } },
+      images: { where: { isPrimary: true }, take: 1 },
       variants: {
         where: { isActive: true },
         include: {
           attributes: {
-            include: {
-              attributeValue: {
-                include: {
-                  attribute: true,
-                },
-              },
-            },
+            include: { attributeValue: { include: { attribute: true } } },
           },
-          images: {
-            orderBy: { order: "asc" }, // Sort images by order (0, 1, 2, 3...)
-          },
+          images: { orderBy: { order: "asc" } },
         },
         orderBy: { price: "asc" },
       },
       _count: {
         select: {
-          reviews: {
-            where: {
-              status: "APPROVED",
-            },
-          },
+          reviews: { where: { status: "APPROVED" } },
           variants: true,
         },
       },
     },
-    orderBy: [
-      { ourProduct: "desc" },
-      normalizedSort === "price"
-        ? { variants: { _min: { price: normalizedOrder } } }
-        : normalizedSort === "newest"
-          ? { createdAt: normalizedOrder }
-          : { [normalizedSort]: normalizedOrder }
-    ],
-    skip: (parseInt(page) - 1) * parseInt(limit),
-    take: parseInt(limit),
+    orderBy: isPriceSort
+      ? [{ ourProduct: "desc" }]
+      : [
+          { ourProduct: "desc" },
+          normalizedSort === "newest"
+            ? { createdAt: normalizedOrder }
+            : { [normalizedSort]: normalizedOrder },
+        ],
+    ...(isPriceSort ? {} : {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit),
+    }),
   });
+
+  if (isPriceSort) {
+    const getMinPrice = (p) =>
+      p.variants.length > 0
+        ? Math.min(...p.variants.map((v) => parseFloat(v.salePrice ?? v.price)))
+        : Infinity;
+    products.sort((a, b) => {
+      if (a.ourProduct !== b.ourProduct) return a.ourProduct ? -1 : 1;
+      const diff = getMinPrice(a) - getMinPrice(b);
+      return normalizedOrder === "asc" ? diff : -diff;
+    });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    products = products.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+  }
 
   // Batch fetch active flash sales for all products in this result
   const now = new Date();
@@ -1000,57 +1000,51 @@ export const getProductsByType = asyncHandler(async (req, res) => {
     where: filterConditions,
   });
 
-  // Get products with sorting
-  const products = await prisma.product.findMany({
+  // Prisma doesn't support _min orderBy on relations — sort in JS for price
+  const isPriceSort = normalizedSort === "price";
+
+  let products = await prisma.product.findMany({
     where: filterConditions,
     include: {
-      categories: {
-        include: {
-          category: true,
-        },
-      },
-      images: {
-        where: { isPrimary: true },
-        take: 1,
-      },
+      categories: { include: { category: true } },
+      images: { where: { isPrimary: true }, take: 1 },
       variants: {
         where: { isActive: true },
         include: {
           attributes: {
-            include: {
-              attributeValue: {
-                include: {
-                  attribute: true,
-                },
-              },
-            },
+            include: { attributeValue: { include: { attribute: true } } },
           },
-          images: {
-            orderBy: { order: "asc" },
-          },
+          images: { orderBy: { order: "asc" } },
         },
         orderBy: { price: "asc" },
       },
       _count: {
         select: {
-          reviews: {
-            where: {
-              status: "APPROVED",
-            },
-          },
+          reviews: { where: { status: "APPROVED" } },
           variants: true,
         },
       },
     },
-    orderBy: [
-      { ourProduct: "desc" },
-      normalizedSort === "price"
-        ? { variants: { _min: { price: normalizedOrder } } }
-        : { [normalizedSort]: normalizedOrder }
-    ],
-    skip,
-    take: parseInt(limit),
+    orderBy: isPriceSort
+      ? [{ ourProduct: "desc" }]
+      : [{ ourProduct: "desc" }, { [normalizedSort]: normalizedOrder }],
+    ...(isPriceSort ? {} : { skip, take: parseInt(limit) }),
   });
+
+  if (isPriceSort) {
+    const getMinPrice = (p) =>
+      p.variants.length > 0
+        ? Math.min(...p.variants.map((v) => parseFloat(v.salePrice ?? v.price)))
+        : Infinity;
+    products.sort((a, b) => {
+      if (a.ourProduct !== b.ourProduct) return a.ourProduct ? -1 : 1;
+      const diff = getMinPrice(a) - getMinPrice(b);
+      return normalizedOrder === "asc" ? diff : -diff;
+    });
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    products = products.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+  }
 
   // Batch fetch active flash sales for these products
   const now = new Date();
