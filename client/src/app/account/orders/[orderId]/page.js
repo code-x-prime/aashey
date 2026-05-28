@@ -327,6 +327,16 @@ export default function OrderDetailPage() {
                                     <div>
                                         <p className="text-xs text-[#9CA3AF] uppercase tracking-wide mb-1">AWB / Tracking Number</p>
                                         <p className="font-semibold text-[#1A0A00] font-mono">{order.awbCode}</p>
+                                        {order.trackingUrl && (
+                                            <a
+                                                href={order.trackingUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1 font-medium"
+                                            >
+                                                Track Shipment →
+                                            </a>
+                                        )}
                                     </div>
                                 )}
                             </div>

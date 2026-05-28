@@ -15,6 +15,10 @@ import {
   User,
   Truck,
   CheckCircle,
+  ExternalLink,
+  RefreshCw,
+  Copy,
+  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, debugData, cn } from "@/lib/utils";
@@ -1112,135 +1116,215 @@ export default function OrderDetailsPage() {
             </Card>
           ) : null}
 
-          {/* Shiprocket Information */}
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                <Truck className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                Shiprocket Shipment
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6 space-y-4">
-              {/* Existing shipment info */}
-              {orderDetails.shiprocket && (
-                <div className="space-y-3">
-                  {orderDetails.shiprocket.orderId && (
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">Shiprocket Order ID</p>
-                      <p className="font-mono text-sm text-[#1F2937] bg-[#F3F4F6] px-2 py-1 rounded border border-[#E5E7EB]">
-                        {orderDetails.shiprocket.orderId}
-                      </p>
-                    </div>
-                  )}
-                  {orderDetails.shiprocket.shipmentId && (
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">Shipment ID</p>
-                      <p className="font-mono text-sm text-[#1F2937] bg-[#F3F4F6] px-2 py-1 rounded border border-[#E5E7EB]">
-                        {orderDetails.shiprocket.shipmentId}
-                      </p>
-                    </div>
-                  )}
-                  {orderDetails.shiprocket.awbCode && (
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">AWB Code</p>
-                      <p className="font-mono text-sm text-[#1F2937] bg-[#F3F4F6] px-2 py-1 rounded border border-[#E5E7EB]">
-                        {orderDetails.shiprocket.awbCode}
-                      </p>
-                    </div>
-                  )}
-                  {orderDetails.shiprocket.courierName && (
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">Courier</p>
-                      <p className="font-medium text-[#1F2937]">{orderDetails.shiprocket.courierName}</p>
-                    </div>
-                  )}
-                  {orderDetails.shiprocket.status && (
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">Shiprocket Status</p>
-                      <Badge className={cn("text-xs font-medium border", getStatusBadgeClass(orderDetails.shiprocket.status))}>
-                        {orderDetails.shiprocket.status}
-                      </Badge>
-                    </div>
-                  )}
+          {/* Shiprocket Shipment Card */}
+          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-[#F0FFF4] to-[#FFFFFF] border-b border-[#E5E7EB] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#4CAF50]/10 border border-[#4CAF50]/20">
+                  <Truck className="h-5 w-5 text-[#4CAF50]" />
                 </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[#1F2937]">Shiprocket Shipment</h3>
+                  <p className="text-xs text-[#9CA3AF]">Courier management & tracking</p>
+                </div>
+              </div>
+              {orderDetails.shiprocket?.status && (
+                <Badge className={cn("text-xs font-semibold px-3 py-1 border", getStatusBadgeClass(orderDetails.shiprocket.status))}>
+                  {orderDetails.shiprocket.status.replace(/_/g, " ")}
+                </Badge>
               )}
+            </div>
 
-              {/* Courier selection — only show if no AWB yet */}
-              {!orderDetails.shiprocket?.awbCode && (
-                <div className="border-t border-[#E5E7EB] pt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-[#1F2937]">Select Courier</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={fetchCouriers}
-                      disabled={loadingCouriers}
-                      className="text-xs text-[#6B7280] hover:text-[#1F2937]"
-                    >
-                      {loadingCouriers ? <Loader2 className="h-3 w-3 animate-spin" /> : "Refresh"}
-                    </Button>
+            <CardContent className="px-6 py-5 space-y-5">
+
+              {/* ── Booked: show tracking info ── */}
+              {orderDetails.shiprocket?.awbCode ? (
+                <div className="space-y-4">
+
+                  {/* AWB + Track button — prominent */}
+                  <div className="bg-[#F0FFF4] border border-[#4CAF50]/30 rounded-xl p-4">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="text-xs text-[#4CAF50] font-semibold uppercase tracking-wider mb-1">AWB / Tracking Number</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-mono text-xl font-bold text-[#1F2937] tracking-wider">
+                            {orderDetails.shiprocket.awbCode}
+                          </p>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(orderDetails.shiprocket!.awbCode!);
+                              toast.success("AWB copied!");
+                            }}
+                            className="p-1.5 rounded-md hover:bg-[#4CAF50]/10 text-[#4CAF50] transition-colors"
+                            title="Copy AWB"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <a
+                        href={`https://shiprocket.co/tracking/${orderDetails.shiprocket.awbCode}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#4CAF50] text-white text-sm font-semibold rounded-lg hover:bg-[#43A047] transition-colors shadow-sm flex-shrink-0"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Track Live
+                      </a>
+                    </div>
                   </div>
 
-                  {loadingCouriers ? (
-                    <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Fetching available couriers...
-                    </div>
-                  ) : couriers.length > 0 ? (
-                    <div className="space-y-2">
-                      {couriers.map((courier) => (
-                        <label
-                          key={courier.id}
-                          className={cn(
-                            "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
-                            selectedCourierId === courier.id
-                              ? "border-[#4CAF50] bg-[#F0FFF4]"
-                              : "border-[#E5E7EB] hover:border-[#9CA3AF]"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name="courier"
-                              value={courier.id}
-                              checked={selectedCourierId === courier.id}
-                              onChange={() => setSelectedCourierId(courier.id)}
-                              className="h-4 w-4 text-[#4CAF50]"
-                            />
-                            <div>
-                              <p className="text-sm font-medium text-[#1F2937]">{courier.name}</p>
-                              <p className="text-xs text-[#9CA3AF]">ETD: {courier.etd}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-semibold text-[#1F2937]">₹{courier.rate}</p>
-                            {courier.codAvailable && (
-                              <p className="text-xs text-[#6B7280]">COD available</p>
-                            )}
-                          </div>
-                        </label>
-                      ))}
+                  {/* IDs grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {orderDetails.shiprocket.courierName && (
+                      <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+                        <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">Courier</p>
+                        <div className="flex items-center gap-1.5">
+                          <Truck className="h-3.5 w-3.5 text-[#4CAF50]" />
+                          <p className="font-semibold text-[#1F2937] text-sm">{orderDetails.shiprocket.courierName}</p>
+                        </div>
+                      </div>
+                    )}
+                    {orderDetails.shiprocket.orderId && (
+                      <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+                        <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">SR Order ID</p>
+                        <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.orderId}</p>
+                      </div>
+                    )}
+                    {orderDetails.shiprocket.shipmentId && (
+                      <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+                        <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">Shipment ID</p>
+                        <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.shipmentId}</p>
+                      </div>
+                    )}
+                  </div>
 
+                  {/* Status timeline hint */}
+                  <div className="flex items-center gap-2 text-xs text-[#6B7280] bg-[#F9FAFB] rounded-lg px-3 py-2 border border-[#E5E7EB]">
+                    <CheckCircle className="h-3.5 w-3.5 text-[#4CAF50] flex-shrink-0" />
+                    Shipment booked. Use "Track Live" to see real-time delivery updates on Shiprocket.
+                  </div>
+                </div>
+
+              ) : (
+                /* ── Not booked: show courier selection ── */
+                <div className="space-y-4">
+
+                  {/* Pending booking info */}
+                  {(orderDetails.shiprocket?.orderId || orderDetails.shiprocket?.shipmentId) && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {orderDetails.shiprocket.orderId && (
+                        <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+                          <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">SR Order ID</p>
+                          <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.orderId}</p>
+                        </div>
+                      )}
+                      {orderDetails.shiprocket.shipmentId && (
+                        <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+                          <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">Shipment ID</p>
+                          <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.shipmentId}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Courier selector */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold text-[#1F2937]">Select Courier Partner</p>
                       <Button
-                        onClick={handleBookShipment}
-                        disabled={!selectedCourierId || bookingShipment}
-                        className="w-full mt-2 bg-[#4CAF50] hover:bg-[#43A047] text-white"
+                        variant="ghost"
+                        size="sm"
+                        onClick={fetchCouriers}
+                        disabled={loadingCouriers}
+                        className="text-xs text-[#6B7280] hover:text-[#1F2937] gap-1.5 h-7 px-2"
                       >
-                        {bookingShipment ? (
-                          <span className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Booking Shipment...
-                          </span>
-                        ) : (
-                          "Book Shipment"
-                        )}
+                        <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} />
+                        Refresh
                       </Button>
                     </div>
-                  ) : (
-                    <p className="text-sm text-[#9CA3AF]">
-                      No couriers available for this pincode. Check pickup address in Shiprocket settings.
-                    </p>
-                  )}
+
+                    {loadingCouriers ? (
+                      <div className="flex items-center gap-3 py-6 justify-center text-sm text-[#9CA3AF] bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
+                        <Loader2 className="h-4 w-4 animate-spin text-[#4CAF50]" />
+                        Fetching available couriers from Shiprocket...
+                      </div>
+                    ) : couriers.length > 0 ? (
+                      <div className="space-y-2">
+                        {couriers.map((courier) => (
+                          <label
+                            key={courier.id}
+                            className={cn(
+                              "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all duration-150",
+                              selectedCourierId === courier.id
+                                ? "border-[#4CAF50] bg-[#F0FFF4] shadow-sm"
+                                : "border-[#E5E7EB] hover:border-[#9CA3AF] bg-white"
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                                selectedCourierId === courier.id
+                                  ? "border-[#4CAF50] bg-[#4CAF50]"
+                                  : "border-[#D1D5DB]"
+                              )}>
+                                {selectedCourierId === courier.id && (
+                                  <div className="h-2 w-2 rounded-full bg-white" />
+                                )}
+                              </div>
+                              <input
+                                type="radio"
+                                name="courier"
+                                value={courier.id}
+                                checked={selectedCourierId === courier.id}
+                                onChange={() => setSelectedCourierId(courier.id)}
+                                className="sr-only"
+                              />
+                              <div>
+                                <p className="text-sm font-semibold text-[#1F2937]">{courier.name}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <Clock className="h-3 w-3 text-[#9CA3AF]" />
+                                  <p className="text-xs text-[#9CA3AF]">ETD: {courier.etd}</p>
+                                  {courier.codAvailable && (
+                                    <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded font-medium">COD</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-base font-bold text-[#1F2937]">₹{courier.rate}</p>
+                              <p className="text-xs text-[#9CA3AF]">Shipping charge</p>
+                            </div>
+                          </label>
+                        ))}
+
+                        <Button
+                          onClick={handleBookShipment}
+                          disabled={!selectedCourierId || bookingShipment}
+                          className="w-full mt-3 bg-[#4CAF50] hover:bg-[#43A047] text-white font-semibold h-11 text-sm shadow-sm"
+                        >
+                          {bookingShipment ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Booking Shipment...
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-2">
+                              <Truck className="h-4 w-4" />
+                              Book Shipment
+                            </span>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="py-6 text-center bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
+                        <Truck className="h-8 w-8 text-[#D1D5DB] mx-auto mb-2" />
+                        <p className="text-sm font-medium text-[#6B7280]">No couriers available</p>
+                        <p className="text-xs text-[#9CA3AF] mt-1">Check pickup address in Shiprocket settings</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>

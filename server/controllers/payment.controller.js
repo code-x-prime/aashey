@@ -1325,6 +1325,14 @@ export const getOrderDetails = asyncHandler(async (req, res) => {
         })),
       }
       : null,
+    // Shiprocket shipment data
+    awbCode: order.awbCode || null,
+    courierName: order.courierName || null,
+    shiprocketStatus: order.shiprocketStatus || null,
+    shiprocketOrderId: order.shiprocketOrderId || null,
+    trackingUrl: order.awbCode
+      ? `https://shiprocket.co/tracking/${order.awbCode}`
+      : null,
   };
 
   res

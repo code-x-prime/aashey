@@ -15,6 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  Truck,
+  ExternalLink,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -354,6 +356,33 @@ export default function OrdersPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Shiprocket tracking info */}
+                    {(order.awbCode || order.shiprocketStatus || order.courierName) && (
+                      <div className="flex items-center gap-2 flex-wrap mt-2 pt-3 border-t border-[#F3F4F6]">
+                        <Truck className="h-3.5 w-3.5 text-[#4CAF50] shrink-0" />
+                        {order.courierName && (
+                          <span className="text-xs font-medium text-[#374151]">{order.courierName}</span>
+                        )}
+                        {order.awbCode && (
+                          <a
+                            href={`https://shiprocket.co/tracking/${order.awbCode}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs font-mono text-[#4CAF50] hover:underline flex items-center gap-0.5"
+                          >
+                            {order.awbCode}
+                            <ExternalLink className="h-3 w-3 ml-0.5" />
+                          </a>
+                        )}
+                        {order.shiprocketStatus && (
+                          <span className="text-xs bg-[#F0FFF4] text-[#4CAF50] border border-[#4CAF50]/20 px-2 py-0.5 rounded-full font-medium">
+                            {order.shiprocketStatus.replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Total & Actions */}
