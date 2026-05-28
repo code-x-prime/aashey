@@ -111,14 +111,30 @@ export const getProductsByCategory = asyncHandler(async (req, res) => {
     normalizedOrder = parts[1];
   }
 
-  // Find the category by slug
+  // Find the category by slug (include subcategories for response)
   const category = await prisma.category.findUnique({
     where: { slug },
+    include: {
+      subCategories: {
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+      },
+    },
   });
 
   if (!category) {
     throw new ApiError(404, "Category not found");
   }
+
+  // Format category with image URLs
+  const formattedCategory = {
+    ...category,
+    image: category.image ? getFileUrl(category.image) : null,
+    subCategories: (category.subCategories || []).map((sub) => ({
+      ...sub,
+      image: sub.image ? getFileUrl(sub.image) : null,
+    })),
+  };
 
   // Products in this category OR in any subcategory of this category
   const productWhere = {
@@ -292,7 +308,7 @@ export const getProductsByCategory = asyncHandler(async (req, res) => {
     new ApiResponsive(
       200,
       {
-        category,
+        category: formattedCategory,
         products: formattedProducts,
         pagination: {
           total: totalProducts,
@@ -302,6 +318,144 @@ export const getProductsByCategory = asyncHandler(async (req, res) => {
         },
       },
       "Products fetched successfully"
+    )
+  );
+});
+
+// Get products by subcategory slug
+export const getProductsBySubCategory = asyncHandler(async (req, res) => {
+  const { catSlug, subSlug } = req.params;
+  const { page = 1, limit = 10, sort = "createdAt", order = "desc" } = req.query;
+
+  let normalizedSort = sort;
+  let normalizedOrder = order;
+  if (sort && sort.includes("-")) {
+    const parts = sort.split("-");
+    normalizedSort = parts[0];
+    normalizedOrder = parts[1];
+  }
+
+  // Find parent category then subcategory
+  const parentCategory = await prisma.category.findUnique({ where: { slug: catSlug } });
+  if (!parentCategory) throw new ApiError(404, "Category not found");
+
+  const subCategory = await prisma.subCategory.findUnique({
+    where: { categoryId_slug: { categoryId: parentCategory.id, slug: subSlug } },
+  });
+  if (!subCategory) throw new ApiError(404, "Subcategory not found");
+
+  const productWhere = {
+    isActive: true,
+    subCategories: { some: { subCategoryId: subCategory.id } },
+  };
+
+  const totalProducts = await prisma.product.count({ where: productWhere });
+  const isPriceSort = normalizedSort === "price";
+
+  let products = await prisma.product.findMany({
+    where: productWhere,
+    include: {
+      images: { where: { isPrimary: true }, take: 1 },
+      categories: { include: { category: true }, take: 1 },
+      variants: {
+        where: { isActive: true },
+        include: {
+          attributes: { include: { attributeValue: { include: { attribute: true } } } },
+          images: true,
+        },
+      },
+      _count: { select: { reviews: true } },
+    },
+    orderBy: isPriceSort
+      ? [{ ourProduct: "desc" }]
+      : [{ ourProduct: "desc" }, { [normalizedSort]: normalizedOrder }],
+    ...(isPriceSort ? {} : {
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit),
+    }),
+  });
+
+  if (isPriceSort) {
+    const getMinPrice = (p) =>
+      p.variants.length > 0
+        ? Math.min(...p.variants.map((v) => parseFloat(v.salePrice ?? v.price)))
+        : Infinity;
+    products.sort((a, b) => {
+      if (a.ourProduct !== b.ourProduct) return a.ourProduct ? -1 : 1;
+      const diff = getMinPrice(a) - getMinPrice(b);
+      return normalizedOrder === "asc" ? diff : -diff;
+    });
+    const pageNum = parseInt(page), limitNum = parseInt(limit);
+    products = products.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+  }
+
+  const now = new Date();
+  const productIds = products.map((p) => p.id);
+  const flashSaleProducts = await prisma.flashSaleProduct.findMany({
+    where: {
+      productId: { in: productIds },
+      flashSale: { isActive: true, startTime: { lte: now }, endTime: { gte: now } },
+    },
+    include: { flashSale: { select: { id: true, name: true, discountPercentage: true, endTime: true } } },
+  });
+  const flashSaleMap = {};
+  flashSaleProducts.forEach((fsp) => {
+    flashSaleMap[fsp.productId] = { isActive: true, ...fsp.flashSale };
+  });
+
+  const formattedProducts = products.map((product) => {
+    const primaryCategory = product.categories.length > 0 ? product.categories[0].category : null;
+    let imageUrl = null;
+    if (product.images?.length > 0) {
+      imageUrl = product.images.find((i) => i.isPrimary)?.url || product.images[0].url;
+    } else if (product.variants?.length > 0) {
+      const vImg = product.variants.find((v) => v.images?.length > 0);
+      if (vImg) imageUrl = vImg.images.find((i) => i.isPrimary)?.url || vImg.images[0].url;
+    }
+    const basePrice = product.variants.length > 0
+      ? Math.min(...product.variants.map((v) => parseFloat(v.salePrice || v.price)))
+      : null;
+    const regularPrice = product.variants.length > 0
+      ? Math.min(...product.variants.map((v) => parseFloat(v.price)))
+      : null;
+    const flashSale = flashSaleMap[product.id] || null;
+    let flashSalePrice = null;
+    if (flashSale && basePrice !== null) {
+      flashSalePrice = Math.round((basePrice - (basePrice * flashSale.discountPercentage) / 100) * 100) / 100;
+    }
+    return {
+      ...product,
+      category: primaryCategory,
+      images: product.images.map((img) => ({ ...img, url: getFileUrl(img.url) })),
+      image: imageUrl ? getFileUrl(imageUrl) : null,
+      basePrice,
+      regularPrice,
+      hasSale: product.variants.some((v) => v.salePrice !== null),
+      flashSale: flashSale ? { ...flashSale, flashSalePrice } : null,
+    };
+  });
+
+  res.status(200).json(
+    new ApiResponsive(
+      200,
+      {
+        category: {
+          ...parentCategory,
+          image: parentCategory.image ? getFileUrl(parentCategory.image) : null,
+        },
+        subCategory: {
+          ...subCategory,
+          image: subCategory.image ? getFileUrl(subCategory.image) : null,
+        },
+        products: formattedProducts,
+        pagination: {
+          total: totalProducts,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(totalProducts / parseInt(limit)),
+        },
+      },
+      "Subcategory products fetched successfully"
     )
   );
 });

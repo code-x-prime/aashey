@@ -570,7 +570,7 @@ export function ProductForm({
 
             // Set product data
             const existingSubCategoryIds =
-              productData.subCategories?.map((sc: any) => sc.id) || [];
+              productData.subCategories?.map((sc: any) => sc.subCategoryId || sc.subCategory?.id || sc.id) || [];
 
             // Initialize selected sub-categories with existing ones when editing
             setSelectedSubCategories(existingSubCategoryIds);

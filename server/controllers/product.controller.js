@@ -125,6 +125,16 @@ export const getAllProducts = asyncHandler(async (req, res) => {
         some: { subCategoryId: { in: subcategoryIds } },
       },
     }),
+    // Fallback: subcategory requested but no ProductSubCategory links exist — filter by parent category
+    ...(subcategory && subcategoryIds.length === 0 && category && {
+      categories: {
+        some: {
+          category: {
+            OR: [{ id: category }, { slug: category }],
+          },
+        },
+      },
+    }),
     // Filter by featured
     ...(featured === "true" && {
       OR: [
@@ -441,6 +451,16 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
           category: true,
         },
       },
+      subCategories: {
+        include: {
+          subCategory: {
+            include: {
+              category: true,
+            },
+          },
+        },
+        take: 1,
+      },
       brand: true,
       images: {
         orderBy: { isPrimary: "desc" },
@@ -458,7 +478,7 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
             },
           },
           images: {
-            orderBy: { order: "asc" }, // Sort images by order (0, 1, 2, 3...)
+            orderBy: { order: "asc" },
           },
         },
       },
@@ -501,6 +521,15 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
     // Add primary category
     category:
       product.categories.length > 0 ? product.categories[0].category : null,
+    // Add primary subcategory
+    subCategory: product.subCategories?.length > 0
+      ? {
+          ...product.subCategories[0].subCategory,
+          image: product.subCategories[0].subCategory.image
+            ? getFileUrl(product.subCategories[0].subCategory.image)
+            : null,
+        }
+      : null,
     // Include brand (only select basic fields)
     brand: product.brand
       ? {

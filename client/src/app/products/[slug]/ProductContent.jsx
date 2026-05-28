@@ -415,19 +415,23 @@ export default function ProductContent({ slug }) {
       {/* ── Breadcrumb ──────────────────────────── */}
       <div className="border-b border-[#C9933A]/12 bg-white/60 backdrop-blur-sm py-3 px-4 md:px-8 lg:px-16">
         <div className="max-w-7xl mx-auto flex items-center flex-wrap gap-0.5 text-[11.5px] font-sans">
-          {[
-            { label: "Home",     href: "/" },
-            { label: "Products", href: "/products" },
-            ...(product?.category || product?.categories?.[0]?.category ? [{
-              label: product.category?.name || product.categories[0]?.category?.name,
-              href: `/category/${product.category?.slug || product.categories[0]?.category?.slug}`,
-            }] : []),
-          ].map((crumb, i) => (
-            <span key={crumb.href} className="flex items-center gap-0.5">
-              {i > 0 && <RiArrowRightSLine className="w-3.5 h-3.5 text-[#C9933A]/40 mx-0.5" />}
-              <Link href={crumb.href} className="text-[#8B6040] hover:text-[#C9933A] transition-colors">{crumb.label}</Link>
-            </span>
-          ))}
+          {(() => {
+            const catSlug = product.category?.slug || product.categories?.[0]?.category?.slug;
+            const catName = product.category?.name || product.categories?.[0]?.category?.name;
+            const sub = product.subCategory;
+            const crumbs = [
+              { label: "Home", href: "/" },
+              { label: "Products", href: "/products" },
+              ...(catName && catSlug ? [{ label: catName, href: `/category/${catSlug}` }] : []),
+              ...(sub && catSlug ? [{ label: sub.name, href: `/category/${catSlug}/${sub.slug}` }] : []),
+            ];
+            return crumbs.map((crumb, i) => (
+              <span key={crumb.href} className="flex items-center gap-0.5">
+                {i > 0 && <RiArrowRightSLine className="w-3.5 h-3.5 text-[#C9933A]/40 mx-0.5" />}
+                <Link href={crumb.href} className="text-[#8B6040] hover:text-[#C9933A] transition-colors">{crumb.label}</Link>
+              </span>
+            ));
+          })()}
           <RiArrowRightSLine className="w-3.5 h-3.5 text-[#C9933A]/40 mx-0.5" />
           <span className="text-[#C9933A] font-medium truncate max-w-[180px]">{product.name}</span>
         </div>

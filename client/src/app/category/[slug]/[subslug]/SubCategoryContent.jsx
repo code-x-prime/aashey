@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {  useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchApi } from "@/lib/utils";
@@ -10,7 +10,6 @@ import { ProductCard } from "@/components/products/ProductCard";
 import { ProductListCard } from "@/components/products/ProductCard";
 import { getImageUrl } from "@/lib/imageUrl";
 
-// Product Skeleton
 function ProductCardSkeleton({ view }) {
     if (view === "list") {
         return (
@@ -37,30 +36,24 @@ function ProductCardSkeleton({ view }) {
     );
 }
 
-export default function CategoryContent({ slug }) {
+export default function SubCategoryContent({ catSlug, subSlug }) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
     const [category, setCategory] = useState(null);
+    const [subCategory, setSubCategory] = useState(null);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
 
-    // Read state FROM URL params (makes URLs shareable)
     const sortOption = searchParams.get("sort") || "newest";
     const viewMode = searchParams.get("view") || "grid";
     const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
-    // Update URL param helper
     const setParam = useCallback((key, value, defaultValue) => {
         const params = new URLSearchParams(searchParams.toString());
-        if (value === defaultValue) {
-            params.delete(key);
-        } else {
-            params.set(key, value);
-        }
-        // Reset page when sort/view changes (not when changing page)
+        if (value === defaultValue) { params.delete(key); } else { params.set(key, value); }
         if (key !== "page") params.delete("page");
         router.push(`?${params.toString()}`, { scroll: false });
     }, [searchParams, router]);
@@ -76,11 +69,10 @@ export default function CategoryContent({ slug }) {
     };
 
     useEffect(() => {
-        const fetchCategoryAndProducts = async () => {
+        const fetchData = async () => {
             setLoading(true);
             try {
-                let sort = "createdAt";
-                let order = "desc";
+                let sort = "createdAt", order = "desc";
                 switch (sortOption) {
                     case "newest": sort = "createdAt"; order = "desc"; break;
                     case "oldest": sort = "createdAt"; order = "asc"; break;
@@ -91,25 +83,25 @@ export default function CategoryContent({ slug }) {
                 }
 
                 const response = await fetchApi(
-                    `/public/categories/${slug}/products?page=${currentPage}&limit=12&sort=${sort}&order=${order}`
+                    `/public/categories/${catSlug}/subcategories/${subSlug}/products?page=${currentPage}&limit=12&sort=${sort}&order=${order}`
                 );
 
                 setCategory(response.data.category);
+                setSubCategory(response.data.subCategory);
                 setProducts(response.data.products || []);
-                setPagination(prev => response.data.pagination || prev);
+                setPagination((prev) => response.data.pagination || prev);
             } catch (err) {
-                console.error("Error fetching category:", err);
+                console.error("Error fetching subcategory:", err);
                 setError(err.message);
             } finally {
                 setLoading(false);
             }
         };
 
-        if (slug) fetchCategoryAndProducts();
-    }, [slug, currentPage, sortOption]);
+        if (catSlug && subSlug) fetchData();
+    }, [catSlug, subSlug, currentPage, sortOption]);
 
-    // Loading state
-    if (loading && !category) {
+    if (loading && !subCategory) {
         return (
             <div className="min-h-screen bg-[#FDF6E3]">
                 <div className="py-12 bg-[#FDF6E3]">
@@ -135,10 +127,10 @@ export default function CategoryContent({ slug }) {
             <div className="min-h-screen bg-[#FDF6E3] flex items-center justify-center px-4">
                 <div className="bg-white border border-red-200 rounded-lg p-8 max-w-md w-full text-center">
                     <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-                    <h2 className="font-sans text-xl font-semibold text-[#3F1F00] mb-2">Category Not Found</h2>
+                    <h2 className="font-sans text-xl font-semibold text-[#3F1F00] mb-2">Not Found</h2>
                     <p className="font-sans text-[#5C3A1E] mb-6">{error}</p>
-                    <Link href="/categories" className="inline-flex items-center px-5 py-2.5 bg-[#3F1F00] text-[#FDF6E3] rounded-lg font-sans font-semibold hover:bg-[#C9933A] transition-colors">
-                        <ChevronLeft className="w-4 h-4 mr-1" /> Back to Categories
+                    <Link href={`/category/${catSlug}`} className="inline-flex items-center px-5 py-2.5 bg-[#3F1F00] text-[#FDF6E3] rounded-lg font-sans font-semibold hover:bg-[#C9933A] transition-colors">
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Back to {category?.name || "Category"}
                     </Link>
                 </div>
             </div>
@@ -160,43 +152,27 @@ export default function CategoryContent({ slug }) {
                         <ChevronRight className="w-3.5 h-3.5 text-white/30 mx-1" />
                         <Link href="/categories" className="text-white/60 hover:text-[#C9933A] transition-colors">Categories</Link>
                         <ChevronRight className="w-3.5 h-3.5 text-white/30 mx-1" />
-                        <span className="text-[#C9933A] font-medium">{category?.name}</span>
+                        <Link href={`/category/${catSlug}`} className="text-white/60 hover:text-[#C9933A] transition-colors">{category?.name}</Link>
+                        <ChevronRight className="w-3.5 h-3.5 text-white/30 mx-1" />
+                        <span className="text-[#C9933A] font-medium">{subCategory?.name}</span>
                     </div>
 
                     <div className="flex flex-col md:flex-row md:items-center gap-5">
-                        {category?.image && (
+                        {subCategory?.image && (
                             <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-white/10 border border-white/20 overflow-hidden flex-shrink-0">
-                                <Image src={getImageUrl(category.image)} alt={category.name} width={96} height={96} className="w-full h-full object-contain p-3" />
+                                <Image src={getImageUrl(subCategory.image)} alt={subCategory.name} width={96} height={96} className="w-full h-full object-contain p-3" />
                             </div>
                         )}
                         <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C9933A]/20 border border-[#C9933A]/30 rounded-full font-sans text-xs tracking-[0.1em] uppercase text-[#C9933A] font-medium mb-2">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C9933A]/20 border border-[#C9933A]/30 rounded-full font-sans text-[10px] tracking-[0.1em] uppercase text-[#C9933A] font-medium mb-1">
+                                {category?.name}
+                            </div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C9933A]/20 border border-[#C9933A]/30 rounded-full font-sans text-xs tracking-[0.1em] uppercase text-[#C9933A] font-medium mb-2 ml-2">
                                 <Package className="w-3.5 h-3.5" />
                                 {pagination.total} Products
                             </div>
-                            <h1 className="font-sans text-2xl md:text-4xl font-semibold text-white mb-1">{category?.name}</h1>
-                            {category?.description && <p className="font-sans text-white/70 max-w-2xl text-sm">{category.description}</p>}
-
-                            {/* Subcategory chips */}
-                            {category?.subCategories?.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-4">
-                                    <Link
-                                        href={`/category/${slug}`}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-sans text-xs font-semibold bg-white text-[#3F1F00] border border-white/30 hover:bg-[#C9933A] hover:text-[#3F1F00] transition-colors"
-                                    >
-                                        All
-                                    </Link>
-                                    {category.subCategories.map((sub) => (
-                                        <Link
-                                            key={sub.id}
-                                            href={`/category/${slug}/${sub.slug}`}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-sans text-xs font-semibold bg-white/10 text-white border border-white/20 hover:bg-[#C9933A] hover:text-[#3F1F00] hover:border-[#C9933A] transition-colors"
-                                        >
-                                            {sub.name}
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
+                            <h1 className="font-sans text-2xl md:text-4xl font-semibold text-white mb-1">{subCategory?.name}</h1>
+                            {subCategory?.description && <p className="font-sans text-white/70 max-w-2xl text-sm">{subCategory.description}</p>}
                         </div>
                     </div>
                 </div>
@@ -209,33 +185,20 @@ export default function CategoryContent({ slug }) {
                     <div className="font-sans text-[#6B4423] text-sm">
                         Showing <span className="text-[#3F1F00] font-semibold">{products.length}</span> of <span className="text-[#3F1F00] font-semibold">{pagination.total}</span> products
                     </div>
-
                     <div className="flex items-center gap-2">
-                        {/* View Toggle */}
                         <div className="flex items-center bg-[#FDF6E3] rounded-md p-0.5 border border-[#C9933A]/15">
-                            <button
-                                onClick={() => handleViewChange("grid")}
-                                title="Grid view"
-                                className={`p-1.5 rounded transition-all duration-200 ${viewMode === "grid" ? "bg-[#3F1F00] text-[#FDF6E3] shadow-sm" : "text-[#7A4E2D] hover:text-[#3F1F00]"}`}
-                            >
+                            <button onClick={() => handleViewChange("grid")} title="Grid view"
+                                className={`p-1.5 rounded transition-all duration-200 ${viewMode === "grid" ? "bg-[#3F1F00] text-[#FDF6E3] shadow-sm" : "text-[#7A4E2D] hover:text-[#3F1F00]"}`}>
                                 <LayoutGrid className="w-4 h-4" />
                             </button>
-                            <button
-                                onClick={() => handleViewChange("list")}
-                                title="List view"
-                                className={`p-1.5 rounded transition-all duration-200 ${viewMode === "list" ? "bg-[#3F1F00] text-[#FDF6E3] shadow-sm" : "text-[#7A4E2D] hover:text-[#3F1F00]"}`}
-                            >
+                            <button onClick={() => handleViewChange("list")} title="List view"
+                                className={`p-1.5 rounded transition-all duration-200 ${viewMode === "list" ? "bg-[#3F1F00] text-[#FDF6E3] shadow-sm" : "text-[#7A4E2D] hover:text-[#3F1F00]"}`}>
                                 <List className="w-4 h-4" />
                             </button>
                         </div>
-
-                        {/* Sort */}
                         <div className="relative">
-                            <select
-                                value={sortOption}
-                                onChange={handleSortChange}
-                                className="appearance-none bg-white border border-[#C9933A]/20 text-[#3F1F00] rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-[#C9933A]/30 focus:border-[#C9933A] font-sans text-sm font-medium cursor-pointer"
-                            >
+                            <select value={sortOption} onChange={handleSortChange}
+                                className="appearance-none bg-white border border-[#C9933A]/20 text-[#3F1F00] rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-[#C9933A]/30 focus:border-[#C9933A] font-sans text-sm font-medium cursor-pointer">
                                 <option value="newest">Newest First</option>
                                 <option value="oldest">Oldest First</option>
                                 <option value="name-asc">Name: A to Z</option>
@@ -259,9 +222,9 @@ export default function CategoryContent({ slug }) {
                             <Package className="w-8 h-8 text-[#C9933A]" />
                         </div>
                         <h2 className="font-sans text-xl font-semibold text-[#3F1F00] mb-2">No Products Found</h2>
-                        <p className="font-sans text-[#5C3A1E] mb-6">This category doesn&apos;t have any products yet.</p>
-                        <Link href="/products" className="inline-flex items-center px-6 py-3 bg-[#3F1F00] text-[#FDF6E3] rounded-lg font-sans font-semibold hover:bg-[#C9933A] transition-colors">
-                            Browse All Products
+                        <p className="font-sans text-[#5C3A1E] mb-6">This subcategory doesn&apos;t have any products yet.</p>
+                        <Link href={`/category/${catSlug}`} className="inline-flex items-center px-6 py-3 bg-[#3F1F00] text-[#FDF6E3] rounded-lg font-sans font-semibold hover:bg-[#C9933A] transition-colors">
+                            Browse {category?.name || "Category"}
                         </Link>
                     </div>
                 ) : viewMode === "grid" ? (
@@ -277,14 +240,10 @@ export default function CategoryContent({ slug }) {
                 {/* Pagination */}
                 {pagination.pages > 1 && (
                     <div className="flex justify-center items-center mt-10 gap-1.5">
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="p-2.5 bg-white border border-[#C9933A]/20 rounded-lg text-[#6B4423] hover:text-[#3F1F00] hover:border-[#C9933A]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
+                        <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}
+                            className="p-2.5 bg-white border border-[#C9933A]/20 rounded-lg text-[#6B4423] hover:text-[#3F1F00] hover:border-[#C9933A]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-
                         {[...Array(pagination.pages)].map((_, i) => {
                             const page = i + 1;
                             const show = page === 1 || page === pagination.pages || (page >= currentPage - 1 && page <= currentPage + 1);
@@ -292,21 +251,14 @@ export default function CategoryContent({ slug }) {
                             if (ellipsis) return <span key={page} className="text-[#7A4E2D] px-1">…</span>;
                             if (!show) return null;
                             return (
-                                <button
-                                    key={page}
-                                    onClick={() => handlePageChange(page)}
-                                    className={`w-10 h-10 rounded-lg font-sans font-semibold text-sm transition-colors ${currentPage === page ? "bg-[#3F1F00] text-[#FDF6E3]" : "bg-white border border-[#C9933A]/20 text-[#3F1F00] hover:border-[#C9933A]/40"}`}
-                                >
+                                <button key={page} onClick={() => handlePageChange(page)}
+                                    className={`w-10 h-10 rounded-lg font-sans font-semibold text-sm transition-colors ${currentPage === page ? "bg-[#3F1F00] text-[#FDF6E3]" : "bg-white border border-[#C9933A]/20 text-[#3F1F00] hover:border-[#C9933A]/40"}`}>
                                     {page}
                                 </button>
                             );
                         })}
-
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === pagination.pages}
-                            className="p-2.5 bg-white border border-[#C9933A]/20 rounded-lg text-[#6B4423] hover:text-[#3F1F00] hover:border-[#C9933A]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
+                        <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === pagination.pages}
+                            className="p-2.5 bg-white border border-[#C9933A]/20 rounded-lg text-[#6B4423] hover:text-[#3F1F00] hover:border-[#C9933A]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>

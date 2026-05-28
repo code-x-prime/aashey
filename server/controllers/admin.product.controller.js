@@ -289,6 +289,11 @@ export const getProductById = asyncHandler(async (req, res, next) => {
           category: true,
         },
       },
+      subCategories: {
+        include: {
+          subCategory: true,
+        },
+      },
       images: {
         orderBy: { order: "asc" },
       },
@@ -555,6 +560,21 @@ export const createProduct = asyncHandler(async (req, res, next) => {
             categoryId: catId,
             isPrimary: catId === primaryCategory,
           },
+        });
+      }
+
+      // Create product-subcategory connections
+      let parsedSubCategoryIds = [];
+      try {
+        if (req.body.subCategoryIds) {
+          parsedSubCategoryIds = JSON.parse(req.body.subCategoryIds);
+        }
+      } catch (e) {
+        parsedSubCategoryIds = [];
+      }
+      for (const subCatId of parsedSubCategoryIds) {
+        await prisma.productSubCategory.create({
+          data: { productId: newProduct.id, subCategoryId: subCatId },
         });
       }
 
@@ -1179,6 +1199,23 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
           categoryId: primaryCategoryId,
         },
         data: { isPrimary: true },
+      });
+    }
+  }
+
+  // Update subcategory connections if provided
+  if (req.body.subCategoryIds !== undefined) {
+    let parsedSubCategoryIds = [];
+    try {
+      parsedSubCategoryIds = JSON.parse(req.body.subCategoryIds);
+      if (!Array.isArray(parsedSubCategoryIds)) parsedSubCategoryIds = [];
+    } catch (e) {
+      parsedSubCategoryIds = [];
+    }
+    await prisma.productSubCategory.deleteMany({ where: { productId } });
+    for (const subCatId of parsedSubCategoryIds) {
+      await prisma.productSubCategory.create({
+        data: { productId, subCategoryId: subCatId },
       });
     }
   }
