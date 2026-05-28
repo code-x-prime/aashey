@@ -95,6 +95,19 @@ export default function OrderDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  interface ShiprocketCourier {
+    id: number;
+    name: string;
+    rate: number;
+    etd: string;
+    codAvailable: boolean;
+  }
+
+  const [couriers, setCouriers] = useState<ShiprocketCourier[]>([]);
+  const [loadingCouriers, setLoadingCouriers] = useState(false);
+  const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
+  const [bookingShipment, setBookingShipment] = useState(false);
+
   interface OrderItem {
     id: string;
     productId: string;
@@ -189,6 +202,48 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     fetchOrderDetails();
   }, [id, fetchOrderDetails]);
+
+  const fetchCouriers = useCallback(async () => {
+    if (!id) return;
+    setLoadingCouriers(true);
+    try {
+      const response = await orders.getOrderCouriers(id);
+      if (response?.data?.success) {
+        setCouriers(response.data.data.couriers || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch couriers:", err);
+    } finally {
+      setLoadingCouriers(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (orderDetails && !orderDetails.shiprocket?.awbCode) {
+      fetchCouriers();
+    }
+  }, [orderDetails, fetchCouriers]);
+
+  const handleBookShipment = async () => {
+    if (!id || !selectedCourierId) return;
+    setBookingShipment(true);
+    try {
+      const response = await orders.bookShipment(id, selectedCourierId);
+      if (response?.data?.success) {
+        toast.success("Shipment booked! AWB: " + (response.data.data.order.awbCode || "assigned"));
+        fetchOrderDetails();
+      } else {
+        toast.error(response?.data?.message || "Failed to book shipment");
+      }
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response: { data?: { message?: string } } }).response?.data?.message
+        : "Failed to book shipment";
+      toast.error(msg || "Failed to book shipment");
+    } finally {
+      setBookingShipment(false);
+    }
+  };
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -1058,15 +1113,16 @@ export default function OrderDetailsPage() {
           ) : null}
 
           {/* Shiprocket Information */}
-          {orderDetails.shiprocket && (
-            <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-              <CardHeader className="px-6 pt-6 pb-4">
-                <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                  <Truck className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                  Shiprocket Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
+          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
+            <CardHeader className="px-6 pt-6 pb-4">
+              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
+                <Truck className="mr-2 h-5 w-5 text-[#4CAF50]" />
+                Shiprocket Shipment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-6 pb-6 space-y-4">
+              {/* Existing shipment info */}
+              {orderDetails.shiprocket && (
                 <div className="space-y-3">
                   {orderDetails.shiprocket.orderId && (
                     <div>
@@ -1095,28 +1151,100 @@ export default function OrderDetailsPage() {
                   {orderDetails.shiprocket.courierName && (
                     <div>
                       <p className="text-xs text-[#9CA3AF] mb-1">Courier</p>
-                      <p className="font-medium text-[#1F2937]">
-                        {orderDetails.shiprocket.courierName}
-                      </p>
+                      <p className="font-medium text-[#1F2937]">{orderDetails.shiprocket.courierName}</p>
                     </div>
                   )}
                   {orderDetails.shiprocket.status && (
                     <div>
                       <p className="text-xs text-[#9CA3AF] mb-1">Shiprocket Status</p>
-                      <Badge
-                        className={cn(
-                          "text-xs font-medium border",
-                          getStatusBadgeClass(orderDetails.shiprocket.status)
-                        )}
-                      >
+                      <Badge className={cn("text-xs font-medium border", getStatusBadgeClass(orderDetails.shiprocket.status))}>
                         {orderDetails.shiprocket.status}
                       </Badge>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+
+              {/* Courier selection — only show if no AWB yet */}
+              {!orderDetails.shiprocket?.awbCode && (
+                <div className="border-t border-[#E5E7EB] pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-[#1F2937]">Select Courier</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={fetchCouriers}
+                      disabled={loadingCouriers}
+                      className="text-xs text-[#6B7280] hover:text-[#1F2937]"
+                    >
+                      {loadingCouriers ? <Loader2 className="h-3 w-3 animate-spin" /> : "Refresh"}
+                    </Button>
+                  </div>
+
+                  {loadingCouriers ? (
+                    <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Fetching available couriers...
+                    </div>
+                  ) : couriers.length > 0 ? (
+                    <div className="space-y-2">
+                      {couriers.map((courier) => (
+                        <label
+                          key={courier.id}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
+                            selectedCourierId === courier.id
+                              ? "border-[#4CAF50] bg-[#F0FFF4]"
+                              : "border-[#E5E7EB] hover:border-[#9CA3AF]"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="courier"
+                              value={courier.id}
+                              checked={selectedCourierId === courier.id}
+                              onChange={() => setSelectedCourierId(courier.id)}
+                              className="h-4 w-4 text-[#4CAF50]"
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-[#1F2937]">{courier.name}</p>
+                              <p className="text-xs text-[#9CA3AF]">ETD: {courier.etd}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-[#1F2937]">₹{courier.rate}</p>
+                            {courier.codAvailable && (
+                              <p className="text-xs text-[#6B7280]">COD available</p>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+
+                      <Button
+                        onClick={handleBookShipment}
+                        disabled={!selectedCourierId || bookingShipment}
+                        className="w-full mt-2 bg-[#4CAF50] hover:bg-[#43A047] text-white"
+                      >
+                        {bookingShipment ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Booking Shipment...
+                          </span>
+                        ) : (
+                          "Book Shipment"
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#9CA3AF]">
+                      No couriers available for this pincode. Check pickup address in Shiprocket settings.
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

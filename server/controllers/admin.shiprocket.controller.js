@@ -13,6 +13,8 @@ import {
     getShiprocketSettings,
     checkServiceability,
     processOrderForShipping,
+    assignAWB,
+    schedulePickup,
     trackShipment,
     trackByOrderId,
     cancelShiprocketOrder,
@@ -522,4 +524,148 @@ export const handleWebhook = asyncHandler(async (req, res) => {
     }
 
     res.status(200).json({ status: "ok" });
+});
+
+// Get available couriers for a specific order
+export const getOrderCouriers = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+            shippingAddress: true,
+            items: {
+                include: { variant: true },
+            },
+        },
+    });
+
+    if (!order) {
+        throw new ApiError(404, "Order not found");
+    }
+
+    const deliveryPincode = order.shippingAddress?.postalCode;
+    if (!deliveryPincode) {
+        throw new ApiError(400, "Order has no delivery pincode");
+    }
+
+    const settings = await getShiprocketSettings();
+    const pickupAddress = await prisma.shiprocketPickupAddress.findFirst({
+        where: { isDefault: true },
+    });
+
+    const pickupPincode = pickupAddress?.pincode;
+    if (!pickupPincode) {
+        throw new ApiError(400, "No default pickup address configured in Shiprocket settings");
+    }
+
+    const totalWeight = Math.max(
+        order.items.reduce((sum, item) => {
+            const weight = item.variant?.weight || 0.5;
+            return sum + weight * item.quantity;
+        }, 0),
+        0.5
+    );
+
+    const result = await checkServiceability({
+        pickupPincode,
+        deliveryPincode,
+        weight: totalWeight,
+        cod: false,
+    });
+
+    const couriers = (result?.data?.available_courier_companies || []).map((c) => ({
+        id: c.courier_company_id,
+        name: c.courier_name,
+        rate: parseFloat(c.rate),
+        etd: c.etd || "2-3 days",
+        codAvailable: c.cod === 1,
+    }));
+
+    couriers.sort((a, b) => a.rate - b.rate);
+
+    res.status(200).json(
+        new ApiResponsive(200, { couriers, deliveryPincode, totalWeight }, "Couriers fetched successfully")
+    );
+});
+
+// Book shipment with selected courier
+export const bookShipment = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+    const { courierId } = req.body;
+
+    if (!courierId) {
+        throw new ApiError(400, "courierId is required");
+    }
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+            id: true,
+            shiprocketOrderId: true,
+            shiprocketShipmentId: true,
+            awbCode: true,
+        },
+    });
+
+    if (!order) {
+        throw new ApiError(404, "Order not found");
+    }
+
+    if (order.awbCode) {
+        throw new ApiError(400, "Shipment already booked. AWB: " + order.awbCode);
+    }
+
+    if (order.shiprocketShipmentId) {
+        // Order already on Shiprocket — just assign AWB with selected courier
+        const awbResponse = await assignAWB(order.shiprocketShipmentId, courierId);
+        const awbCode = awbResponse.response?.data?.awb_code || null;
+        const courierName = awbResponse.response?.data?.courier_name || null;
+
+        await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                awbCode,
+                courierName,
+                shiprocketStatus: "AWB_ASSIGNED",
+                selectedCourierId: String(courierId),
+            },
+        });
+
+        try {
+            await schedulePickup(order.shiprocketShipmentId);
+            await prisma.order.update({
+                where: { id: orderId },
+                data: { shiprocketStatus: "PICKUP_SCHEDULED" },
+            });
+        } catch (e) {
+            // non-critical
+        }
+    } else {
+        // Order not yet on Shiprocket — update courier preference then sync
+        await prisma.order.update({
+            where: { id: orderId },
+            data: { selectedCourierId: String(courierId) },
+        });
+
+        const result = await processOrderForShipping(orderId);
+        if (!result) {
+            throw new ApiError(400, "Shiprocket is disabled or configuration is missing");
+        }
+    }
+
+    const updatedOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+            shiprocketOrderId: true,
+            shiprocketShipmentId: true,
+            awbCode: true,
+            courierName: true,
+            shiprocketStatus: true,
+        },
+    });
+
+    res.status(200).json(
+        new ApiResponsive(200, { order: updatedOrder }, "Shipment booked successfully")
+    );
 });

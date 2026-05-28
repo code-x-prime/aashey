@@ -23,8 +23,6 @@ import {
     MessageSquare,
     User,
     LogIn,
-    Truck,
-    Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -46,10 +44,7 @@ export default function CheckoutPage() {
     const [loadingAddresses, setLoadingAddresses] = useState(false);
     const [showAddressForm, setShowAddressForm] = useState(false);
 
-    // Shipping state
-    const [shippingOptions, setShippingOptions] = useState([]);
     const [selectedShippingOption, setSelectedShippingOption] = useState(null);
-    const [loadingShipping, setLoadingShipping] = useState(false);
 
     // Payment state
     const [paymentSettings, setPaymentSettings] = useState({
@@ -190,58 +185,9 @@ export default function CheckoutPage() {
         fetchAddresses();
     };
 
-    // Fetch shipping options based on selected address
-    const fetchShippingOptions = async () => {
-        if (!selectedAddressId && !guestAddress.postalCode) {
-            toast.error("Please select or enter a delivery address first");
-            return;
-        }
-
-        setLoadingShipping(true);
-        try {
-            let deliveryPincode = "";
-
-            if (isAuthenticated && selectedAddressId) {
-                const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
-                if (selectedAddress) {
-                    deliveryPincode = selectedAddress.postalCode;
-                }
-            } else {
-                deliveryPincode = guestAddress.postalCode;
-            }
-
-            if (!deliveryPincode) {
-                throw new Error("Delivery pincode not found");
-            }
-
-            const response = await fetchApi("/cart/shipping-options", {
-                method: "POST",
-                credentials: "include",
-                body: JSON.stringify({
-                    deliveryPincode,
-                    cartItems: !isAuthenticated ? buildGuestCartItems() : undefined,
-                }),
-            });
-
-            if (response.success) {
-                setShippingOptions(response.data.shippingOptions || []);
-                if (response.data.shippingOptions?.length > 0) {
-                    setSelectedShippingOption(response.data.shippingOptions[0]); // Select cheapest by default
-                }
-                setCurrentStep(2); // Move to shipping step
-            }
-        } catch (error) {
-            console.error("Error fetching shipping options:", error);
-            toast.error(error.message || "Failed to fetch shipping options");
-        } finally {
-            setLoadingShipping(false);
-        }
-    };
-
     // Handle step navigation
     const handleNextStep = () => {
         if (currentStep === 1) {
-            // Validate address selection
             if (isAuthenticated) {
                 if (!selectedAddressId) {
                     toast.error("Please select a shipping address");
@@ -252,21 +198,20 @@ export default function CheckoutPage() {
                     return;
                 }
             }
-            // Fetch shipping options and move to step 2
-            fetchShippingOptions();
-        } else if (currentStep === 2) {
-            // Validate shipping option selection
-            if (!selectedShippingOption) {
-                toast.error("Please select a shipping option");
-                return;
-            }
-            setCurrentStep(3); // Move to payment step
+            // Use flat rate from cart context (respects admin-configured rate + free shipping threshold)
+            setSelectedShippingOption({
+                id: null,
+                name: "Standard Shipping",
+                rate: totals.shipping,
+                etd: "3-5 business days",
+            });
+            setCurrentStep(3);
         }
     };
 
     const handlePrevStep = () => {
-        if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
+        if (currentStep === 3) {
+            setCurrentStep(1);
         }
     };
 
@@ -1140,14 +1085,13 @@ export default function CheckoutPage() {
                         <div className="flex items-center gap-2">
                             {[
                                 { step: 1, label: "Address" },
-                                { step: 2, label: "Shipping" },
                                 { step: 3, label: "Payment" },
                             ].map((item) => (
                                 <button
                                     key={item.step}
                                     type="button"
                                     className={`px-4 py-2 rounded-full text-xs font-medium transition ${currentStep === item.step ? "bg-primary text-white" : "bg-gray-100 text-[#5C3A1E] hover:bg-gray-200"}`}
-                                    onClick={() => setCurrentStep(item.step)}
+                                    onClick={() => currentStep === 3 && item.step === 1 ? setCurrentStep(1) : undefined}
                                 >
                                     {item.label}
                                 </button>
@@ -1391,62 +1335,6 @@ export default function CheckoutPage() {
                         )}
                     </div>
 
-                    {currentStep === 2 && (
-                        <div className="bg-white rounded-lg shadow-sm border p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h2 className="text-lg font-semibold flex items-center">
-                                        <Truck className="h-5 w-5 mr-2 text-primary" />
-                                        Shipping Options
-                                    </h2>
-                                    <p className="text-sm text-[#5C3A1E] mt-1">
-                                        Choose a courier from Shiprocket and apply the correct shipping charge.
-                                    </p>
-                                </div>
-                                <Button size="sm" variant="outline" onClick={fetchShippingOptions} disabled={loadingShipping}>
-                                    Refresh
-                                </Button>
-                            </div>
-
-                            {loadingShipping ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                                </div>
-                            ) : shippingOptions.length > 0 ? (
-                                <div className="space-y-3">
-                                    {shippingOptions.map((option) => (
-                                        <label
-                                            key={option.id}
-                                            className={`block border rounded-lg p-4 cursor-pointer transition ${selectedShippingOption?.id === option.id ? "border-primary bg-primary/5" : "border-gray-200 hover:border-gray-400"}`}
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <input
-                                                    type="radio"
-                                                    name="shippingOption"
-                                                    checked={selectedShippingOption?.id === option.id}
-                                                    onChange={() => setSelectedShippingOption(option)}
-                                                    className="mt-1 h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                                />
-                                                <div className="flex-1">
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <span className="font-medium">{option.name}</span>
-                                                        <span className="text-sm font-semibold text-[#3F1F00]">{formatCurrency(option.rate)}</span>
-                                                    </div>
-                                                    <p className="text-sm text-[#5C3A1E] mt-1">ETD: {option.etd || "2-3 days"}</p>
-                                                    <p className="text-sm text-[#5C3A1E] mt-1">{option.description}</p>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-[#5C3A1E]">
-                                    No shipping options were found for this pincode. Please verify the address or try another courier.
-                                </div>
-                            )}
-                        </div>
-                    )}
-
                     {currentStep === 3 && (
                         <div className="bg-white rounded-lg shadow-sm border p-6">
                             <h2 className="text-lg font-semibold flex items-center mb-4">
@@ -1545,9 +1433,9 @@ export default function CheckoutPage() {
                         ) : (
                             <div />
                         )}
-                        {currentStep < 3 && (
+                        {currentStep === 1 && (
                             <Button size="md" onClick={handleNextStep} className="border-[#C9933A] hover:bg-[#C9933A] hover:text-[#3F1F00] py-3 px-5">
-                                {currentStep === 1 ? "Continue to Shipping" : "Continue to Payment"}
+                                Continue to Payment
                             </Button>
                         )}
                     </div>
