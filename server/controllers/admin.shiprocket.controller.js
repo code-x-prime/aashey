@@ -561,7 +561,7 @@ export const getOrderCouriers = asyncHandler(async (req, res) => {
 
     const totalWeight = Math.max(
         order.items.reduce((sum, item) => {
-            const weight = item.variant?.weight || 0.5;
+            const weight = item.variant?.shippingWeight || 0.5;
             return sum + weight * item.quantity;
         }, 0),
         0.5
@@ -618,7 +618,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
 
     if (order.shiprocketShipmentId) {
         // Order already on Shiprocket — just assign AWB with selected courier
-        const awbResponse = await assignAWB(order.shiprocketShipmentId, courierId);
+        const awbResponse = await assignAWB(order.shiprocketShipmentId, parseInt(courierId));
         const awbCode = awbResponse.response?.data?.awb_code || null;
         const courierName = awbResponse.response?.data?.courier_name || null;
 
@@ -628,7 +628,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
                 awbCode,
                 courierName,
                 shiprocketStatus: "AWB_ASSIGNED",
-                selectedCourierId: String(courierId),
+                selectedCourierId: parseInt(courierId),
             },
         });
 
@@ -645,7 +645,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
         // Order not yet on Shiprocket — update courier preference then sync
         await prisma.order.update({
             where: { id: orderId },
-            data: { selectedCourierId: String(courierId) },
+            data: { selectedCourierId: parseInt(courierId) },
         });
 
         const result = await processOrderForShipping(orderId);
