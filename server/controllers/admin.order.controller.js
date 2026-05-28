@@ -123,6 +123,9 @@ export const getOrders = asyncHandler(async (req, res, next) => {
           phone: true,
         },
       },
+      _count: {
+        select: { items: true },
+      },
     },
     orderBy: {
       [sort]: order,
