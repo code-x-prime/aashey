@@ -9,6 +9,7 @@ import { TrendingProducts } from "@/components/sections/TrendingProducts";
 import { NewsletterCTA } from "@/components/sections/NewsletterCTA";
 import BannerCarousel from "@/components/sections/BannerCarousel";
 import BrandCarousel from "@/components/sections/BrandCarousel";
+import AasheyFAQSection from "@/components/sections/AasheyFAQSection";
 
 export const metadata = {
   title: "AASHEY | Pure A2 Cow Ghee — Traditionally Bilona Crafted",
@@ -51,6 +52,8 @@ export default function Home() {
         <BrandCarousel tag="NEW" title="NEW BRANDS" />
         {/* Customer Reviews - Social proof */}
         <CustomerReviews showStats={true} />
+
+        <AasheyFAQSection />
 
         {/* Newsletter / Royal Community CTA */}
         <NewsletterCTA />

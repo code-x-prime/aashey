@@ -12,6 +12,35 @@ import {
 import { Search, HelpCircle, Mail, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { faqSections, staticFaqs } from "@/lib/static-faqs";
+
+function renderFaqAnswer(faq) {
+    if (Array.isArray(faq.answer)) {
+        return (
+            <div className="space-y-3">
+                {faq.answer.map((part, index) => {
+                    if (typeof part === "string") {
+                        return (
+                            <p key={index} className="font-sans text-sm leading-relaxed text-[#3F1F00]">
+                                {part}
+                            </p>
+                        );
+                    }
+
+                    return (
+                        <ul key={index} className="space-y-2 pl-5 font-sans text-sm leading-relaxed text-[#3F1F00] list-disc">
+                            {part.items.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+                    );
+                })}
+            </div>
+        );
+    }
+
+    return <div dangerouslySetInnerHTML={{ __html: faq.answer }} />;
+}
 
 export default function FAQsPage() {
     const [faqs, setFaqs] = useState([]);
@@ -37,8 +66,10 @@ export default function FAQsPage() {
                     faqsData = response.data.data;
                 }
 
-                setFaqs(faqsData);
-                setFilteredFaqs(faqsData);
+                const resolvedFaqs = faqsData.length ? faqsData : staticFaqs;
+
+                setFaqs(resolvedFaqs);
+                setFilteredFaqs(resolvedFaqs);
 
                 // Fetch categories
                 const categoriesResponse = await fetchApi("/faqs/categories");
@@ -55,11 +86,16 @@ export default function FAQsPage() {
                     categoriesData = categoriesResponse.data.data;
                 }
 
-                if (categoriesData.length) {
+                if (categoriesData.length && faqsData.length) {
                     setCategories(["all", ...categoriesData.map((cat) => cat.name)]);
+                } else {
+                    setCategories(["all", ...faqSections.map((section) => section.title)]);
                 }
             } catch (error) {
                 console.error("Failed to fetch FAQs:", error);
+                setFaqs(staticFaqs);
+                setFilteredFaqs(staticFaqs);
+                setCategories(["all", ...faqSections.map((section) => section.title)]);
             } finally {
                 setLoading(false);
             }
@@ -83,7 +119,7 @@ export default function FAQsPage() {
             filtered = filtered.filter(
                 (faq) =>
                     faq.question.toLowerCase().includes(query) ||
-                    faq.answer.toLowerCase().includes(query)
+                    (faq.answerText || faq.answer || "").toLowerCase().includes(query)
             );
         }
 
@@ -187,7 +223,7 @@ export default function FAQsPage() {
                                             {faq.question}
                                         </AccordionTrigger>
                                         <AccordionContent className="px-1 pb-4 pt-1 font-sans text-[#3F1F00] text-sm leading-relaxed">
-                                            <div dangerouslySetInnerHTML={{ __html: faq.answer }} />
+                                            {renderFaqAnswer(faq)}
                                         </AccordionContent>
                                     </AccordionItem>
                                 ))}
