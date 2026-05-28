@@ -701,7 +701,7 @@ export const settings = {
         success: true,
         data: {
           settings: {
-            storeName: "D fix",
+            storeName: "Aashey",
             storeEmail: "store@example.com",
             storePhone: "+1 234 567 8900",
             storeAddress: "123 Store St, City, Country",
@@ -711,8 +711,8 @@ export const settings = {
             shippingFee: 5,
             freeShippingThreshold: 50,
             enableFreeShipping: true,
-            metaTitle: "D fix - Best Products",
-            metaDescription: "Find the best products at D fix",
+            metaTitle: "Aashey - Best Products",
+            metaDescription: "Find the best products at Aashey",
             socialLinks: {
               facebook: "https://facebook.com/yourstore",
               twitter: "https://twitter.com/yourstore",

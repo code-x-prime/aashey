@@ -15,7 +15,7 @@ const socialLinks = [
   },
   {
     name: "Facebook",
-    handle: "D fix India",
+    handle: "Aashey India",
     url: "https://www.facebook.com/share/1DCsKYB5Uy/?mibextid=wwXIfr",
     icon: Facebook,
     color: "from-blue-600 to-blue-500",
@@ -65,7 +65,7 @@ export const SocialMediaSection = () => {
             >
               {/* Background gradient on hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${social.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-              
+
               {/* Content */}
               <div className="relative z-10">
                 {/* Icon */}

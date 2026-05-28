@@ -426,7 +426,7 @@ export default function VariantCard({
           });
         }
 
-        // Update images array and fix ordering
+        // Update images array anAashey ordering
         const allImages = [...currentImages, ...newImages];
 
         // Ensure proper order and primary image logic

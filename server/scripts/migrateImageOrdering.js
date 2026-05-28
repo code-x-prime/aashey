@@ -25,7 +25,7 @@ async function migrateImageOrdering() {
             `📸 Processing ${product.images.length} images for product: ${product.name}`
           );
 
-          // Check for duplicate primary images and fix
+          // Check for duplicate primary images anAashey
           const primaryImages = product.images.filter((img) => img.isPrimary);
           if (primaryImages.length > 1) {
             console.log(
@@ -82,7 +82,7 @@ async function migrateImageOrdering() {
             `📸 Processing ${variant.images.length} images for variant: ${variant.sku}`
           );
 
-          // Check for duplicate primary images and fix
+          // Check for duplicate primary images anAashey
           const primaryImages = variant.images.filter((img) => img.isPrimary);
           if (primaryImages.length > 1) {
             console.log(

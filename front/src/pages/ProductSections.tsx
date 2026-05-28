@@ -1131,7 +1131,7 @@ export default function ProductSectionsPage() {
                 <p className="text-sm mb-3 text-[#9CA3AF]">
                   Product Sections are customizable collections of products that
                   appear on your website's homepage. Each section can display up
-                  to 15 products and helps organize D fixfront to showcase
+                  to 15 products and helps organize Aasheyfront to showcase
                   featured items, best sellers, new arrivals, or any custom
                   collection you want to highlight.
                 </p>
