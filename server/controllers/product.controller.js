@@ -448,7 +448,14 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
     include: {
       categories: {
         include: {
-          category: true,
+          category: {
+            include: {
+              subCategories: {
+                where: { isActive: true },
+                orderBy: { name: "asc" },
+              },
+            },
+          },
         },
       },
       subCategories: {
@@ -518,10 +525,20 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
   // Format the response
   const formattedProduct = {
     ...product,
-    // Add primary category
-    category:
-      product.categories.length > 0 ? product.categories[0].category : null,
-    // Add primary subcategory
+    // Add primary category with its subcategories
+    category: product.categories.length > 0
+      ? {
+          ...product.categories[0].category,
+          image: product.categories[0].category.image
+            ? getFileUrl(product.categories[0].category.image)
+            : null,
+          subCategories: (product.categories[0].category.subCategories || []).map((sub) => ({
+            ...sub,
+            image: sub.image ? getFileUrl(sub.image) : null,
+          })),
+        }
+      : null,
+    // Add primary subcategory (the one this product is assigned to)
     subCategory: product.subCategories?.length > 0
       ? {
           ...product.subCategories[0].subCategory,

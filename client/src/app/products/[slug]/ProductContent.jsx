@@ -457,6 +457,31 @@ export default function ProductContent({ slug }) {
               }
             </div>
 
+            {/* Category + Subcategory chips */}
+            {product.category && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/category/${product.category.slug}`}
+                  className="inline-flex items-center px-3 py-1 rounded-full bg-[#C9933A]/10 border border-[#C9933A]/25 text-[#C9933A] font-sans text-xs font-semibold hover:bg-[#C9933A]/20 transition-colors"
+                >
+                  {product.category.name}
+                </Link>
+                {product.category.subCategories?.map((sub) => (
+                  <Link
+                    key={sub.id}
+                    href={`/category/${product.category.slug}/${sub.slug}`}
+                    className={`inline-flex items-center px-3 py-1 rounded-full font-sans text-xs font-medium border transition-colors ${
+                      product.subCategory?.id === sub.id
+                        ? "bg-[#3F1F00] text-[#FDF6E3] border-[#3F1F00]"
+                        : "bg-white text-[#5C3A1E] border-[#C9933A]/20 hover:border-[#C9933A]/50 hover:bg-[#FDF6E3]"
+                    }`}
+                  >
+                    {sub.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+
             {/* Name + Rating */}
             <div>
               <h1 className=" text-4xl md:text-5xl font-semibold text-[#3F1F00] leading-tight">
