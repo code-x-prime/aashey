@@ -344,10 +344,16 @@ export const getProductsBySubCategory = asyncHandler(async (req, res) => {
   });
   if (!subCategory) throw new ApiError(404, "Subcategory not found");
 
-  const productWhere = {
-    isActive: true,
-    subCategories: { some: { subCategoryId: subCategory.id } },
-  };
+  // Check if any products are explicitly assigned to this subcategory
+  const hasExplicitAssignments = await prisma.productSubCategory.count({
+    where: { subCategoryId: subCategory.id },
+  }) > 0;
+
+  // If products assigned → filter by subcategory
+  // If not → fallback to parent category (admin hasn't assigned yet)
+  const productWhere = hasExplicitAssignments
+    ? { isActive: true, subCategories: { some: { subCategoryId: subCategory.id } } }
+    : { isActive: true, categories: { some: { categoryId: parentCategory.id } } };
 
   const totalProducts = await prisma.product.count({ where: productWhere });
   const isPriceSort = normalizedSort === "price";
