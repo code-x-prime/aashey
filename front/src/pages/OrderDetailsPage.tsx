@@ -1,8 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { orders } from "@/api/adminService";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   ShoppingCart,
   ChevronLeft,
@@ -18,207 +27,89 @@ import {
   ExternalLink,
   RefreshCw,
   Copy,
+  Phone,
+  Mail,
+  Tag,
+  Hash,
+  Calendar,
+  IndianRupee,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/context/LanguageContext";
 import { getImageUrl } from "@/utils/image";
+
+interface ShiprocketCourier { id: number; name: string; rate: number; etd: string; codAvailable: boolean; }
+interface OrderUpdate { id: string; status: string; timestamp: string; note?: string; location?: string; description?: string; }
+interface OrderItem {
+  id: string; productId: string; quantity: number; price: number; subtotal: number;
+  imageUrl?: string; name?: string;
+  product?: { title: string; name: string; images: string[]; imageUrl?: string; };
+  variant?: { sku: string; attributes?: Array<{ attribute: string; value: string; }>; flavor?: { name: string; }; weight?: { value: number; unit: string; }; images?: Array<{ url: string; }>; };
+  returnRequest?: { id: string; status: string; reason: string; customReason?: string; createdAt: string; processedAt?: string; } | null;
+  flashSaleName?: string; flashSaleDiscount?: number; originalPrice?: number;
+}
+interface OrderDetails {
+  id: string; orderNumber: string; status: string; totalAmount: number;
+  subTotal: string | number; shippingAmount: number; taxAmount: number;
+  discount?: string | number; codCharge?: string | number;
+  createdAt: string; updatedAt: string; cancelledAt?: string; cancelReason?: string; cancelledBy?: string; userId?: string; couponCode?: string;
+  shippingAddress: { name?: string; street: string; city: string; state: string; postalCode: string; country: string; phone?: string; };
+  user: { name: string; email: string; phone?: string; };
+  items: OrderItem[]; updates?: OrderUpdate[];
+  paymentGateway?: string; paymentMode?: string; paymentMethod?: string;
+  razorpayPayment?: { paymentMethod: string; status: string; razorpayPaymentId?: string; razorpayOrderId?: string; };
+  coupon?: { discountType: string; discountValue: number; description?: string; };
+  tracking?: { carrier?: string; trackingNumber?: string; status?: string; estimatedDelivery?: string; updates?: OrderUpdate[]; };
+  shiprocket?: { orderId?: number; shipmentId?: number; awbCode?: string; courierName?: string; status?: string; };
+  shippingCost?: string | number; total?: string | number;
+}
 
 export default function OrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
 
-  interface OrderDetails {
-    id: string;
-    orderNumber: string;
-    status: string;
-    totalAmount: number;
-    subTotal: string | number;
-    shippingAmount: number;
-    taxAmount: number;
-    discount?: string | number;
-    codCharge?: string | number;
-    createdAt: string;
-    updatedAt: string;
-    cancelledAt?: string;
-    cancelReason?: string;
-    cancelledBy?: string;
-    userId?: string;
-    couponCode?: string;
-    shippingAddress: {
-      name?: string;
-      street: string;
-      city: string;
-      state: string;
-      postalCode: string;
-      country: string;
-      phone?: string;
-    };
-    user: {
-      name: string;
-      email: string;
-      phone?: string;
-    };
-    items: OrderItem[];
-    updates?: OrderUpdate[];
-    paymentGateway?: string;
-    paymentMode?: string;
-    paymentMethod?: string;
-    razorpayPayment?: {
-      paymentMethod: string;
-      status: string;
-      razorpayPaymentId?: string;
-      razorpayOrderId?: string;
-    };
-    coupon?: {
-      discountType: string;
-      discountValue: number;
-      description?: string;
-    };
-    tracking?: {
-      carrier?: string;
-      trackingNumber?: string;
-      status?: string;
-      estimatedDelivery?: string;
-      updates?: OrderUpdate[];
-    };
-    shiprocket?: {
-      orderId?: number;
-      shipmentId?: number;
-      awbCode?: string;
-      courierName?: string;
-      status?: string;
-    };
-    shippingCost?: string | number;
-    total?: string | number;
-  }
-
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  interface ShiprocketCourier {
-    id: number;
-    name: string;
-    rate: number;
-    etd: string;
-    codAvailable: boolean;
-  }
-
   const [couriers, setCouriers] = useState<ShiprocketCourier[]>([]);
   const [loadingCouriers, setLoadingCouriers] = useState(false);
   const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
   const [bookingShipment, setBookingShipment] = useState(false);
 
-  interface OrderItem {
-    id: string;
-    productId: string;
-    quantity: number;
-    price: number;
-    subtotal: number;
-    imageUrl?: string;
-    product?: {
-      title: string;
-      name: string;
-      images: string[];
-      imageUrl?: string;
-    };
-    variant?: {
-      sku: string;
-      flavor?: {
-        name: string;
-      };
-      weight?: {
-        value: number;
-        unit: string;
-      };
-      images?: Array<{
-        url: string;
-      }>;
-    };
-    returnRequest?: {
-      id: string;
-      status: string;
-      reason: string;
-      customReason?: string;
-      createdAt: string;
-      processedAt?: string;
-    } | null;
-    // Flash sale fields
-    flashSaleName?: string;
-    flashSaleDiscount?: number;
-    originalPrice?: number;
-  }
-
-  interface OrderUpdate {
-    id: string;
-    status: string;
-    timestamp: string;
-    note?: string;
-    location?: string;
-    description?: string;
-  }
-
-  // Define fetchOrderDetails outside of useEffect so it can be reused
   const fetchOrderDetails = useCallback(async () => {
     if (!id) return;
-
     try {
       setIsLoading(true);
       const response = await orders.getOrderById(id);
-
       if (response?.data?.success && response?.data?.data?.order) {
-        // Fix: Access the order data correctly from response.data.data.order
         setOrderDetails(response.data.data.order);
       } else {
-        setError(response?.data?.message || t('orders.actions.load_error'));
+        setError(response?.data?.message || "Failed to load order");
       }
-    } catch (error: unknown) {
-      console.error("Error fetching order details:", error);
-
-      // Handle axios error properly
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response: { status: number; data?: { message?: string } } };
-        setError(
-          `API Error (${axiosError.response.status}): ${axiosError.response.data?.message || "Unknown error"}`
-        );
-      } else if (error && typeof error === 'object' && 'request' in error) {
-        setError("Network error: No response received from server");
-      } else if (error instanceof Error) {
-        setError(`Error: ${error.message}`);
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err) {
+        const e = err as { response: { status: number; data?: { message?: string } } };
+        setError(`API Error (${e.response.status}): ${e.response.data?.message || "Unknown error"}`);
       } else {
-        setError("An unknown error occurred");
+        setError("Network error");
       }
     } finally {
       setIsLoading(false);
     }
-  }, [id, t]);
-
-  useEffect(() => {
-    fetchOrderDetails();
-  }, [id, fetchOrderDetails]);
+  }, [id]);
 
   const fetchCouriers = useCallback(async () => {
     if (!id) return;
     setLoadingCouriers(true);
     try {
       const response = await orders.getOrderCouriers(id);
-      if (response?.data?.success) {
-        setCouriers(response.data.data.couriers || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch couriers:", err);
-    } finally {
-      setLoadingCouriers(false);
-    }
+      if (response?.data?.success) setCouriers(response.data.data.couriers || []);
+    } catch { /* silent */ } finally { setLoadingCouriers(false); }
   }, [id]);
 
-  useEffect(() => {
-    if (orderDetails && !orderDetails.shiprocket?.awbCode) {
-      fetchCouriers();
-    }
-  }, [orderDetails, fetchCouriers]);
+  useEffect(() => { fetchOrderDetails(); }, [fetchOrderDetails]);
+  useEffect(() => { if (orderDetails && !orderDetails.shiprocket?.awbCode) fetchCouriers(); }, [orderDetails, fetchCouriers]);
 
   const handleBookShipment = async () => {
     if (!id || !selectedCourierId) return;
@@ -228,1080 +119,404 @@ export default function OrderDetailsPage() {
       if (response?.data?.success) {
         toast.success("Shipment booked! AWB: " + (response.data.data.order.awbCode || "assigned"));
         fetchOrderDetails();
-      } else {
-        toast.error(response?.data?.message || "Failed to book shipment");
-      }
+      } else { toast.error(response?.data?.message || "Failed to book shipment"); }
     } catch (err: unknown) {
       const msg = err && typeof err === "object" && "response" in err
-        ? (err as { response: { data?: { message?: string } } }).response?.data?.message
-        : "Failed to book shipment";
+        ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
       toast.error(msg || "Failed to book shipment");
-    } finally {
-      setBookingShipment(false);
-    }
+    } finally { setBookingShipment(false); }
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    if (!dateString) return t('orders.details.not_available');
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "PENDING": return t('orders.status.pending');
-      case "PROCESSING": return t('orders.status.processing');
-      case "SHIPPED": return t('orders.status.shipped');
-      case "DELIVERED": return t('orders.status.delivered');
-      case "CANCELLED": return t('orders.status.cancelled');
-      case "REFUNDED": return t('orders.status.refunded');
-      case "PAID": return t('orders.status.paid');
-      case "RETURN_APPROVED": return t('orders.status.return_approved') || "Return Approved";
-      case "RETURN_COMPLETED": return t('orders.status.return_completed') || "Return Completed";
-      case "APPROVED": return "Approved";
-      case "REJECTED": return "Rejected";
-      default: return status;
-    }
-  };
-
-  // Status timeline component
-  const StatusTimeline = ({ currentStatus }: { currentStatus: string }) => {
-    const steps = [
-      { key: "PENDING", label: t('orders.status.placed'), icon: ShoppingCart },
-      { key: "PROCESSING", label: t('orders.status.processing'), icon: Package },
-      { key: "SHIPPED", label: t('orders.status.shipped'), icon: Truck },
-      { key: "DELIVERED", label: t('orders.status.delivered'), icon: CheckCircle },
-    ];
-
-    // Handle cancelled or refunded orders
-    if (currentStatus === "CANCELLED" || currentStatus === "REFUNDED") {
-      return (
-        <div className="flex items-center justify-center py-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#FEF2F2] text-[#EF4444] rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="font-semibold text-[#EF4444]">{getStatusLabel(currentStatus)}</p>
-              <p className="text-sm text-[#9CA3AF]">
-                {currentStatus === "CANCELLED" ? t('orders.status.cancelled') : t('orders.status.refunded')}
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    const currentStepIndex = steps.findIndex(step => step.key === currentStatus);
-
-    return (
-      <div className="w-full py-4">
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => {
-            const isCompleted = index <= currentStepIndex;
-            const isCurrent = index === currentStepIndex;
-            const IconComponent = step.icon;
-
-            return (
-              <div key={step.key} className="flex flex-col items-center flex-1">
-                <div className="flex items-center w-full">
-                  {index > 0 && (
-                    <div className={cn(
-                      "flex-1 h-0.5",
-                      isCompleted ? 'bg-[#22C55E]' : 'bg-[#E5E7EB]'
-                    )} />
-                  )}
-
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center mx-2",
-                    isCompleted
-                      ? 'bg-[#22C55E] text-white'
-                      : isCurrent
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-[#F3F4F6] text-[#9CA3AF]'
-                  )}>
-                    <IconComponent className="w-5 h-5" />
-                  </div>
-
-                  {index < steps.length - 1 && (
-                    <div className={cn(
-                      "flex-1 h-0.5",
-                      index < currentStepIndex ? 'bg-[#22C55E]' : 'bg-[#E5E7EB]'
-                    )} />
-                  )}
-                </div>
-
-                <div className="mt-3 text-center">
-                  <p className={cn(
-                    "text-xs font-medium",
-                    isCompleted
-                      ? 'text-[#22C55E]'
-                      : isCurrent
-                        ? 'text-[#4CAF50]'
-                        : 'text-[#9CA3AF]'
-                  )}>
-                    {step.label}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Get status badge class
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return "bg-[#FFFBEB] text-[#F59E0B] border-[#FEF3C7]";
-      case "PROCESSING":
-        return "bg-[#EFF6FF] text-[#3B82F6] border-[#DBEAFE]";
-      case "SHIPPED":
-        return "bg-[#EEF2FF] text-[#6366F1] border-[#E0E7FF]";
-      case "DELIVERED":
-        return "bg-[#ECFDF5] text-[#22C55E] border-[#D1FAE5]";
-      case "CANCELLED":
-        return "bg-[#FEF2F2] text-[#EF4444] border-[#FEE2E2]";
-      case "REFUNDED":
-        return "bg-[#F3E8FF] text-[#A855F7] border-[#E9D5FF]";
-      case "RETURN_APPROVED":
-        return "bg-[#FFF7ED] text-[#F97316] border-[#FFEDD5]";
-      case "RETURN_COMPLETED":
-        return "bg-[#F0FDFA] text-[#14B8A6] border-[#CCFBF1]";
-      case "APPROVED":
-        return "bg-[#ECFDF5] text-[#22C55E] border-[#D1FAE5]";
-      case "REJECTED":
-        return "bg-[#FEF2F2] text-[#EF4444] border-[#FEE2E2]";
-      default:
-        return "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]";
-    }
-  };
-
-  // Handle order status update
   const handleStatusUpdate = async (newStatus: string) => {
     if (!id) return;
-
     try {
-      const response = await orders.updateOrderStatus(id, {
-        status: newStatus,
-      });
-
-      if (response && response.data && response.data.success) {
-        toast.success(t('orders.actions.status_update_success', { status: newStatus }));
-
-        // Update the order status in the UI
-        setOrderDetails((prev: OrderDetails | null) => ({
-          ...prev!,
-          status: newStatus,
-        }));
-      } else {
-        toast.error(response.data?.message || t('orders.actions.status_update_error'));
-      }
-    } catch (error: unknown) {
-      console.error("Error updating order status:", error);
-      toast.error(t('orders.actions.status_update_error'));
-    }
+      const response = await orders.updateOrderStatus(id, { status: newStatus });
+      if (response?.data?.success) {
+        toast.success(`Status updated to ${newStatus}`);
+        setOrderDetails((prev) => prev ? { ...prev, status: newStatus } : prev);
+      } else { toast.error(response.data?.message || "Update failed"); }
+    } catch { toast.error("Update failed"); }
   };
 
+  const formatDate = (s: string) => {
+    if (!s) return "—";
+    return new Intl.DateTimeFormat("en-IN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(s));
+  };
 
+  const toNum = (v: string | number | undefined) => typeof v === "string" ? parseFloat(v) || 0 : (v || 0);
 
-  // Loading state
-  if (isLoading && !orderDetails) {
-    return (
-      <div className="flex h-full w-full items-center justify-center py-20">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-10 w-10 animate-spin text-[#4CAF50]" />
-          <p className="mt-4 text-base text-[#9CA3AF]">
-            {t('partners_tab.common.loading').replace('Partners', 'Order details').replace('partners', 'order details').replace('Partner', 'Order').replace('partner', 'order')}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const STATUS_STEPS = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED"];
+  const STATUS_COLORS: Record<string, string> = {
+    PENDING:           "bg-amber-50 text-amber-600 border-amber-200",
+    PROCESSING:        "bg-blue-50 text-blue-600 border-blue-200",
+    PAID:              "bg-indigo-50 text-indigo-600 border-indigo-200",
+    SHIPPED:           "bg-purple-50 text-purple-600 border-purple-200",
+    DELIVERED:         "bg-emerald-50 text-emerald-600 border-emerald-200",
+    CANCELLED:         "bg-red-50 text-red-500 border-red-200",
+    REFUNDED:          "bg-violet-50 text-violet-600 border-violet-200",
+    RETURN_APPROVED:   "bg-orange-50 text-orange-500 border-orange-200",
+    RETURN_COMPLETED:  "bg-teal-50 text-teal-600 border-teal-200",
+    APPROVED:          "bg-emerald-50 text-emerald-600 border-emerald-200",
+    REJECTED:          "bg-red-50 text-red-500 border-red-200",
+  };
+  const statusColor = (s: string) => STATUS_COLORS[s] || "bg-gray-100 text-gray-500 border-gray-200";
 
-  // Error state
-  if (error && !orderDetails) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center py-20">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#FEF2F2] mb-4">
-          <AlertTriangle className="h-8 w-8 text-[#EF4444]" />
-        </div>
-        <h2 className="text-xl font-semibold text-[#1F2937] mb-1.5">{t('reviews.messages.error_title')}</h2>
-        <p className="text-center text-[#9CA3AF] mb-6">{error}</p>
-        <Button
-          variant="outline"
-          className="border-[#4CAF50] text-[#2E7D32] hover:bg-[#E8F5E9]"
-          onClick={() => {
-            setError(null);
-            setIsLoading(true);
-            fetchOrderDetails();
-          }}
-        >
-          {t('reviews.messages.try_again')}
-        </Button>
-      </div>
-    );
-  }
+  // ---------- Loading / Error ----------
+  if (isLoading && !orderDetails) return (
+    <div className="flex h-full items-center justify-center py-20">
+      <Loader2 className="h-8 w-8 animate-spin text-[#4CAF50]" />
+    </div>
+  );
 
-  // No order or empty order data, but not in error state
-  if (
-    !isLoading &&
-    !error &&
-    (!orderDetails || Object.keys(orderDetails).length === 0)
-  ) {
-    return (
-      <div className="space-y-6">
-        <Button variant="outline" size="sm" asChild className="mb-2">
-          <Link to="/orders">
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            {t('orders.details.back_to_list')}
-          </Link>
-        </Button>
+  if (error && !orderDetails) return (
+    <div className="flex h-full flex-col items-center justify-center py-20 gap-4">
+      <AlertTriangle className="h-10 w-10 text-red-400" />
+      <p className="text-[#9CA3AF]">{error}</p>
+      <Button variant="outline" onClick={fetchOrderDetails}>Retry</Button>
+    </div>
+  );
 
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              {t('orders.details.not_found')}
-            </h2>
-            <p className="text-center text-muted-foreground mb-4">
-              {t('orders.details.not_found_desc')}
-            </p>
-            <Button
-              onClick={() => {
-                setIsLoading(true);
-                fetchOrderDetails();
-              }}
-            >
-              {t('reviews.messages.try_again')}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Fix access to order items (may need to adjust based on actual API response structure)
-  // Early return if orderDetails is null
-  if (!orderDetails) {
-    return (
-      <div className="flex h-full w-full items-center justify-center py-10">
-        <div className="flex flex-col items-center">
-          <>
-            <AlertTriangle className="h-16 w-16 text-muted-foreground" />
-            <h2 className="mt-4 text-xl font-semibold">{t('orders.details.not_found')}</h2>
-            <p className="text-center text-muted-foreground">
-              {t('orders.details.not_found_desc')}
-            </p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              asChild
-            >
-              <Link to="/orders">{t('orders.details.back_to_list')}</Link>
-            </Button>
-          </>
-        </div>
-      </div>
-    );
-  }
+  if (!orderDetails) return null;
 
   const orderItems = orderDetails.items || [];
+  const subTotal  = toNum(orderDetails.subTotal);
+  const shipping  = toNum(orderDetails.shippingCost);
+  const discount  = toNum(orderDetails.discount);
+  const codCharge = toNum(orderDetails.codCharge);
+  const grandTotal = toNum(orderDetails.total) || (subTotal + shipping + codCharge - discount);
+  const stepIdx = STATUS_STEPS.indexOf(orderDetails.status);
+  const isCancelled = ["CANCELLED", "REFUNDED", "RETURN_APPROVED", "RETURN_COMPLETED"].includes(orderDetails.status);
 
   return (
-    <div className="space-y-8">
-      {/* Premium Page Header */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="mb-3 border-[#E5E7EB] hover:bg-[#F3F7F6]"
-            >
-              <Link to="/orders">
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                {t('orders.details.back_to_list')}
-              </Link>
-            </Button>
-            <h1 className="text-3xl font-semibold text-[#1F2937] tracking-tight">
-              {t('orders.details.title', { number: orderDetails.orderNumber })}
-            </h1>
-            <p className="text-[#9CA3AF] text-sm mt-1.5">
-              {t('orders.details.placed_on', { date: formatDate(orderDetails.createdAt) })}
-            </p>
-          </div>
+    <div className="space-y-5 pb-10">
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge
-              className={cn(
-                "text-xs font-medium border px-3 py-1",
-                getStatusBadgeClass(orderDetails.status)
-              )}
-            >
-              {getStatusLabel(orderDetails.status)}
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 text-[#9CA3AF] hover:text-[#1F2937]">
+            <Link to="/orders"><ChevronLeft className="h-4 w-4 mr-1" />All Orders</Link>
+          </Button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl font-bold text-[#1F2937]">#{orderDetails.orderNumber}</h1>
+            <Badge className={cn("text-xs font-semibold border px-3 py-1", statusColor(orderDetails.status))}>
+              {orderDetails.status.replace(/_/g, " ")}
             </Badge>
-
-            {/* Status update buttons */}
-            {orderDetails.status !== "DELIVERED" &&
-              orderDetails.status !== "CANCELLED" &&
-              orderDetails.status !== "REFUNDED" && (
-                <div className="flex flex-wrap gap-2">
-                  {orderDetails.status === "PENDING" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-[#E5E7EB] hover:bg-[#F3F7F6]"
-                      onClick={() => handleStatusUpdate("PROCESSING")}
-                    >
-                      {t('orders.actions.mark_processing')}
-                    </Button>
-                  )}
-
-                  {(orderDetails.status === "PROCESSING" ||
-                    orderDetails.status === "PAID") && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-[#E5E7EB] hover:bg-[#F3F7F6]"
-                        onClick={() => handleStatusUpdate("SHIPPED")}
-                      >
-                        {t('orders.actions.mark_shipped')}
-                      </Button>
-                    )}
-
-                  {orderDetails.status === "SHIPPED" && (
-                    <Button
-                      size="sm"
-                      className=""
-                      onClick={() => handleStatusUpdate("DELIVERED")}
-                    >
-                      {t('orders.actions.mark_delivered')}
-                    </Button>
-                  )}
-
-                  {(orderDetails.status === "PENDING" ||
-                    orderDetails.status === "PROCESSING") && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-[#E5E7EB] hover:bg-[#F3F7F6]"
-                        onClick={() => handleStatusUpdate("PAID")}
-                      >
-                        {t('orders.actions.mark_paid')}
-                      </Button>
-                    )}
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-[#EF4444] text-[#EF4444] hover:bg-[#FEF2F2]"
-                    onClick={() => handleStatusUpdate("CANCELLED")}
-                  >
-                    {t('orders.actions.cancel')}
-                  </Button>
-                </div>
-              )}
+            <span className="text-sm text-[#9CA3AF] flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" />
+              {formatDate(orderDetails.createdAt)}
+            </span>
           </div>
         </div>
-        <div className="h-px bg-[#E5E7EB]" />
+
+        {/* Status action buttons */}
+        {!isCancelled && orderDetails.status !== "DELIVERED" && (
+          <div className="flex flex-wrap gap-2">
+            {orderDetails.status === "PENDING" && (
+              <Button size="sm" variant="outline" className="h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleStatusUpdate("PROCESSING")}>
+                Mark Processing
+              </Button>
+            )}
+            {(orderDetails.status === "PROCESSING" || orderDetails.status === "PAID") && (
+              <Button size="sm" variant="outline" className="h-8 text-xs border-purple-200 text-purple-600 hover:bg-purple-50" onClick={() => handleStatusUpdate("SHIPPED")}>
+                Mark Shipped
+              </Button>
+            )}
+            {orderDetails.status === "SHIPPED" && (
+              <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => handleStatusUpdate("DELIVERED")}>
+                Mark Delivered
+              </Button>
+            )}
+            {(orderDetails.status === "PENDING" || orderDetails.status === "PROCESSING") && (
+              <Button size="sm" variant="outline" className="h-8 text-xs border-indigo-200 text-indigo-600 hover:bg-indigo-50" onClick={() => handleStatusUpdate("PAID")}>
+                Mark Paid
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="h-8 text-xs border-red-200 text-red-500 hover:bg-red-50" onClick={() => handleStatusUpdate("CANCELLED")}>
+              Cancel Order
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Order Status Timeline */}
-        <div className="lg:col-span-3">
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                <Truck className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                {t('orders.details.status_timeline')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              <StatusTimeline currentStatus={orderDetails.status} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Order Items */}
-        <div className="lg:col-span-2">
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                <Package className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                {t('orders.details.items')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              <div className="divide-y divide-[#E5E7EB]">
-                {orderItems.map((item: OrderItem) => (
-                  <div key={item.id} className="py-4 flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] overflow-hidden flex-shrink-0">
-                      <img
-                        src={getImageUrl(
-                          item.imageUrl ||
-                          item.product?.imageUrl ||
-                          (Array.isArray(item.product?.images) ? item.product.images[0] : null) ||
-                          (item.variant?.images?.[0]?.url) ||
-                          null
-                        )}
-                        alt={item.product?.name || "Product"}
-                        className="h-full w-full object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src =
-                            "/images/product-placeholder.jpg";
-                        }}
-                      />
+      {/* ── Status Timeline ── */}
+      {!isCancelled && (
+        <Card className="border-[#E5E7EB]">
+          <CardContent className="px-6 py-5">
+            <div className="flex items-center justify-between">
+              {STATUS_STEPS.map((step, idx) => {
+                const done = idx <= stepIdx;
+                const current = idx === stepIdx;
+                const Icon = [ShoppingCart, Package, Truck, CheckCircle][idx];
+                return (
+                  <React.Fragment key={step}>
+                    {idx > 0 && <div className={cn("flex-1 h-0.5 mx-2", done ? "bg-emerald-400" : "bg-[#E5E7EB]")} />}
+                    <div className="flex flex-col items-center gap-2 shrink-0">
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center",
+                        done ? "bg-emerald-500 text-white" : current ? "bg-emerald-100 text-emerald-600 ring-2 ring-emerald-300" : "bg-[#F3F4F6] text-[#9CA3AF]")}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className={cn("text-[10px] font-semibold uppercase tracking-wide", done ? "text-emerald-600" : "text-[#9CA3AF]")}>
+                        {step === "PENDING" ? "Placed" : step.charAt(0) + step.slice(1).toLowerCase()}
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[#1F2937] mb-1">
-                        {item.product?.name}
-                      </p>
-                      <p className="text-xs text-[#9CA3AF] mb-2">
-                        {t('orders.details.sku')}: {item.variant?.sku || t('orders.details.not_available')}
-                      </p>
-                      {item.variant?.flavor && (
-                        <div className="text-sm text-[#4B5563]">
-                          <span className="text-[#9CA3AF]">{t('orders.details.flavor')}: </span>
-                          {item.variant.flavor.name}
-                          {item.variant.weight && (
-                            <>
-                              <span className="text-[#9CA3AF] ml-2">{t('orders.details.weight')}: </span>
-                              {`${item.variant.weight.value}${item.variant.weight.unit}`}
-                            </>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Cancelled banner ── */}
+      {orderDetails.status === "CANCELLED" && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-red-700">Order Cancelled</p>
+            {orderDetails.cancelReason && <p className="text-sm text-red-600 mt-0.5">Reason: {orderDetails.cancelReason}</p>}
+            {orderDetails.cancelledAt && <p className="text-xs text-red-400 mt-1">{formatDate(orderDetails.cancelledAt)}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* ── Main 2-col grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {/* LEFT: Items + Tracking */}
+        <div className="lg:col-span-2 space-y-5">
+
+          {/* Order Items Table */}
+          <Card className="border-[#E5E7EB] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
+              <Package className="h-4 w-4 text-[#4CAF50]" />
+              <h2 className="font-semibold text-[#1F2937]">Order Items</h2>
+              <span className="text-xs text-[#9CA3AF] bg-[#F3F4F6] px-2 py-0.5 rounded-full">{orderItems.length}</span>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[#F9FAFB] hover:bg-[#F9FAFB]">
+                  <TableHead className="pl-5 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Product</TableHead>
+                  <TableHead className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide text-center">Qty</TableHead>
+                  <TableHead className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide text-right">Price</TableHead>
+                  <TableHead className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide text-right pr-5">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orderItems.map((item: OrderItem) => (
+                  <TableRow key={item.id} className="border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA]">
+                    <TableCell className="pl-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] overflow-hidden shrink-0">
+                          <img
+                            src={getImageUrl(item.imageUrl || item.product?.imageUrl || (Array.isArray(item.product?.images) ? item.product.images[0] : null) || item.variant?.images?.[0]?.url || null)}
+                            alt={item.product?.name || "Product"}
+                            className="h-full w-full object-contain"
+                            onError={(e) => { e.currentTarget.src = "/images/product-placeholder.jpg"; }}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[#1F2937] text-sm truncate max-w-[200px]">{item.product?.name || item.name || "Product"}</p>
+                          {item.variant?.sku && (
+                            <p className="text-xs text-[#9CA3AF] font-mono mt-0.5">SKU: {item.variant.sku}</p>
+                          )}
+                          {item.variant?.attributes?.map((attr, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 text-xs text-[#6B7280] bg-[#F3F4F6] px-1.5 py-0.5 rounded mr-1 mt-1">
+                              {attr.attribute}: {attr.value}
+                            </span>
+                          ))}
+                          {item.flashSaleName && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="text-[10px] bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded font-medium">⚡ {item.flashSaleName} -{item.flashSaleDiscount}%</span>
+                            </div>
+                          )}
+                          {item.returnRequest && (
+                            <Badge className={cn("text-[10px] font-medium border mt-1 h-5 px-1.5", statusColor(item.returnRequest.status))}>
+                              Return: {item.returnRequest.status.replace(/_/g, " ")}
+                            </Badge>
                           )}
                         </div>
-                      )}
-
-                      {/* Flash Sale Badge */}
-                      {item.flashSaleName && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <Badge className="bg-orange-50 text-orange-600 border-orange-200 text-[10px] px-2 py-0 h-5 font-normal">
-                            ⚡ {item.flashSaleName}
-                          </Badge>
-                          <span className="text-xs text-orange-600 font-medium">-{item.flashSaleDiscount}% OFF</span>
-                        </div>
-                      )}
-                      {/* Return Request Badge */}
-                      {item.returnRequest && (
-                        <div className="mt-2">
-                          <Badge
-                            className={cn(
-                              "text-xs font-medium border",
-                              getStatusBadgeClass(item.returnRequest.status)
-                            )}
-                          >
-                            Return: {getStatusLabel(item.returnRequest.status)}
-                          </Badge>
-                          <p className="text-xs text-[#9CA3AF] mt-1">
-                            Reason: {item.returnRequest.reason}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm text-[#9CA3AF] mb-1">{t('orders.details.price')}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center py-4">
+                      <span className="text-sm font-semibold text-[#1F2937] bg-[#F3F4F6] px-2.5 py-1 rounded-md">{item.quantity}</span>
+                    </TableCell>
+                    <TableCell className="text-right py-4">
                       {item.originalPrice && item.originalPrice > item.price && (
-                        <p className="text-xs text-[#9CA3AF] line-through">
-                          {formatCurrency(item.originalPrice)}
-                        </p>
+                        <p className="text-xs text-[#9CA3AF] line-through">{formatCurrency(item.originalPrice)}</p>
                       )}
-                      <p className="font-semibold text-[#1F2937] mb-3">
-                        {formatCurrency(item.price)}
-                      </p>
-                      <p className="text-sm text-[#9CA3AF] mb-1">{t('orders.details.qty')}</p>
-                      <p className="font-semibold text-[#1F2937] mb-3">
-                        {item.quantity}
-                      </p>
-                      <p className="text-sm text-[#9CA3AF] mb-1">{t('orders.details.total')}</p>
-                      <p className="font-bold text-lg text-[#1F2937]">
-                        {formatCurrency(item.subtotal)}
-                      </p>
-                    </div>
-                  </div>
+                      <p className="text-sm font-medium text-[#1F2937]">{formatCurrency(item.price)}</p>
+                    </TableCell>
+                    <TableCell className="text-right py-4 pr-5">
+                      <p className="text-sm font-bold text-[#1F2937]">{formatCurrency(item.subtotal)}</p>
+                    </TableCell>
+                  </TableRow>
                 ))}
+              </TableBody>
+            </Table>
+
+            {/* Price breakdown */}
+            <div className="px-5 py-4 border-t border-[#E5E7EB] space-y-2.5 bg-[#FAFAFA]">
+              <div className="flex justify-between text-sm text-[#6B7280]">
+                <span>Subtotal</span><span className="font-medium text-[#1F2937]">{formatCurrency(subTotal)}</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Order Summary */}
-        <div className="space-y-6">
-          {/* Customer Info */}
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                <User className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                {t('orders.details.customer_info')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-[#9CA3AF] mb-1">{t('return_requests.common.name')}</p>
-                  <p className="font-medium text-[#1F2937]">
-                    {orderDetails.user?.name || "Guest"}
-                  </p>
+              {shipping > 0 && (
+                <div className="flex justify-between text-sm text-[#6B7280]">
+                  <span>Shipping</span><span className="font-medium text-[#1F2937]">{formatCurrency(shipping)}</span>
                 </div>
-                <div>
-                  <p className="text-xs text-[#9CA3AF] mb-1">{t('return_requests.common.email')}</p>
-                  <p className="font-medium text-[#1F2937]">
-                    {orderDetails.user?.email || t('orders.details.not_available')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-[#9CA3AF] mb-1">{t('partners_tab.common.number')}</p>
-                  <p className="font-medium text-[#1F2937]">
-                    {orderDetails.user?.phone || t('orders.details.not_available')}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Cancellation Information (if order is cancelled) */}
-          {orderDetails.status === "CANCELLED" && (
-            <Card className="bg-[#FEF2F2] border-2 border-[#FEE2E2] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-              <CardHeader className="px-6 pt-6 pb-4">
-                <CardTitle className="text-lg font-semibold text-[#EF4444] flex items-center">
-                  <AlertTriangle className="mr-2 h-5 w-5" />
-                  {t('orders.details.cancellation_info')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs text-[#9CA3AF] mb-1">{t('orders.details.cancelled_at')}</p>
-                    <p className="font-medium text-[#1F2937]">
-                      {orderDetails.cancelledAt && formatDate(orderDetails.cancelledAt)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#9CA3AF] mb-1">{t('orders.details.reason')}</p>
-                    <p className="font-medium text-[#1F2937]">
-                      {orderDetails.cancelReason || t('orders.details.no_reason')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#9CA3AF] mb-1">{t('orders.details.cancelled_by')}</p>
-                    <p className="font-medium text-[#1F2937]">
-                      {orderDetails.cancelledBy === orderDetails.userId
-                        ? t('orders.details.by_customer')
-                        : t('orders.details.by_admin')}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Payment Info */}
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                <CreditCard className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                {t('orders.details.payment_info')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-[#9CA3AF] mb-1">{t('orders.details.method')}</p>
-                  <p className="font-medium text-[#1F2937]">
-                    {orderDetails.paymentMethod || orderDetails.razorpayPayment?.paymentMethod || "ONLINE"}
-                  </p>
-                </div>
-                {orderDetails.paymentGateway && (
-                  <div>
-                    <p className="text-xs text-[#9CA3AF] mb-1">{t('orders.details.gateway')}</p>
-                    <p className="font-medium text-[#1F2937]">
-                      {orderDetails.paymentGateway}
-                      {orderDetails.paymentMode && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          ({orderDetails.paymentMode})
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-xs text-[#9CA3AF] mb-1">{t('partners_tab.common.status')}</p>
-                  <Badge
-                    className={cn(
-                      "text-xs font-medium border",
-                      orderDetails.razorpayPayment?.status === "CAPTURED" ||
-                        orderDetails.razorpayPayment?.status === "PAID" ||
-                        orderDetails.status === "PAID"
-                        ? "bg-[#ECFDF5] text-[#22C55E] border-[#D1FAE5]"
-                        : "bg-[#FFFBEB] text-[#F59E0B] border-[#FEF3C7]"
-                    )}
-                  >
-                    {orderDetails.razorpayPayment?.status || getStatusLabel(orderDetails.status) || t('orders.details.not_available')}
-                  </Badge>
-                </div>
-                {orderDetails.razorpayPayment?.razorpayPaymentId && (
-                  <div>
-                    <p className="text-xs text-[#9CA3AF] mb-1">{t('orders.details.transaction_id')}</p>
-                    <p className="font-mono text-xs text-[#1F2937] bg-[#F3F4F6] px-2 py-1 rounded border border-[#E5E7EB]">
-                      {orderDetails.razorpayPayment.razorpayPaymentId}
-                    </p>
-                  </div>
-                )}
-                {orderDetails.razorpayPayment?.razorpayOrderId && (
-                  <div>
-                    <p className="text-xs text-[#9CA3AF] mb-1">{t('orders.details.order_id')}</p>
-                    <p className="font-mono text-xs text-[#1F2937] bg-[#F3F4F6] px-2 py-1 rounded border border-[#E5E7EB]">
-                      {orderDetails.razorpayPayment.razorpayOrderId}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Shipping Address */}
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                <MapPin className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                {t('orders.details.shipping_address')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              {orderDetails.shippingAddress ? (
-                <div className="space-y-2">
-                  <p className="font-semibold text-[#1F2937]">
-                    {orderDetails.shippingAddress.name}
-                  </p>
-                  <p className="text-[#4B5563]">{orderDetails.shippingAddress.street}</p>
-                  <p className="text-[#4B5563]">
-                    {orderDetails.shippingAddress.city},{" "}
-                    {orderDetails.shippingAddress.state}{" "}
-                    {orderDetails.shippingAddress.postalCode}
-                  </p>
-                  <p className="text-[#4B5563]">{orderDetails.shippingAddress.country}</p>
-                  <p className="text-sm text-[#9CA3AF]">
-                    Phone: {orderDetails.shippingAddress.phone || t('orders.details.not_available')}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-[#9CA3AF]">No shipping address found</p>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Order Summary */}
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                <ShoppingCart className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                {t('orders.details.total')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              <div className="space-y-3">
+              {codCharge > 0 && (
+                <div className="flex justify-between text-sm text-[#6B7280]">
+                  <span>COD Surcharge</span><span className="font-medium text-[#1F2937]">{formatCurrency(codCharge)}</span>
+                </div>
+              )}
+              {discount > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-[#4B5563]">{t('orders.details.subtotal')}:</span>
-                  <span className="font-medium text-[#1F2937]">
-                    {formatCurrency(orderDetails.subTotal)}
-                  </span>
+                  <span className="text-emerald-600">Discount{orderDetails.couponCode ? ` (${orderDetails.couponCode})` : ""}</span>
+                  <span className="font-medium text-emerald-600">-{formatCurrency(discount)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#4B5563]">{t('orders.details.tax')} (0%):</span>
-                  <span className="font-medium text-[#1F2937]">
-                    {formatCurrency(0)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#4B5563]">{t('orders.details.shipping')}:</span>
-                  <span className="font-medium text-[#1F2937]">
-                    {formatCurrency(
-                      typeof orderDetails.shippingCost === 'string'
-                        ? parseFloat(orderDetails.shippingCost)
-                        : (orderDetails.shippingCost || 0)
-                    )}
-                  </span>
-                </div>
-                {(typeof orderDetails.codCharge === 'string' ? parseFloat(orderDetails.codCharge) : (orderDetails.codCharge || 0)) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#4B5563]">COD Surcharge:</span>
-                    <span className="font-medium text-[#1F2937]">
-                      {formatCurrency(
-                        typeof orderDetails.codCharge === 'string'
-                          ? parseFloat(orderDetails.codCharge)
-                          : (orderDetails.codCharge || 0)
-                      )}
-                    </span>
-                  </div>
-                )}
-                {(typeof orderDetails.discount === 'string' ? parseFloat(orderDetails.discount) : (orderDetails.discount || 0)) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#22C55E]">Discount:</span>
-                    <span className="font-medium text-[#22C55E]">
-                      -{formatCurrency(
-                        typeof orderDetails.discount === 'string'
-                          ? parseFloat(orderDetails.discount)
-                          : (orderDetails.discount || 0)
-                      )}
-                    </span>
-                  </div>
-                )}
-                {orderDetails.couponCode && (
-                  <div className="mt-2 p-3 bg-[#ECFDF5] border border-[#D1FAE5] rounded-lg">
-                    <div className="flex items-center text-[#22C55E] font-medium mb-1 text-sm">
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Coupon applied: {orderDetails.couponCode}
-                    </div>
-                    {orderDetails.coupon && (
-                      <div className="text-sm text-[#22C55E]">
-                        {orderDetails.coupon.discountType === "PERCENTAGE" ? (
-                          <span>
-                            {orderDetails.coupon.discountValue}% off the order total
-                          </span>
-                        ) : (
-                          <span>
-                            {formatCurrency(orderDetails.coupon.discountValue)} off the order total
-                          </span>
-                        )}
-                        {orderDetails.coupon.description && (
-                          <p className="text-xs mt-1 text-[#9CA3AF]">
-                            {orderDetails.coupon.description}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="flex justify-between border-t border-[#E5E7EB] pt-3 font-bold text-lg">
-                  <span className="text-[#1F2937]">{t('orders.details.grand_total')}:</span>
-                  <span className="text-[#1F2937]">
-                    {formatCurrency(
-                      orderDetails.total ||
-                      ((typeof orderDetails.subTotal === 'string' ? parseFloat(orderDetails.subTotal) : orderDetails.subTotal) +
-                        (typeof orderDetails.shippingCost === 'string' ? parseFloat(orderDetails.shippingCost) : (orderDetails.shippingCost || 0)) +
-                        (typeof orderDetails.codCharge === 'string' ? parseFloat(orderDetails.codCharge) : (orderDetails.codCharge || 0)) -
-                        (typeof orderDetails.discount === 'string' ? parseFloat(orderDetails.discount) : (orderDetails.discount || 0)))
-                    )}
-                  </span>
-                </div>
+              )}
+              <div className="flex justify-between items-center pt-2.5 border-t border-[#E5E7EB]">
+                <span className="font-bold text-[#1F2937]">Grand Total</span>
+                <span className="text-lg font-bold text-[#1F2937] flex items-center gap-0.5">
+                  <IndianRupee className="h-4 w-4" />{grandTotal.toFixed(2)}
+                </span>
               </div>
-            </CardContent>
+            </div>
           </Card>
-
-          {/* Tracking Info */}
-          {orderDetails.status === "SHIPPED" ||
-            orderDetails.status === "DELIVERED" ? (
-            <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl">
-              <CardHeader className="px-6 pt-6 pb-4">
-                <CardTitle className="text-lg font-semibold text-[#1F2937] flex items-center">
-                  <Truck className="mr-2 h-5 w-5 text-[#4CAF50]" />
-                  Tracking Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                {orderDetails.tracking ? (
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">Carrier</p>
-                      <p className="font-medium text-[#1F2937]">
-                        {orderDetails.tracking.carrier || "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">Tracking Number</p>
-                      <p className="font-mono text-sm text-[#1F2937] bg-[#F3F4F6] px-2 py-1 rounded border border-[#E5E7EB]">
-                        {orderDetails.tracking.trackingNumber || t('orders.details.not_available')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">{t('partners_tab.common.status')}</p>
-                      <Badge
-                        className={cn(
-                          "text-xs font-medium border",
-                          getStatusBadgeClass(
-                            orderDetails.tracking?.status || orderDetails.status
-                          )
-                        )}
-                      >
-                        {getStatusLabel(orderDetails.tracking?.status || orderDetails.status)}
-                      </Badge>
-                    </div>
-                    {orderDetails.tracking.estimatedDelivery && (
-                      <div>
-                        <p className="text-xs text-[#9CA3AF] mb-1">Estimated Delivery</p>
-                        <p className="font-medium text-[#1F2937]">
-                          {formatDate(orderDetails.tracking.estimatedDelivery)}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Tracking Updates */}
-                    {orderDetails.tracking.updates &&
-                      orderDetails.tracking.updates.length > 0 && (
-                        <div className="mt-6">
-                          <h4 className="mb-3 font-semibold text-[#1F2937]">Tracking Updates</h4>
-                          <div className="space-y-3">
-                            {orderDetails.tracking.updates.map(
-                              (update: OrderUpdate, index: number) => (
-                                <div
-                                  key={index}
-                                  className="rounded-lg border border-[#E5E7EB] bg-[#F3F7F6] p-3"
-                                >
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Clock className="h-4 w-4 text-[#9CA3AF]" />
-                                    <span className="text-sm text-[#9CA3AF]">
-                                      {formatDate(update.timestamp)}
-                                    </span>
-                                  </div>
-                                  <p className="font-medium text-[#1F2937] mb-1">
-                                    {update.status}
-                                  </p>
-                                  {update.location && (
-                                    <p className="text-sm text-[#4B5563]">
-                                      {update.location}
-                                    </p>
-                                  )}
-                                  {update.description && (
-                                    <p className="text-sm text-[#4B5563] mt-1">
-                                      {update.description}
-                                    </p>
-                                  )}
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#F3F4F6] mb-4">
-                      <Truck className="h-8 w-8 text-[#9CA3AF]" />
-                    </div>
-                    <p className="font-semibold text-[#1F2937] mb-1.5">Shipping in progress</p>
-                    <p className="text-sm text-[#9CA3AF] mb-4 max-w-sm mx-auto">
-                      {orderDetails.status === "DELIVERED"
-                        ? "This order has been marked as delivered, but no detailed tracking information is available."
-                        : "This order has been shipped, but detailed tracking information is not yet available."}
-                    </p>
-                    <Badge
-                      className={cn(
-                        "text-xs font-medium border",
-                        getStatusBadgeClass(orderDetails.status)
-                      )}
-                    >
-                      {getStatusLabel(orderDetails.status)}
-                    </Badge>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : null}
 
           {/* Shiprocket Shipment Card */}
-          <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl overflow-hidden">
-            {/* Header */}
-            <div className="px-6 py-4 bg-gradient-to-r from-[#F0FFF4] to-[#FFFFFF] border-b border-[#E5E7EB] flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#4CAF50]/10 border border-[#4CAF50]/20">
-                  <Truck className="h-5 w-5 text-[#4CAF50]" />
+          <Card className="border-[#E5E7EB] overflow-hidden">
+            <div className="px-5 py-4 bg-linear-to-r from-emerald-50 to-white border-b border-[#E5E7EB] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+                  <Truck className="h-4 w-4 text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-[#1F2937]">Shiprocket Shipment</h3>
+                  <h3 className="text-sm font-semibold text-[#1F2937]">Shiprocket Shipment</h3>
                   <p className="text-xs text-[#9CA3AF]">Courier management & tracking</p>
                 </div>
               </div>
               {orderDetails.shiprocket?.status && (
-                <Badge className={cn("text-xs font-semibold px-3 py-1 border", getStatusBadgeClass(orderDetails.shiprocket.status))}>
+                <Badge className={cn("text-xs font-semibold border", statusColor(orderDetails.shiprocket.status))}>
                   {orderDetails.shiprocket.status.replace(/_/g, " ")}
                 </Badge>
               )}
             </div>
 
-            <CardContent className="px-6 py-5 space-y-5">
-
-              {/* ── Booked: show tracking info ── */}
+            <CardContent className="px-5 py-5 space-y-4">
               {orderDetails.shiprocket?.awbCode ? (
+                // ── Booked ──
                 <div className="space-y-4">
-
-                  {/* AWB + Track button — prominent */}
-                  <div className="bg-[#F0FFF4] border border-[#4CAF50]/30 rounded-xl p-4">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
-                        <p className="text-xs text-[#4CAF50] font-semibold uppercase tracking-wider mb-1">AWB / Tracking Number</p>
+                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mb-1">AWB / Tracking No.</p>
                         <div className="flex items-center gap-2">
-                          <p className="font-mono text-xl font-bold text-[#1F2937] tracking-wider">
-                            {orderDetails.shiprocket.awbCode}
-                          </p>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(orderDetails.shiprocket!.awbCode!);
-                              toast.success("AWB copied!");
-                            }}
-                            className="p-1.5 rounded-md hover:bg-[#4CAF50]/10 text-[#4CAF50] transition-colors"
-                            title="Copy AWB"
-                          >
+                          <p className="font-mono text-xl font-bold text-[#1F2937] tracking-wider">{orderDetails.shiprocket.awbCode}</p>
+                          <button onClick={() => { navigator.clipboard.writeText(orderDetails.shiprocket!.awbCode!); toast.success("Copied!"); }}
+                            className="p-1 rounded-md hover:bg-emerald-100 text-emerald-600" title="Copy AWB">
                             <Copy className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
-                      <a
-                        href={`https://shiprocket.co/tracking/${orderDetails.shiprocket.awbCode}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#4CAF50] text-white text-sm font-semibold rounded-lg hover:bg-[#43A047] transition-colors shadow-sm flex-shrink-0"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        Track Live
+                      <a href={`https://shiprocket.co/tracking/${orderDetails.shiprocket.awbCode}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors shrink-0">
+                        <ExternalLink className="h-3.5 w-3.5" /> Track Live
                       </a>
                     </div>
                   </div>
-
-                  {/* IDs grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {orderDetails.shiprocket.courierName && (
                       <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                        <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">Courier</p>
-                        <div className="flex items-center gap-1.5">
-                          <Truck className="h-3.5 w-3.5 text-[#4CAF50]" />
-                          <p className="font-semibold text-[#1F2937] text-sm">{orderDetails.shiprocket.courierName}</p>
-                        </div>
+                        <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">Courier</p>
+                        <p className="text-sm font-semibold text-[#1F2937]">{orderDetails.shiprocket.courierName}</p>
                       </div>
                     )}
                     {orderDetails.shiprocket.orderId && (
                       <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                        <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">SR Order ID</p>
-                        <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.orderId}</p>
+                        <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">SR Order ID</p>
+                        <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.orderId}</p>
                       </div>
                     )}
                     {orderDetails.shiprocket.shipmentId && (
                       <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                        <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">Shipment ID</p>
-                        <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.shipmentId}</p>
+                        <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">Shipment ID</p>
+                        <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.shipmentId}</p>
                       </div>
                     )}
                   </div>
-
-                  {/* Status timeline hint */}
                   <div className="flex items-center gap-2 text-xs text-[#6B7280] bg-[#F9FAFB] rounded-lg px-3 py-2 border border-[#E5E7EB]">
-                    <CheckCircle className="h-3.5 w-3.5 text-[#4CAF50] flex-shrink-0" />
-                    Shipment booked. Use "Track Live" to see real-time delivery updates on Shiprocket.
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    Shipment booked. Click "Track Live" for real-time updates.
                   </div>
                 </div>
-
               ) : (
-                /* ── Not booked: show courier selection ── */
+                // ── Not booked ──
                 <div className="space-y-4">
-
-                  {/* Pending booking info */}
                   {(orderDetails.shiprocket?.orderId || orderDetails.shiprocket?.shipmentId) && (
                     <div className="grid grid-cols-2 gap-3">
                       {orderDetails.shiprocket.orderId && (
                         <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                          <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">SR Order ID</p>
-                          <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.orderId}</p>
+                          <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">SR Order ID</p>
+                          <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.orderId}</p>
                         </div>
                       )}
                       {orderDetails.shiprocket.shipmentId && (
                         <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                          <p className="text-xs text-[#9CA3AF] mb-1 font-medium uppercase tracking-wide">Shipment ID</p>
-                          <p className="font-mono text-sm text-[#374151] font-medium">{orderDetails.shiprocket.shipmentId}</p>
+                          <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">Shipment ID</p>
+                          <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.shipmentId}</p>
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Courier selector */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-sm font-semibold text-[#1F2937]">Select Courier Partner</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={fetchCouriers}
-                        disabled={loadingCouriers}
-                        className="text-xs text-[#6B7280] hover:text-[#1F2937] gap-1.5 h-7 px-2"
-                      >
-                        <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} />
-                        Refresh
+                      <Button variant="ghost" size="sm" onClick={fetchCouriers} disabled={loadingCouriers} className="h-7 px-2 gap-1.5 text-xs text-[#6B7280]">
+                        <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} /> Refresh
                       </Button>
                     </div>
 
                     {loadingCouriers ? (
-                      <div className="flex items-center gap-3 py-6 justify-center text-sm text-[#9CA3AF] bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
-                        <Loader2 className="h-4 w-4 animate-spin text-[#4CAF50]" />
-                        Fetching available couriers from Shiprocket...
+                      <div className="flex items-center justify-center gap-2 py-8 bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
+                        <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                        <span className="text-sm text-[#9CA3AF]">Fetching couriers...</span>
                       </div>
                     ) : couriers.length > 0 ? (
                       <div className="space-y-2">
-                        {couriers.map((courier) => (
-                          <label
-                            key={String(courier.id)}
-                            className={cn(
-                              "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all duration-150",
-                              selectedCourierId === courier.id
-                                ? "border-[#4CAF50] bg-[#F0FFF4] shadow-sm"
-                                : "border-[#E5E7EB] hover:border-[#9CA3AF] bg-white"
-                            )}
-                          >
+                        {couriers.map((c) => (
+                          <label key={String(c.id)} className={cn(
+                            "flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all",
+                            selectedCourierId === c.id ? "border-emerald-500 bg-emerald-50" : "border-[#E5E7EB] bg-white hover:border-[#9CA3AF]"
+                          )}>
                             <div className="flex items-center gap-3">
-                              <input
-                                type="radio"
-                                name="courier"
-                                value={String(courier.id)}
-                                checked={selectedCourierId === courier.id}
-                                onChange={() => setSelectedCourierId(courier.id)}
-                                className="h-4 w-4 accent-[#4CAF50]"
-                              />
+                              <input type="radio" name="courier" value={String(c.id)} checked={selectedCourierId === c.id}
+                                onChange={() => setSelectedCourierId(c.id)} className="h-4 w-4 accent-emerald-600" />
                               <div>
-                                <p className="text-sm font-semibold text-[#1F2937]">{courier.name}</p>
+                                <p className="text-sm font-semibold text-[#1F2937]">{c.name}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <p className="text-xs text-[#9CA3AF]">ETD: {courier.etd}</p>
-                                  {courier.codAvailable && (
-                                    <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded font-medium">COD</span>
-                                  )}
+                                  <span className="text-xs text-[#9CA3AF]">ETD: {c.etd}</span>
+                                  {c.codAvailable && <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded font-medium">COD</span>}
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-base font-bold text-[#1F2937]">₹{courier.rate}</p>
-                              <p className="text-xs text-[#9CA3AF]">Shipping charge</p>
+                            <div className="text-right shrink-0">
+                              <p className="text-base font-bold text-[#1F2937]">₹{c.rate}</p>
+                              <p className="text-[10px] text-[#9CA3AF]">shipping</p>
                             </div>
                           </label>
                         ))}
-
-                        <Button
-                          onClick={handleBookShipment}
-                          disabled={!selectedCourierId || bookingShipment}
-                          className="w-full mt-3 bg-[#4CAF50] hover:bg-[#43A047] text-white font-semibold h-11 text-sm shadow-sm"
-                        >
-                          {bookingShipment ? (
-                            <span className="flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Booking Shipment...
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-2">
-                              <Truck className="h-4 w-4" />
-                              Book Shipment
-                            </span>
-                          )}
+                        <Button onClick={handleBookShipment} disabled={!selectedCourierId || bookingShipment}
+                          className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white h-10 text-sm font-semibold">
+                          {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin mr-2" />Booking...</>) : (<><Truck className="h-4 w-4 mr-2" />Book Shipment</>)}
                         </Button>
                       </div>
                     ) : (
-                      <div className="py-6 text-center bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
-                        <Truck className="h-8 w-8 text-[#D1D5DB] mx-auto mb-2" />
-                        <p className="text-sm font-medium text-[#6B7280]">No couriers available</p>
+                      <div className="flex flex-col items-center py-8 bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
+                        <Truck className="h-8 w-8 text-[#D1D5DB] mb-2" />
+                        <p className="text-sm text-[#6B7280] font-medium">No couriers available</p>
                         <p className="text-xs text-[#9CA3AF] mt-1">Check pickup address in Shiprocket settings</p>
                       </div>
                     )}
@@ -1310,6 +525,159 @@ export default function OrderDetailsPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Tracking Updates */}
+          {orderDetails.tracking?.updates && orderDetails.tracking.updates.length > 0 && (
+            <Card className="border-[#E5E7EB]">
+              <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[#4CAF50]" />
+                <h2 className="font-semibold text-[#1F2937]">Tracking History</h2>
+              </div>
+              <CardContent className="px-5 py-4">
+                <div className="space-y-3">
+                  {orderDetails.tracking.updates.map((u: OrderUpdate, i: number) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                        {i < orderDetails.tracking!.updates!.length - 1 && <div className="w-0.5 flex-1 bg-[#E5E7EB] mt-1" />}
+                      </div>
+                      <div className="pb-3 min-w-0">
+                        <p className="text-sm font-semibold text-[#1F2937]">{u.status}</p>
+                        {u.location && <p className="text-xs text-[#6B7280] mt-0.5">{u.location}</p>}
+                        {u.description && <p className="text-xs text-[#9CA3AF] mt-0.5">{u.description}</p>}
+                        <p className="text-xs text-[#9CA3AF] mt-1">{formatDate(u.timestamp)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* RIGHT: Sidebar */}
+        <div className="space-y-4">
+
+          {/* Customer */}
+          <Card className="border-[#E5E7EB]">
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
+              <User className="h-4 w-4 text-[#4CAF50]" />
+              <h2 className="font-semibold text-[#1F2937] text-sm">Customer</h2>
+            </div>
+            <CardContent className="px-5 py-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-[#E8F5E9] flex items-center justify-center shrink-0">
+                  <User className="h-4 w-4 text-[#2E7D32]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#1F2937]">{orderDetails.user?.name || "Guest"}</p>
+                </div>
+              </div>
+              {orderDetails.user?.email && (
+                <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+                  <Mail className="h-3.5 w-3.5 shrink-0" />{orderDetails.user.email}
+                </div>
+              )}
+              {orderDetails.user?.phone && (
+                <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+                  <Phone className="h-3.5 w-3.5 shrink-0" />{orderDetails.user.phone}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Shipping Address */}
+          <Card className="border-[#E5E7EB]">
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-[#4CAF50]" />
+              <h2 className="font-semibold text-[#1F2937] text-sm">Shipping Address</h2>
+            </div>
+            <CardContent className="px-5 py-4">
+              {orderDetails.shippingAddress ? (
+                <div className="text-sm text-[#374151] space-y-0.5">
+                  {orderDetails.shippingAddress.name && <p className="font-semibold text-[#1F2937]">{orderDetails.shippingAddress.name}</p>}
+                  <p>{orderDetails.shippingAddress.street}</p>
+                  <p>{orderDetails.shippingAddress.city}, {orderDetails.shippingAddress.state} {orderDetails.shippingAddress.postalCode}</p>
+                  <p>{orderDetails.shippingAddress.country}</p>
+                  {orderDetails.shippingAddress.phone && (
+                    <p className="flex items-center gap-1.5 text-[#6B7280] mt-2"><Phone className="h-3.5 w-3.5" />{orderDetails.shippingAddress.phone}</p>
+                  )}
+                </div>
+              ) : <p className="text-sm text-[#9CA3AF]">No address found</p>}
+            </CardContent>
+          </Card>
+
+          {/* Payment */}
+          <Card className="border-[#E5E7EB]">
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-[#4CAF50]" />
+              <h2 className="font-semibold text-[#1F2937] text-sm">Payment</h2>
+            </div>
+            <CardContent className="px-5 py-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#9CA3AF]">Method</span>
+                <span className="text-sm font-semibold text-[#1F2937]">
+                  {orderDetails.paymentMethod || orderDetails.razorpayPayment?.paymentMethod || "ONLINE"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#9CA3AF]">Status</span>
+                <Badge className={cn("text-xs font-medium border",
+                  (orderDetails.razorpayPayment?.status === "CAPTURED" || orderDetails.status === "PAID")
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                    : "bg-amber-50 text-amber-600 border-amber-200")}>
+                  {orderDetails.razorpayPayment?.status || orderDetails.status}
+                </Badge>
+              </div>
+              {orderDetails.paymentGateway && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#9CA3AF]">Gateway</span>
+                  <span className="text-xs text-[#374151]">
+                    {orderDetails.paymentGateway}{orderDetails.paymentMode && ` · ${orderDetails.paymentMode}`}
+                  </span>
+                </div>
+              )}
+              {orderDetails.razorpayPayment?.razorpayPaymentId && (
+                <div>
+                  <p className="text-xs text-[#9CA3AF] mb-1">Payment ID</p>
+                  <p className="font-mono text-xs bg-[#F3F4F6] px-2 py-1.5 rounded border border-[#E5E7EB] text-[#374151] break-all">
+                    {orderDetails.razorpayPayment.razorpayPaymentId}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Order Meta */}
+          <Card className="border-[#E5E7EB]">
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
+              <Hash className="h-4 w-4 text-[#4CAF50]" />
+              <h2 className="font-semibold text-[#1F2937] text-sm">Order Info</h2>
+            </div>
+            <CardContent className="px-5 py-4 space-y-2.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9CA3AF]">Order ID</span>
+                <span className="font-mono text-xs text-[#374151] bg-[#F3F4F6] px-2 py-0.5 rounded">{orderDetails.id?.slice(0, 8)}…</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9CA3AF]">Placed</span>
+                <span className="text-xs text-[#374151]">{formatDate(orderDetails.createdAt)}</span>
+              </div>
+              {orderDetails.couponCode && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[#9CA3AF] flex items-center gap-1"><Tag className="h-3.5 w-3.5" />Coupon</span>
+                  <span className="text-xs font-mono font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{orderDetails.couponCode}</span>
+                </div>
+              )}
+              <div className="pt-2 border-t border-[#E5E7EB]">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#1F2937]">Total Paid</span>
+                  <span className="text-lg font-bold text-[#1F2937]">{formatCurrency(grandTotal)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
         </div>
       </div>
     </div>
