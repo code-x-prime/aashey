@@ -67,7 +67,7 @@ interface OrderDetails {
 
 export default function OrderDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useLanguage();
+  useLanguage();
 
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
