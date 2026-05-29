@@ -1253,7 +1253,7 @@ export default function OrderDetailsPage() {
                       <div className="space-y-2">
                         {couriers.map((courier) => (
                           <label
-                            key={courier.id}
+                            key={String(courier.id)}
                             className={cn(
                               "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all duration-150",
                               selectedCourierId === courier.id
@@ -1262,28 +1262,17 @@ export default function OrderDetailsPage() {
                             )}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={cn(
-                                "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                                selectedCourierId === courier.id
-                                  ? "border-[#4CAF50] bg-[#4CAF50]"
-                                  : "border-[#D1D5DB]"
-                              )}>
-                                {selectedCourierId === courier.id && (
-                                  <div className="h-2 w-2 rounded-full bg-white" />
-                                )}
-                              </div>
                               <input
                                 type="radio"
                                 name="courier"
-                                value={courier.id}
+                                value={String(courier.id)}
                                 checked={selectedCourierId === courier.id}
                                 onChange={() => setSelectedCourierId(courier.id)}
-                                className="sr-only"
+                                className="h-4 w-4 accent-[#4CAF50]"
                               />
                               <div>
                                 <p className="text-sm font-semibold text-[#1F2937]">{courier.name}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <Clock className="h-3 w-3 text-[#9CA3AF]" />
                                   <p className="text-xs text-[#9CA3AF]">ETD: {courier.etd}</p>
                                   {courier.codAvailable && (
                                     <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded font-medium">COD</span>
@@ -1291,7 +1280,7 @@ export default function OrderDetailsPage() {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right flex-shrink-0">
+                            <div className="text-right">
                               <p className="text-base font-bold text-[#1F2937]">₹{courier.rate}</p>
                               <p className="text-xs text-[#9CA3AF]">Shipping charge</p>
                             </div>
