@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchApi, formatCurrency } from "@/lib/utils";
@@ -230,6 +230,10 @@ export default function ProductContent({ slug }) {
     } catch (e) { console.error(e); } finally { setIsAddingToCart(false); }
   };
 
+  /* ── Touch swipe refs ────────────────────────── */
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+
   /* ── Images renderer ─────────────────────────── */
   const renderImages = () => {
     let imgs = [];
@@ -242,6 +246,29 @@ export default function ProductContent({ slug }) {
 
     const safeIndex = activeImgIndex < imgs.length ? activeImgIndex : 0;
     const currentImg = imgs[safeIndex];
+
+    const handleTouchStart = (e) => {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e) => {
+      if (touchStartX.current === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+      // Only swipe if horizontal movement > 40px and more horizontal than vertical
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) {
+          // swipe left → next
+          setActiveImgIndex((prev) => (prev + 1) % imgs.length);
+        } else {
+          // swipe right → prev
+          setActiveImgIndex((prev) => (prev - 1 + imgs.length) % imgs.length);
+        }
+      }
+      touchStartX.current = null;
+      touchStartY.current = null;
+    };
 
     const Badges = () => (
       <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
@@ -260,13 +287,32 @@ export default function ProductContent({ slug }) {
 
     return (
       <div className="space-y-3">
-        <div className="relative aspect-square w-full bg-[#F5EDD5] rounded-2xl overflow-hidden border border-[#C9933A]/20 group"
-          style={{ boxShadow: "0 8px 40px rgba(63,31,0,0.10)" }}>
+        {/* Main image — swipeable */}
+        <div
+          className="relative aspect-square w-full bg-[#F5EDD5] rounded-2xl overflow-hidden border border-[#C9933A]/20 group select-none"
+          style={{ boxShadow: "0 8px 40px rgba(63,31,0,0.10)", touchAction: "pan-y" }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           <Image src={getImageUrl(currentImg?.url)} alt={product?.name || "Product"} fill className="object-cover transition-transform duration-700 group-hover:scale-105" priority />
           <Badges />
+          {/* Dot indicators on mobile */}
+          {imgs.length > 1 && (
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+              {imgs.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImgIndex(i)}
+                  className={`rounded-full transition-all duration-200 ${i === safeIndex ? "w-5 h-1.5 bg-[#C9933A]" : "w-1.5 h-1.5 bg-white/60"}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Thumbnails */}
         {imgs.length > 1 && (
-          <div className="flex gap-2.5 overflow-x-auto pb-1">
+          <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
             {imgs.map((img, i) => (
               <button key={i} onClick={() => setActiveImgIndex(i)}
                 className={`flex-shrink-0 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-200 ${safeIndex === i ? "border-[#C9933A] ring-2 ring-[#C9933A]/25 scale-105" : "border-transparent hover:border-[#C9933A]/50 opacity-70 hover:opacity-100"}`}>
