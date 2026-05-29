@@ -457,7 +457,7 @@ export default function ProductContent({ slug }) {
               }
             </div>
 
-            {/* Category + Subcategory chips */}
+            {/* Category + product's own subcategory chip only */}
             {product.category && (
               <div className="flex flex-wrap items-center gap-2">
                 <Link
@@ -466,19 +466,14 @@ export default function ProductContent({ slug }) {
                 >
                   {product.category.name}
                 </Link>
-                {product.category.subCategories?.map((sub) => (
+                {product.subCategory && (
                   <Link
-                    key={sub.id}
-                    href={`/category/${product.category.slug}/${sub.slug}`}
-                    className={`inline-flex items-center px-3 py-1 rounded-full font-sans text-xs font-medium border transition-colors ${
-                      product.subCategory?.id === sub.id
-                        ? "bg-[#3F1F00] text-[#FDF6E3] border-[#3F1F00]"
-                        : "bg-white text-[#5C3A1E] border-[#C9933A]/20 hover:border-[#C9933A]/50 hover:bg-[#FDF6E3]"
-                    }`}
+                    href={`/category/${product.category.slug}/${product.subCategory.slug}`}
+                    className="inline-flex items-center px-3 py-1 rounded-full font-sans text-xs font-semibold border bg-[#3F1F00] text-[#FDF6E3] border-[#3F1F00] hover:bg-[#5C2E00] transition-colors"
                   >
-                    {sub.name}
+                    {product.subCategory.name}
                   </Link>
-                ))}
+                )}
               </div>
             )}
 
@@ -667,19 +662,25 @@ export default function ProductContent({ slug }) {
               </div>
             </div>
 
-            {/* Meta: SKU + Category */}
+            {/* Meta: SKU + Category + Subcategory */}
             {(selectedVariant?.sku || product.category) && (
               <div className="border-t border-[#C9933A]/12 pt-4 space-y-1.5">
                 {selectedVariant?.sku && (
                   <div className="flex items-center gap-3">
-                    <span className="font-sans text-[10.5px] font-semibold uppercase tracking-wider text-[#8B6040] w-20">SKU</span>
-                    <span className="font-sans text-[12.5px] text-[#5C3A1E]">{selectedVariant.sku}</span>
+                    <span className="font-sans text-[10.5px] font-semibold uppercase tracking-wider text-[#8B6040] w-24">SKU</span>
+                    <span className="font-mono text-[12.5px] text-[#5C3A1E]">{selectedVariant.sku}</span>
                   </div>
                 )}
                 {product.category && (
                   <div className="flex items-center gap-3">
-                    <span className="font-sans text-[10.5px] font-semibold uppercase tracking-wider text-[#8B6040] w-20">Category</span>
+                    <span className="font-sans text-[10.5px] font-semibold uppercase tracking-wider text-[#8B6040] w-24">Category</span>
                     <Link href={`/category/${product.category?.slug}`} className="font-sans text-[12.5px] text-[#C9933A] hover:underline">{product.category?.name}</Link>
+                  </div>
+                )}
+                {product.subCategory && (
+                  <div className="flex items-center gap-3">
+                    <span className="font-sans text-[10.5px] font-semibold uppercase tracking-wider text-[#8B6040] w-24">Sub Category</span>
+                    <Link href={`/category/${product.category?.slug}/${product.subCategory.slug}`} className="font-sans text-[12.5px] text-[#C9933A] hover:underline">{product.subCategory.name}</Link>
                   </div>
                 )}
               </div>
