@@ -219,7 +219,7 @@ export const Footer = () => {
           COPYRIGHT BAR
       ══════════════════════════════════════════ */}
       <div className="bg-[#061409] border-t border-white/[0.04]">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 py-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24 pt-4 pb-24 lg:pb-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
 
             {/* Copyright */}
