@@ -116,8 +116,9 @@ export const createBanner = asyncHandler(async (req, res, next) => {
   let desktopImageUrl, mobileImageUrl;
 
   try {
-    desktopImageUrl = await processAndUploadImage(req.files.desktopImage[0]);
-    mobileImageUrl = await processAndUploadImage(req.files.mobileImage[0]);
+    // skipResize=true: banners are hero images, preserve full HD quality
+    desktopImageUrl = await processAndUploadImage(req.files.desktopImage[0], "banners", true);
+    mobileImageUrl = await processAndUploadImage(req.files.mobileImage[0], "banners", true);
   } catch (error) {
     // Clean up uploaded images if one fails
     if (desktopImageUrl) {
@@ -321,7 +322,7 @@ export const updateBanner = asyncHandler(async (req, res, next) => {
       // Upload new image
       try {
         updateData.desktopImage = await processAndUploadImage(
-          req.files.desktopImage[0]
+          req.files.desktopImage[0], "banners", true
         );
       } catch (error) {
         throw new ApiError(
@@ -339,7 +340,7 @@ export const updateBanner = asyncHandler(async (req, res, next) => {
       // Upload new image
       try {
         updateData.mobileImage = await processAndUploadImage(
-          req.files.mobileImage[0]
+          req.files.mobileImage[0], "banners", true
         );
       } catch (error) {
         throw new ApiError(

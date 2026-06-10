@@ -58,8 +58,9 @@ export default function BannerCarousel() {
                 <Image
                   src={banner.desktopImage}
                   alt={banner.alt}
-                  width={1900}
-                  height={600}
+                  width={1920}
+                  height={650}
+                  quality={100}
                   className="w-full h-auto aspect-[1900/650] object-cover object-center"
                   priority={index === 0}
                   sizes="100vw"
@@ -71,8 +72,9 @@ export default function BannerCarousel() {
                 <Image
                   src={banner.mobileImage}
                   alt={banner.alt}
-                  width={1000}
-                  height={450}
+                  width={800}
+                  height={600}
+                  quality={100}
                   className="w-full h-auto aspect-[800/600] object-cover object-center"
                   priority={index === 0}
                   sizes="100vw"
@@ -107,11 +109,10 @@ export default function BannerCarousel() {
             <button
               key={index}
               onClick={() => setCurrent(index)}
-              className={`rounded-full transition-all duration-300 ${
-                index === current
+              className={`rounded-full transition-all duration-300 ${index === current
                   ? "w-7 h-2.5 bg-[#C9933A]"
                   : "w-2.5 h-2.5 bg-[#C9933A]/40 hover:bg-[#C9933A]/70"
-              }`}
+                }`}
             />
           ))}
         </div>
