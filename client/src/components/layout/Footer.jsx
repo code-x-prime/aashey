@@ -81,7 +81,7 @@ export const Footer = () => {
 
             {/* Quote */}
             <p className="font-sans italic text-[#FDF6E3]/65 text-[19px] leading-snug mb-3">
-              &ldquo;Made with love, crafted with tradition.&rdquo;
+              &ldquo;Tradition You Can Trust, Purity You Can Taste.&rdquo;
             </p>
             <p className="font-sans text-[13px] text-[#FDF6E3]/45 leading-relaxed max-w-[260px]">
               Free-grazing Gir cows. Ancient Bilona method. Zero shortcuts.
