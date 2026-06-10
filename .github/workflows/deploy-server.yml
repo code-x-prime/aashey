@@ -1,0 +1,28 @@
+name: Deploy Server (Aashey)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - ".github/workflows/deploy-server.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy aashey (server) to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.REPO_PATH || '~/aashey' }}
+            git fetch origin main
+            git reset --hard origin/main
+            cd server
+            npm install
+            npm run generate
+            pm2 restart aashey-server --update-env

@@ -39,6 +39,8 @@ import adminMOQRoutes from "./routes/admin.moq.routes.js";
 import adminPaymentGatewayRoutes from "./routes/admin.payment-gateway.routes.js";
 import adminShiprocketRoutes from "./routes/admin.shiprocket.routes.js";
 import adminAnnouncementRoutes from "./routes/admin.announcement.routes.js";
+import adminVideoRoutes from "./routes/admin.video.routes.js";
+import { getPublicVideos } from "./controllers/admin.video.controller.js";
 
 const app = express();
 
@@ -157,6 +159,8 @@ app.use("/api/admin", adminMOQRoutes);
 app.use("/api/admin", adminPaymentGatewayRoutes);
 app.use("/api/admin/shiprocket", adminShiprocketRoutes);
 app.use("/api/admin/announcements", adminAnnouncementRoutes);
+app.use("/api/admin/videos", adminVideoRoutes);
+app.get("/api/public/videos", getPublicVideos);
 
 // Shiprocket webhook (public endpoint)
 app.use("/api/webhooks/shiprocket", adminShiprocketRoutes);

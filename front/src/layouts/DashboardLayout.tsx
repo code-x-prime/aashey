@@ -574,6 +574,16 @@ export default function DashboardLayout() {
                     ),
                   },
                   {
+                    href: "/videos",
+                    title: "Videos",
+                    icon: <Settings className="h-3 w-3" />,
+                    hasPermission: hasPermissionFor(
+                      admin,
+                      Resource.SETTINGS,
+                      Action.UPDATE
+                    ),
+                  },
+                  {
                     href: "/moq-settings",
                     title: t("nav.moq"),
                     icon: <Settings className="h-3 w-3" />,

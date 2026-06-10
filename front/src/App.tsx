@@ -47,6 +47,7 @@ import ShippingSettingsPage from "./pages/ShippingSettingsPage";
 import SettingsPage from "./pages/SettingsPage";
 import { LanguageProvider } from "./context/LanguageContext";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import VideoManagementPage from "./pages/VideoManagementPage";
 
 // Protected Route Component
 const ProtectedRoute = ({
@@ -656,6 +657,15 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="videos"
+              element={
+                <ProtectedRoute resource={Resource.SETTINGS} action={Action.UPDATE}>
+                  <VideoManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

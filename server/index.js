@@ -38,10 +38,37 @@ const gracefulShutdown = async () => {
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
 
+// Run DB migrations for new tables
+const runMigrations = async () => {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "VideoSection" (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        title TEXT,
+        url TEXT NOT NULL,
+        "order" INTEGER NOT NULL DEFAULT 0,
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "VideoSectionSettings" (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        "autoScroll" BOOLEAN NOT NULL DEFAULT true
+      )
+    `);
+    console.log("✅ Video tables migration complete");
+  } catch (e) {
+    console.error("Migration error (non-fatal):", e.message);
+  }
+};
+
 // Connect to the database and start the server
 prisma
   .$connect()
-  .then(() => {
+  .then(async () => {
+    await runMigrations();
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT} 🚀`);
     });
