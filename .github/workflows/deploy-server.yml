@@ -20,6 +20,7 @@ jobs:
           script: |
             set -e
             cd ${{ secrets.REPO_PATH || '~/aashey' }}
+            git remote prune origin || true
             git fetch origin main
             git reset --hard origin/main
             cd server
