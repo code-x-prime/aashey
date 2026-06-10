@@ -280,10 +280,10 @@ export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 xl:px-24">
           <div className="mt-14 pt-10 border-t border-[#C9933A]/20 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { number: "50K+", label: "Happy Customers" },
+              { number: "1000+", label: "Happy Customers" },
               { number: "4.9★", label: "Google Rating" },
               { number: "99%", label: "Satisfaction Rate" },
-              { number: "25+", label: "Years Legacy" },
+              { number: "6+", label: "Years Legacy" },
             ].map((stat, i) => (
               <div key={i}>
                 <p className="font-sans text-4xl md:text-5xl font-bold text-[#C9933A] leading-none mb-2">
