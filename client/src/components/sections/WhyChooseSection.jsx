@@ -39,7 +39,7 @@ export const WhyChooseSection = () => {
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">Why Choose Us</span>
           <h2 className="font-sans text-3xl md:text-4xl font-bold text-foreground mt-2 mb-4">
-            Trusted by 50,000+ Customers
+            Trusted by 1,000+ Customers
           </h2>
           <p className="text-[#6B4423]">
             Join thousands of satisfied customers who trust us for their audio equipment needs.

@@ -68,7 +68,7 @@ export const faqSections = [
         question: "Where is Aashey A2 Ghee made?",
         answer: [
           "Aashey ghee is produced at our facility in Village Takali, Shiv Shakti Nagar, Chalisgaon, District Jalgaon, Maharashtra - 424102.",
-          "The brand was founded in 2020 by Smt. Asha Deshmukh, who began making traditional ghee for her own family. What started as a household tradition has grown into a brand trusted by 50,000+ families across India.",
+          "The brand was founded in 2020 by Smt. Asha Deshmukh, who began making traditional ghee for her own family. What started as a household tradition has grown into a brand trusted by 1,000+ families across India.",
         ],
       },
       {

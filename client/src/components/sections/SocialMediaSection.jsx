@@ -105,7 +105,7 @@ export const SocialMediaSection = () => {
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2 text-[#5C3A1E]">
               <Users className="w-4 h-4 text-primary" />
-              <span>50K+ Community</span>
+              <span>1000+ Community</span>
             </div>
             <div className="flex items-center gap-2 text-[#5C3A1E]">
               <Play className="w-4 h-4 text-primary" />

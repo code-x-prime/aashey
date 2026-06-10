@@ -121,7 +121,7 @@ export const Footer = () => {
                 ))}
               </div>
               <p className="font-sans text-[12px] text-[#FDF6E3]/45 leading-tight">
-                Trusted by <span className="text-[#C9933A] font-semibold">50,000+</span><br />
+                Trusted by <span className="text-[#C9933A] font-semibold">1,000+</span><br />
                 families across India
               </p>
             </div>

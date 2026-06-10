@@ -112,7 +112,7 @@ export function NewsletterCTA() {
             {/* Stat strip */}
             <div className="mt-10 pt-6 border-t border-[#C9933A]/15 flex items-center gap-6">
               {[
-                { val: "50K+", label: "Subscribers" },
+                { val: "1000+", label: "Subscribers" },
                 { val: "4.9★", label: "Avg Rating" },
               ].map(({ val, label }) => (
                 <div key={label}>

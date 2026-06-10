@@ -71,7 +71,7 @@ const reasons = [
 
 const stats = [
     { value: "2020", label: "Year Founded" },
-    { value: "50K+", label: "Happy Families" },
+    { value: "1000+", label: "Happy Families" },
     { value: "100%", label: "Pure A2 Milk" },
     { value: "99%", label: "Satisfaction Rate" },
 ];

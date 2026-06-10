@@ -49,7 +49,7 @@ export function AasheyFAQSection({ compact = false }) {
             Frequently Asked Questions
           </h2>
           <p className="font-sans text-[#5C3A1E] text-sm md:text-base mt-4">
-            From Our Family&apos;s Kitchen to Your Table · Founded 2020 · 50,000+ Happy Families
+            From Our Family&apos;s Kitchen to Your Table · Founded 2020 · 1,000+ Happy Families
           </p>
         </div>
 

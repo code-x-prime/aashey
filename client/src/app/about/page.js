@@ -77,7 +77,7 @@ export default function AboutPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                         {[
                             { value: "2020", label: "Year Founded" },
-                            { value: "50K+", label: "Happy Families" },
+                            { value: "1000+", label: "Happy Families" },
                             { value: "100%", label: "Pure A2 Milk" },
                             { value: "0", label: "Preservatives Added" },
                         ].map((stat, i) => (
@@ -261,7 +261,7 @@ export default function AboutPage() {
                         From Our Family&apos;s Kitchen<br />to Your Table.
                     </h2>
                     <p className="font-sans text-[#FDF6E3]/60 text-sm max-w-xl mx-auto mb-8 leading-relaxed">
-                        Join 50,000+ families who have made the switch to pure, authentic A2 Bilona Ghee.
+                        Join 1,000+ families who have made the switch to pure, authentic A2 Bilona Ghee.
                         Free delivery on orders above ₹999.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
