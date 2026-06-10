@@ -12,6 +12,8 @@ export default function VideoCarousel() {
   const [playingId, setPlayingId] = useState(null);
   const autoScrollRef = useRef(null);
   const videoRefs = useRef({});
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
 
   useEffect(() => {
     fetchApi("/public/videos")
@@ -25,18 +27,13 @@ export default function VideoCarousel() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Videos per view — responsive
-  const getPerView = () => {
-    if (typeof window === "undefined") return 3;
-    if (window.innerWidth < 640) return 1;
-    if (window.innerWidth < 1024) return 2;
-    return 3;
-  };
-
-  const [perView, setPerView] = useState(3);
-
+  // Responsive perView: 5 desktop, 3 tablet, 2 mobile
+  const [perView, setPerView] = useState(5);
   useEffect(() => {
-    const update = () => setPerView(getPerView());
+    const update = () => {
+      const w = window.innerWidth;
+      setPerView(w < 640 ? 2 : w < 1024 ? 3 : 5);
+    };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -44,30 +41,37 @@ export default function VideoCarousel() {
 
   const maxIdx = Math.max(0, videos.length - perView);
 
-  const next = useCallback(() => {
-    setCurrentIdx((i) => (i >= maxIdx ? 0 : i + 1));
-  }, [maxIdx]);
+  const next = useCallback(() => setCurrentIdx((i) => (i >= maxIdx ? 0 : i + 1)), [maxIdx]);
+  const prev = useCallback(() => setCurrentIdx((i) => (i <= 0 ? maxIdx : i - 1)), [maxIdx]);
 
-  const prev = useCallback(() => {
-    setCurrentIdx((i) => (i <= 0 ? maxIdx : i - 1));
-  }, [maxIdx]);
-
-  // Auto-scroll
+  // Auto-scroll (pauses when video playing)
   useEffect(() => {
+    clearInterval(autoScrollRef.current);
     if (!autoScroll || videos.length <= perView || playingId) return;
     autoScrollRef.current = setInterval(next, 4000);
     return () => clearInterval(autoScrollRef.current);
   }, [autoScroll, videos.length, perView, playingId, next]);
 
+  // Touch + mouse drag
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      dx < 0 ? next() : prev();
+    }
+    touchStartX.current = null;
+  };
+
   const handlePlayPause = (videoId, el) => {
     if (playingId === videoId) {
-      el.pause();
-      setPlayingId(null);
+      el.pause(); setPlayingId(null);
     } else {
-      // Pause currently playing
-      if (playingId && videoRefs.current[playingId]) {
-        videoRefs.current[playingId].pause();
-      }
+      if (playingId && videoRefs.current[playingId]) videoRefs.current[playingId].pause();
       el.play().catch(() => {});
       setPlayingId(videoId);
     }
@@ -77,11 +81,17 @@ export default function VideoCarousel() {
 
   const visibleVideos = videos.slice(currentIdx, currentIdx + perView);
 
+  const gridClass = {
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    5: "grid-cols-5",
+  }[perView] || "grid-cols-3";
+
   return (
     <section className="py-12 md:py-16 bg-[#FDF6E3]">
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
 
-        {/* Section header */}
+        {/* Header */}
         <div className="flex items-end justify-between mb-8">
           <div>
             <span className="font-sans text-[10px] font-bold tracking-[0.25em] uppercase text-[#C9933A] block mb-2">
@@ -93,31 +103,31 @@ export default function VideoCarousel() {
             <div className="w-10 h-px bg-gradient-to-r from-[#C9933A] to-transparent mt-3" />
           </div>
 
-          {/* Nav buttons */}
           {videos.length > perView && (
             <div className="flex items-center gap-2">
-              <button
-                onClick={prev}
-                className="w-9 h-9 rounded-full border border-[#C9933A]/30 bg-white flex items-center justify-center text-[#3F1F00] hover:bg-[#C9933A] hover:text-white hover:border-[#C9933A] transition-all duration-200"
-              >
+              <button onClick={prev}
+                className="w-9 h-9 rounded-full border border-[#C9933A]/30 bg-white flex items-center justify-center text-[#3F1F00] hover:bg-[#C9933A] hover:text-white hover:border-[#C9933A] transition-all duration-200">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button
-                onClick={next}
-                className="w-9 h-9 rounded-full border border-[#C9933A]/30 bg-white flex items-center justify-center text-[#3F1F00] hover:bg-[#C9933A] hover:text-white hover:border-[#C9933A] transition-all duration-200"
-              >
+              <button onClick={next}
+                className="w-9 h-9 rounded-full border border-[#C9933A]/30 bg-white flex items-center justify-center text-[#3F1F00] hover:bg-[#C9933A] hover:text-white hover:border-[#C9933A] transition-all duration-200">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
         </div>
 
-        {/* Videos grid */}
-        <div className={`grid gap-4 ${perView === 1 ? "grid-cols-1" : perView === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+        {/* Videos */}
+        <div
+          className={`grid gap-3 ${gridClass}`}
+          style={{ touchAction: "pan-y" }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {visibleVideos.map((video) => (
             <div
               key={video.id}
-              className="relative aspect-[9/16] bg-[#1F1F1F] rounded-2xl overflow-hidden shadow-md group cursor-pointer"
+              className="relative aspect-[9/16] bg-[#1F1F1F] rounded-xl overflow-hidden shadow-md group cursor-pointer"
               onClick={() => {
                 const el = videoRefs.current[video.id];
                 if (el) handlePlayPause(video.id, el);
@@ -137,21 +147,14 @@ export default function VideoCarousel() {
               {/* Overlay */}
               <div className={`absolute inset-0 bg-black/30 transition-opacity duration-200 ${playingId === video.id ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`} />
 
-              {/* Play/Pause button */}
+              {/* Play/Pause */}
               <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${playingId === video.id ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
-                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center">
                   {playingId === video.id
-                    ? <Pause className="w-6 h-6 text-white" />
-                    : <Play className="w-6 h-6 text-white ml-0.5" />}
+                    ? <Pause className="w-5 h-5 text-white" />
+                    : <Play className="w-5 h-5 text-white ml-0.5" />}
                 </div>
               </div>
-
-              {/* Title */}
-              {video.title && (
-                <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
-                  <p className="font-sans text-[12px] font-medium text-white/90 line-clamp-2">{video.title}</p>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -160,9 +163,7 @@ export default function VideoCarousel() {
         {videos.length > perView && (
           <div className="flex justify-center gap-1.5 mt-6">
             {Array.from({ length: maxIdx + 1 }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIdx(i)}
+              <button key={i} onClick={() => setCurrentIdx(i)}
                 className={`rounded-full transition-all duration-200 ${i === currentIdx ? "w-6 h-1.5 bg-[#C9933A]" : "w-1.5 h-1.5 bg-[#C9933A]/30"}`}
               />
             ))}
