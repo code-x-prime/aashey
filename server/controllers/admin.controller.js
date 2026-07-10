@@ -688,11 +688,17 @@ export const getUsers = asyncHandler(async (req, res) => {
 
   const totalPages = Math.ceil(totalUsers / parseInt(limit));
 
+  // Map otpVerified to emailVerified for frontend compatibility
+  const mappedUsers = users.map((u) => ({
+    ...u,
+    emailVerified: u.otpVerified,
+  }));
+
   res.status(200).json(
     new ApiResponsive(
       200,
       {
-        users,
+        users: mappedUsers,
         pagination: {
           total: totalUsers,
           pages: totalPages,
@@ -728,9 +734,12 @@ export const getUserById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
+  // Map otpVerified to emailVerified for frontend compatibility
+  const mappedUser = { ...user, emailVerified: user.otpVerified };
+
   res
     .status(200)
-    .json(new ApiResponsive(200, { user }, "User fetched successfully"));
+    .json(new ApiResponsive(200, { user: mappedUser }, "User fetched successfully"));
 });
 
 // Update user status (active/inactive)
@@ -801,12 +810,15 @@ export const verifyUserEmail = asyncHandler(async (req, res) => {
     },
   });
 
+  // Map otpVerified to emailVerified for frontend compatibility
+  const mappedUser = { ...updatedUser, emailVerified: updatedUser.otpVerified };
+
   res
     .status(200)
     .json(
       new ApiResponsive(
         200,
-        { user: updatedUser },
+        { user: mappedUser },
         "User email verified successfully"
       )
     );
@@ -836,13 +848,15 @@ export const updateUserDetails = asyncHandler(async (req, res) => {
     }
   }
 
+  // Build update data - only include fields that are provided
+  const updateData = {};
+  if (name !== undefined && name !== null) updateData.name = name;
+  if (email !== undefined && email !== null) updateData.email = email;
+  if (phone !== undefined && phone !== null) updateData.phone = phone;
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: {
-      ...(name && { name }),
-      ...(email && { email }),
-      ...(phone && { phone }),
-    },
+    data: updateData,
     select: {
       id: true,
       name: true,
@@ -856,35 +870,59 @@ export const updateUserDetails = asyncHandler(async (req, res) => {
     },
   });
 
+  // Map otpVerified to emailVerified for frontend compatibility
+  const mappedUser = { ...updatedUser, emailVerified: updatedUser.otpVerified };
+
   res
     .status(200)
     .json(
       new ApiResponsive(
         200,
-        { user: updatedUser },
+        { user: mappedUser },
         "User details updated successfully"
       )
     );
 });
 
-// Delete user
+// Delete user (soft delete if has orders, hard delete otherwise)
 export const deleteUser = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
+    include: {
+      _count: {
+        select: { orders: true },
+      },
+    },
   });
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  // Delete user - in a real application, consider soft delete or archiving
+  // If user has orders, do soft delete (deactivate) instead of hard delete
+  if (user._count.orders > 0) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isActive: false },
+    });
+
+    return res.status(200).json(
+      new ApiResponsive(
+        200,
+        { softDelete: true, orderCount: user._count.orders },
+        `User has ${user._count.orders} order(s). Account deactivated instead of deleted.`
+      )
+    );
+  }
+
+  // No orders — safe to hard delete
   await prisma.user.delete({
     where: { id: userId },
   });
 
-  res.status(200).json(new ApiResponsive(200, {}, "User deleted successfully"));
+  res.status(200).json(new ApiResponsive(200, { softDelete: false }, "User deleted successfully"));
 });
 
 // Get payment settings

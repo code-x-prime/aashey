@@ -495,18 +495,29 @@ export default function UserManagementPage() {
       const response = await customerUsers.deleteUser(selectedUser.id);
 
       if (response.data.success) {
-        toast.success(t("user_management.messages.delete_success"));
+        const isSoftDelete = response.data.data?.softDelete;
 
-        // Remove user from list
-        setUsers((prevUsers) =>
-          prevUsers.filter((user) => user.id !== selectedUser.id)
-        );
+        if (isSoftDelete) {
+          toast.info(response.data.message || "User has orders. Account deactivated instead of deleted.");
+          // Update user status in list instead of removing
+          setUsers((prevUsers) =>
+            prevUsers.map((user) =>
+              user.id === selectedUser.id ? { ...user, isActive: false } : user
+            )
+          );
+        } else {
+          toast.success(t("user_management.messages.delete_success"));
+          // Remove user from list
+          setUsers((prevUsers) =>
+            prevUsers.filter((user) => user.id !== selectedUser.id)
+          );
+        }
 
         // Close dialog
         setDeleteDialogOpen(false);
 
         // Refresh users if the list becomes empty
-        if (users.length === 1) {
+        if (!isSoftDelete && users.length === 1) {
           // Go to previous page if not on first page
           if (page > 1) {
             setPage(page - 1);

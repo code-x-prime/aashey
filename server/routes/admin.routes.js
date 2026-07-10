@@ -15,6 +15,7 @@ import {
   verifyUserEmail,
   deleteUser,
   updateUserDetails,
+  updateUserStatus,
   getPaymentSettings,
   updatePaymentSettings,
   getPriceVisibilitySettings,
@@ -93,6 +94,13 @@ router.post(
   verifyAdminJWT,
   hasPermission("users", "update"),
   verifyUserEmail
+);
+
+router.patch(
+  "/users/:userId/status",
+  verifyAdminJWT,
+  hasPermission("users", "update"),
+  updateUserStatus
 );
 
 router.patch(
