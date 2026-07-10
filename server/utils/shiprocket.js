@@ -187,12 +187,16 @@ export async function createShiprocketOrder(orderData) {
  * Assign AWB (Air Waybill) to shipment
  */
 export async function assignAWB(shipmentId, courierId = null) {
+    if (!shipmentId) {
+        throw new Error("assignAWB: shipmentId is required but was null/undefined. Cannot call Shiprocket AWB API.");
+    }
+
     const body = {
-        shipment_id: shipmentId,
+        shipment_id: [parseInt(shipmentId, 10)],
     };
 
     if (courierId) {
-        body.courier_id = courierId;
+        body.courier_id = parseInt(courierId, 10);
     }
 
     return shiprocketRequest("/courier/assign/awb", "POST", body);
@@ -713,19 +717,41 @@ export async function processOrderForShipping(orderId) {
         console.log(`Order ${order.orderNumber} has shiprocketOrderId=${order.shiprocketOrderId} but no shipmentId. Fetching from Shiprocket...`);
         try {
             const srOrderDetails = await getShiprocketOrderDetails(order.shiprocketOrderId);
+            console.log(`[SR] getShiprocketOrderDetails raw response keys:`, Object.keys(srOrderDetails || {}));
+
+            // Shiprocket response can be: { data: { ... } } OR direct object
             const srOrder = srOrderDetails?.data || srOrderDetails;
+
+            // Try all known paths for shipment_id
             const shipments = srOrder?.shipments || [];
-            const shipmentId = srOrder?.shipment_id || shipments[0]?.id || shipments[0]?.shipment_id || null;
+            const firstShipment = shipments[0] || {};
+            const shipmentId =
+                srOrder?.shipment_id ||           // direct field
+                srOrder?.id_shipment ||           // alt field name
+                firstShipment?.id ||              // shipments[0].id
+                firstShipment?.shipment_id ||     // shipments[0].shipment_id
+                null;
+
+            const awbCode = firstShipment?.awb_code || firstShipment?.awb || null;
+            const courierName = firstShipment?.courier_name || null;
+
+            console.log(`[SR] Parsed: shipment_id=${shipmentId}, awb=${awbCode}, courier=${courierName}`);
+
             if (shipmentId) {
+                const parsedShipmentId = parseInt(shipmentId, 10);
                 await prisma.order.update({
                     where: { id: orderId },
-                    data: { shiprocketShipmentId: parseInt(shipmentId) },
+                    data: {
+                        shiprocketShipmentId: parsedShipmentId,
+                        ...(awbCode && { awbCode, shiprocketStatus: "AWB_ASSIGNED" }),
+                        ...(courierName && { courierName }),
+                    },
                 });
-                console.log(`Recovered shipment_id=${shipmentId} for order ${order.orderNumber}`);
-                return { order_id: order.shiprocketOrderId, shipment_id: parseInt(shipmentId) };
+                console.log(`Recovered shipment_id=${parsedShipmentId} for order ${order.orderNumber}`);
+                return { order_id: order.shiprocketOrderId, shipment_id: parsedShipmentId };
             } else {
-                console.warn(`Could not recover shipment_id for order ${order.orderNumber}. Response:`, JSON.stringify(srOrderDetails));
-                // Fall through to create new order
+                console.warn(`Could not recover shipment_id for order ${order.orderNumber}. Full response:`, JSON.stringify(srOrderDetails));
+                // Fall through to create new order below
             }
         } catch (fetchError) {
             console.error(`Failed to fetch order details from Shiprocket:`, fetchError.message);

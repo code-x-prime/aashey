@@ -705,17 +705,41 @@ export const bookShipment = asyncHandler(async (req, res) => {
     // 6. Ensure order is synced to Shiprocket (Case 4 & 5)
     if (!order.shiprocketOrderId || !order.shiprocketShipmentId) {
         console.log(`[BOOK] Syncing order ${order.orderNumber} to Shiprocket...`);
-        const result = await processOrderForShipping(orderId);
-        if (!result) {
+        const syncResult = await processOrderForShipping(orderId);
+        if (!syncResult) {
             throw new ApiError(400, "Shiprocket is disabled or configuration is missing. Check Shiprocket settings.");
         }
-        // Refetch order after sync
+
+        // Use shipment_id from sync result directly (most reliable source)
+        const freshShipmentId = syncResult.shipment_id
+            ? parseInt(syncResult.shipment_id, 10)
+            : null;
+
+        // Refetch order after sync to get all updated fields
         order = await prisma.order.findUnique({
             where: { id: orderId },
         });
+
+        // If DB still doesn't have shiprocketShipmentId but sync result has it, use sync result
+        if (!order.shiprocketShipmentId && freshShipmentId) {
+            console.log(`[BOOK] DB missing shiprocketShipmentId, patching from sync result: ${freshShipmentId}`);
+            order = await prisma.order.update({
+                where: { id: orderId },
+                data: { shiprocketShipmentId: freshShipmentId },
+            });
+        }
     }
 
-    // 7. Assign AWB (this will throw if it fails, which is correct because the admin is waiting for confirmation)
+    // 7. Final guard: shiprocketShipmentId must be present before AWB assignment
+    if (!order.shiprocketShipmentId) {
+        throw new ApiError(400,
+            `Cannot assign AWB: Shiprocket Shipment ID is missing for order ${order.orderNumber}. ` +
+            `Shiprocket Order ID: ${order.shiprocketOrderId || "none"}. ` +
+            `Please use the Re-sync button on the order page or check Shiprocket dashboard.`
+        );
+    }
+
+    // 8. Assign AWB (this will throw if it fails, which is correct because the admin is waiting for confirmation)
     console.log(`[BOOK] Assigning AWB to shipment ${order.shiprocketShipmentId} with courier ${courierId}`);
     const awbResponse = await assignAWB(order.shiprocketShipmentId, parseInt(courierId, 10));
     console.log(`[BOOK] AWB response:`, JSON.stringify(awbResponse?.response || awbResponse));

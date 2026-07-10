@@ -132,7 +132,9 @@ export default function OrderDetailsPage() {
       const response = await orders.bookShipment(id, selectedCourierId);
       if (response?.data?.success) {
         toast.success("Shipment booked! AWB: " + (response.data.data.order.awbCode || "assigned"));
-        fetchOrderDetails();
+        await fetchOrderDetails();
+        setSelectedCourierId(null);
+        setCouriers([]);
       } else { toast.error(response?.data?.message || "Failed to book shipment"); }
     } catch (err: unknown) {
       const msg = err && typeof err === "object" && "response" in err
@@ -143,6 +145,9 @@ export default function OrderDetailsPage() {
 
   const [cancellingShipment, setCancellingShipment] = useState(false);
   const [resyncing, setResyncing] = useState(false);
+  const isShiprocketSynced = !!orderDetails?.shiprocket?.orderId;
+  const isShiprocketAwaitingAwb = isShiprocketSynced && !orderDetails?.shiprocket?.awbCode;
+
   const handleCancelShipment = async () => {
     if (!id) return;
     if (!window.confirm("Are you sure you want to cancel this shipment? This cannot be undone.")) return;
@@ -167,7 +172,9 @@ export default function OrderDetailsPage() {
       const response = await orders.resyncOrder(id);
       if (response?.data?.success) {
         toast.success(response.data.message || "Order re-synced with Shiprocket");
-        fetchOrderDetails();
+        await fetchOrderDetails();
+        setSelectedCourierId(null);
+        setCouriers([]);
       } else { toast.error(response?.data?.message || "Re-sync failed"); }
     } catch (err: unknown) {
       const msg = err && typeof err === "object" && "response" in err
@@ -248,24 +255,24 @@ export default function OrderDetailsPage() {
 
   const STATUS_STEPS = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED"];
   const STATUS_COLORS: Record<string, string> = {
-    PENDING:           "bg-amber-50 text-amber-600 border-amber-200",
-    PROCESSING:        "bg-blue-50 text-blue-600 border-blue-200",
-    PAID:              "bg-indigo-50 text-indigo-600 border-indigo-200",
-    SHIPPED:           "bg-purple-50 text-purple-600 border-purple-200",
-    DELIVERED:         "bg-emerald-50 text-emerald-600 border-emerald-200",
-    CANCELLED:         "bg-red-50 text-red-500 border-red-200",
-    REFUNDED:          "bg-violet-50 text-violet-600 border-violet-200",
-    RETURN_APPROVED:   "bg-orange-50 text-orange-500 border-orange-200",
-    RETURN_COMPLETED:  "bg-teal-50 text-teal-600 border-teal-200",
-    APPROVED:          "bg-emerald-50 text-emerald-600 border-emerald-200",
-    REJECTED:          "bg-red-50 text-red-500 border-red-200",
+    PENDING: "bg-amber-50 text-amber-600 border-amber-200",
+    PROCESSING: "bg-blue-50 text-blue-600 border-blue-200",
+    PAID: "bg-indigo-50 text-indigo-600 border-indigo-200",
+    SHIPPED: "bg-purple-50 text-purple-600 border-purple-200",
+    DELIVERED: "bg-emerald-50 text-emerald-600 border-emerald-200",
+    CANCELLED: "bg-red-50 text-red-500 border-red-200",
+    REFUNDED: "bg-violet-50 text-violet-600 border-violet-200",
+    RETURN_APPROVED: "bg-orange-50 text-orange-500 border-orange-200",
+    RETURN_COMPLETED: "bg-teal-50 text-teal-600 border-teal-200",
+    APPROVED: "bg-emerald-50 text-emerald-600 border-emerald-200",
+    REJECTED: "bg-red-50 text-red-500 border-red-200",
     // Shiprocket statuses
-    CREATED:           "bg-sky-50 text-sky-600 border-sky-200",
-    AWB_ASSIGNED:      "bg-blue-50 text-blue-600 border-blue-200",
-    PICKUP_SCHEDULED:  "bg-indigo-50 text-indigo-600 border-indigo-200",
-    PICKED_UP:         "bg-purple-50 text-purple-600 border-purple-200",
-    IN_TRANSIT:        "bg-violet-50 text-violet-600 border-violet-200",
-    OUT_FOR_DELIVERY:  "bg-amber-50 text-amber-600 border-amber-200",
+    CREATED: "bg-sky-50 text-sky-600 border-sky-200",
+    AWB_ASSIGNED: "bg-blue-50 text-blue-600 border-blue-200",
+    PICKUP_SCHEDULED: "bg-indigo-50 text-indigo-600 border-indigo-200",
+    PICKED_UP: "bg-purple-50 text-purple-600 border-purple-200",
+    IN_TRANSIT: "bg-violet-50 text-violet-600 border-violet-200",
+    OUT_FOR_DELIVERY: "bg-amber-50 text-amber-600 border-amber-200",
   };
   const statusColor = (s: string) => STATUS_COLORS[s] || "bg-gray-100 text-gray-500 border-gray-200";
 
@@ -287,9 +294,9 @@ export default function OrderDetailsPage() {
   if (!orderDetails) return null;
 
   const orderItems = orderDetails.items || [];
-  const subTotal  = toNum(orderDetails.subTotal);
-  const shipping  = toNum(orderDetails.shippingCost);
-  const discount  = toNum(orderDetails.discount);
+  const subTotal = toNum(orderDetails.subTotal);
+  const shipping = toNum(orderDetails.shippingCost);
+  const discount = toNum(orderDetails.discount);
   const codCharge = toNum(orderDetails.codCharge);
   const grandTotal = toNum(orderDetails.total) || (subTotal + shipping + codCharge - discount);
   const stepIdx = STATUS_STEPS.indexOf(orderDetails.status);
@@ -531,6 +538,22 @@ export default function OrderDetailsPage() {
             </div>
 
             <CardContent className="px-6 py-6 space-y-5">
+              {isShiprocketAwaitingAwb ? (
+                <div className="bg-amber-50/70 border border-amber-100 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-amber-800">Order is synced to Shiprocket, but AWB is not assigned yet.</p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    This order has been created in Shiprocket. Choose a courier partner below to assign the AWB or click Re-sync if the shipment was already booked.
+                  </p>
+                </div>
+              ) : !isShiprocketSynced ? (
+                <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-slate-800">Order is not yet synced to Shiprocket.</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Select a courier partner below to send this order to Shiprocket and book the shipment.
+                  </p>
+                </div>
+              ) : null}
+
               {orderDetails.shiprocket?.status === "CANCELLED" ? (
                 // ── Cancelled Shipment ──
                 <div className="space-y-4">
@@ -717,7 +740,9 @@ export default function OrderDetailsPage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-3.5">
-                      <p className="text-sm font-bold text-slate-700">Select Courier Partner</p>
+                      <p className="text-sm font-bold text-slate-700">
+                        {isShiprocketSynced ? "Assign Courier Partner for AWB" : "Select Courier Partner"}
+                      </p>
                       <Button variant="ghost" size="sm" onClick={fetchCouriers} disabled={loadingCouriers} className="h-8 px-2.5 gap-1.5 text-xs text-slate-500 rounded-lg hover:bg-slate-50">
                         <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} /> Refresh rates
                       </Button>
