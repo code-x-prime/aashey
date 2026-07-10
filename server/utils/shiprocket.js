@@ -144,7 +144,14 @@ async function shiprocketRequest(endpoint, method = "GET", body = null) {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.message || `Shiprocket API error: ${response.status}`);
+        let errMsg = data.message || `Shiprocket API error: ${response.status}`;
+        if (data.errors) {
+            const details = Object.entries(data.errors)
+                .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(", ") : val}`)
+                .join("; ");
+            errMsg = `${errMsg} (${details})`;
+        }
+        throw new Error(errMsg);
     }
 
     return data;
@@ -738,8 +745,8 @@ export async function processOrderForShipping(orderId) {
         await prisma.order.update({
             where: { id: orderId },
             data: {
-                shiprocketOrderId: shiprocketResponse.order_id,
-                shiprocketShipmentId: shiprocketResponse.shipment_id,
+                shiprocketOrderId: parseInt(shiprocketResponse.order_id, 10),
+                shiprocketShipmentId: parseInt(shiprocketResponse.shipment_id, 10),
                 shiprocketStatus: "CREATED",
             },
         });
@@ -833,7 +840,8 @@ export async function syncOrderFromShiprocket(orderId) {
                     data: {
                         awbCode: awbCode || order.awbCode,
                         courierName: courierName || order.courierName,
-                        shiprocketShipmentId: shipmentId ? parseInt(shipmentId) : order.shiprocketShipmentId,
+                        shiprocketOrderId: srOrder.id ? parseInt(srOrder.id, 10) : order.shiprocketOrderId,
+                        shiprocketShipmentId: shipmentId ? parseInt(shipmentId, 10) : order.shiprocketShipmentId,
                         shiprocketStatus: status || order.shiprocketStatus,
                     },
                 });
