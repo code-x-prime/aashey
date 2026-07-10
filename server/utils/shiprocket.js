@@ -678,31 +678,51 @@ export async function processOrderForShipping(orderId) {
         console.log(`Checking if order ${order.orderNumber} already exists in Shiprocket by order number...`);
         const existingSrOrder = await findShiprocketOrderByNumber(order.orderNumber);
         if (existingSrOrder) {
-            console.log(`Found existing order in Shiprocket: order_id=${existingSrOrder.order_id}`);
+            // Shiprocket /orders list API returns 'id' (not 'order_id') for the SR order ID
+            const srOrderId =
+                existingSrOrder.id ||           // ✓ Shiprocket list API field
+                existingSrOrder.order_id ||     // fallback
+                null;
+
+            console.log(`Found existing order in Shiprocket. Keys: ${Object.keys(existingSrOrder).join(", ")}`);
+            console.log(`SR order: id=${existingSrOrder.id}, order_id=${existingSrOrder.order_id}, shipment_id=${existingSrOrder.shipment_id}`);
+
             const shipments = existingSrOrder.shipments || [];
             const shipment = shipments.find(s => s.awb_code || s.awb) || shipments[0];
-            const shipmentId = shipment?.id || shipment?.shipment_id || null;
+
+            const shipmentId =
+                existingSrOrder.shipment_id ||  // ✓ available at root in list API
+                shipment?.id ||
+                shipment?.shipment_id ||
+                null;
+
             const awbCode = shipment?.awb_code || shipment?.awb || null;
             const courierName = shipment?.courier_name || shipment?.courier || null;
             const status = shipment?.shipment_status || shipment?.status || existingSrOrder.status || null;
 
-            // Update database and local object reference
-            const updatedOrder = await prisma.order.update({
-                where: { id: orderId },
-                data: {
-                    shiprocketOrderId: existingSrOrder.order_id,
-                    shiprocketShipmentId: shipmentId ? parseInt(shipmentId) : null,
-                    awbCode: awbCode || null,
-                    courierName: courierName || null,
-                    shiprocketStatus: status || "CREATED",
-                },
-            });
-            
-            order.shiprocketOrderId = updatedOrder.shiprocketOrderId;
-            order.shiprocketShipmentId = updatedOrder.shiprocketShipmentId;
-            order.awbCode = updatedOrder.awbCode;
-            order.courierName = updatedOrder.courierName;
-            order.shiprocketStatus = updatedOrder.shiprocketStatus;
+            console.log(`Extracted: srOrderId=${srOrderId}, shipmentId=${shipmentId}, awb=${awbCode}, status=${status}`);
+
+            if (srOrderId) {
+                // Update database and local object reference
+                const updatedOrder = await prisma.order.update({
+                    where: { id: orderId },
+                    data: {
+                        shiprocketOrderId: parseInt(srOrderId, 10),
+                        shiprocketShipmentId: shipmentId ? parseInt(shipmentId, 10) : null,
+                        awbCode: awbCode || null,
+                        courierName: courierName || null,
+                        shiprocketStatus: status || "CREATED",
+                    },
+                });
+
+                order.shiprocketOrderId = updatedOrder.shiprocketOrderId;
+                order.shiprocketShipmentId = updatedOrder.shiprocketShipmentId;
+                order.awbCode = updatedOrder.awbCode;
+                order.courierName = updatedOrder.courierName;
+                order.shiprocketStatus = updatedOrder.shiprocketStatus;
+            } else {
+                console.warn(`Found order in Shiprocket but could not extract SR Order ID. Full object: ${JSON.stringify(existingSrOrder)}`);
+            }
         }
     }
 
