@@ -750,12 +750,23 @@ export async function processOrderForShipping(orderId) {
                 console.log(`Recovered shipment_id=${parsedShipmentId} for order ${order.orderNumber}`);
                 return { order_id: order.shiprocketOrderId, shipment_id: parsedShipmentId };
             } else {
-                console.warn(`Could not recover shipment_id for order ${order.orderNumber}. Full response:`, JSON.stringify(srOrderDetails));
-                // Fall through to create new order below
+                // STOP HERE — do NOT fall through to createShiprocketOrder.
+                // The order already exists in Shiprocket (we have shiprocketOrderId).
+                // Creating a duplicate would fail. Log the full response for debugging.
+                console.error(
+                    `[SR] Could not recover shipment_id for SR order ${order.shiprocketOrderId}.\n` +
+                    `Full Shiprocket response: ${JSON.stringify(srOrderDetails)}`
+                );
+                throw new Error(
+                    `Order ${order.orderNumber} exists in Shiprocket (SR Order ID: ${order.shiprocketOrderId}) ` +
+                    `but shipment_id could not be retrieved. ` +
+                    `Please open Shiprocket dashboard, find this order, and note the Shipment ID. ` +
+                    `Shiprocket response: ${JSON.stringify(srOrder).slice(0, 300)}`
+                );
             }
         } catch (fetchError) {
-            console.error(`Failed to fetch order details from Shiprocket:`, fetchError.message);
-            // Fall through to create new order
+            // Re-throw any error (including the one we just threw above)
+            throw fetchError;
         }
     }
 

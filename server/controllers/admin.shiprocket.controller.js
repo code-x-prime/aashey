@@ -890,16 +890,44 @@ export const resyncOrder = asyncHandler(async (req, res) => {
         console.log(`[RESYNC] Fetching shipment ID from Shiprocket for order_id=${order.shiprocketOrderId}...`);
         try {
             const srOrderDetails = await getShiprocketOrderDetails(order.shiprocketOrderId);
-            const shipmentId = srOrderDetails?.order?.shipment_id || srOrderDetails?.shipment_id || null;
+            console.log(`[RESYNC] Raw response keys:`, Object.keys(srOrderDetails || {}));
+
+            // Shiprocket response can be: { data: { ... } } OR direct object
+            const srOrder = srOrderDetails?.data || srOrderDetails;
+            const shipments = srOrder?.shipments || [];
+            const firstShipment = shipments[0] || {};
+
+            const shipmentId =
+                srOrder?.shipment_id ||
+                srOrder?.id_shipment ||
+                firstShipment?.id ||
+                firstShipment?.shipment_id ||
+                null;
+
+            const awbCode = firstShipment?.awb_code || firstShipment?.awb || null;
+            const courierName = firstShipment?.courier_name || null;
+
+            console.log(`[RESYNC] Parsed: shipment_id=${shipmentId}, awb=${awbCode}`);
+            console.log(`[RESYNC] Full srOrder keys: ${Object.keys(srOrder || {}).join(", ")}`);
+
             if (shipmentId) {
                 await prisma.order.update({
                     where: { id: orderId },
-                    data: { shiprocketShipmentId: shipmentId, shiprocketStatus: "CREATED" },
+                    data: {
+                        shiprocketShipmentId: parseInt(shipmentId, 10),
+                        shiprocketStatus: awbCode ? "AWB_ASSIGNED" : "CREATED",
+                        ...(awbCode && { awbCode }),
+                        ...(courierName && { courierName }),
+                    },
                 });
                 console.log(`[RESYNC] Recovered shipment_id=${shipmentId}`);
             } else {
-                console.warn(`[RESYNC] Could not recover shipment_id. Response:`, JSON.stringify(srOrderDetails));
-                throw new ApiError(400, "Could not recover shipment ID from Shiprocket. Order may need to be re-created.");
+                console.warn(`[RESYNC] Could not recover shipment_id. Full response:`, JSON.stringify(srOrderDetails));
+                throw new ApiError(400,
+                    `Could not recover Shipment ID from Shiprocket for SR Order #${order.shiprocketOrderId}. ` +
+                    `Response received but shipment_id not found. ` +
+                    `Go to Shiprocket dashboard → Orders → find order #${order.shiprocketOrderId} → check Shipment ID manually.`
+                );
             }
         } catch (error) {
             if (error instanceof ApiError) throw error;
