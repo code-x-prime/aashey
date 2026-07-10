@@ -726,3 +726,59 @@ export async function processOrderForShipping(orderId) {
         throw error;
     }
 }
+
+/**
+ * Get order details from Shiprocket
+ */
+export async function getShiprocketOrder(shiprocketOrderId) {
+    return shiprocketRequest(`/orders/show/${shiprocketOrderId}`, "GET");
+}
+
+/**
+ * Sync shipment details from Shiprocket to our local database
+ */
+export async function syncOrderFromShiprocket(orderId) {
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+    });
+
+    if (!order || !order.shiprocketOrderId) {
+        return null;
+    }
+
+    try {
+        const response = await getShiprocketOrder(order.shiprocketOrderId);
+        const srOrder = response?.data;
+
+        if (srOrder) {
+            const shipments = srOrder.shipments || [];
+            // Find shipment with AWB code or use the first one
+            const shipment = shipments.find(s => s.awb_code) || shipments[0];
+
+            if (shipment) {
+                const awbCode = shipment.awb_code || null;
+                const courierName = shipment.courier_name || shipment.courier || null;
+                const shipmentId = shipment.id || null;
+                const status = shipment.shipment_status || srOrder.status || null;
+
+                // Update database
+                const updated = await prisma.order.update({
+                    where: { id: orderId },
+                    data: {
+                        awbCode: awbCode || order.awbCode,
+                        courierName: courierName || order.courierName,
+                        shiprocketShipmentId: shipmentId ? parseInt(shipmentId) : order.shiprocketShipmentId,
+                        shiprocketStatus: status || order.shiprocketStatus,
+                    },
+                });
+
+                console.log(`[SYNC] Updated order ${order.orderNumber} from Shiprocket. AWB: ${awbCode}, Status: ${status}`);
+                return updated;
+            }
+        }
+    } catch (error) {
+        console.error(`[SYNC] Failed to sync order ${order.orderNumber} from Shiprocket:`, error.message);
+    }
+    return order;
+}
+

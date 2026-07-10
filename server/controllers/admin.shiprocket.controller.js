@@ -668,6 +668,22 @@ export const bookShipment = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Order not found");
     }
 
+    // Auto-sync shipment status from Shiprocket first if order is synced but lacks AWB code locally
+    if (order.shiprocketOrderId && !order.awbCode) {
+        try {
+            const { syncOrderFromShiprocket } = await import("../utils/shiprocket.js");
+            const synced = await syncOrderFromShiprocket(orderId);
+            if (synced && synced.awbCode) {
+                order.awbCode = synced.awbCode;
+                order.courierName = synced.courierName;
+                order.shiprocketShipmentId = synced.shiprocketShipmentId;
+                order.shiprocketStatus = synced.shiprocketStatus;
+            }
+        } catch (syncErr) {
+            console.error("Auto-sync inside bookShipment failed:", syncErr.message);
+        }
+    }
+
     console.log(`[BOOK] Order ${order.orderNumber} — SROrderId: ${order.shiprocketOrderId}, SRShipmentId: ${order.shiprocketShipmentId}, AWB: ${order.awbCode}, SRStatus: ${order.shiprocketStatus}`);
 
     // Case 1: Already fully booked

@@ -184,6 +184,21 @@ export const getOrders = asyncHandler(async (req, res, next) => {
 export const getOrderById = asyncHandler(async (req, res, next) => {
   const { orderId } = req.params;
 
+  // Auto-sync shipment status from Shiprocket if order is synced but lacks AWB code locally
+  const existingOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, shiprocketOrderId: true, awbCode: true }
+  });
+
+  if (existingOrder && existingOrder.shiprocketOrderId && !existingOrder.awbCode) {
+    try {
+      const { syncOrderFromShiprocket } = await import("../utils/shiprocket.js");
+      await syncOrderFromShiprocket(orderId);
+    } catch (syncErr) {
+      console.error("Auto-sync on getOrderById failed:", syncErr.message);
+    }
+  }
+
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
