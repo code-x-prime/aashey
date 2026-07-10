@@ -417,19 +417,51 @@ export async function getDefaultPickupAddress() {
  * Ensure pickup address is synced to Shiprocket
  */
 async function ensurePickupAddressSynced(pickupAddress) {
-    // If already synced, return immediately
+    try {
+        console.log(`[SR] Auto-matching pickup location for address: ${pickupAddress.pincode}`);
+        // Fetch all registered locations in Shiprocket
+        const srLocationsResponse = await getPickupLocations();
+        const srLocations = srLocationsResponse?.data?.shipping_address || [];
+
+        console.log(`[SR] Found ${srLocations.length} locations in Shiprocket:`, JSON.stringify(srLocations.map(l => l.pickup_location)));
+
+        if (srLocations.length > 0) {
+            // Try to find a match by pincode first, then fallback to first active location
+            let matched = srLocations.find(l => String(l.pin_code) === String(pickupAddress.pincode));
+            if (!matched) {
+                matched = srLocations[0]; // fallback to first registered location
+            }
+
+            if (matched && matched.pickup_location) {
+                console.log(`[SR] Matched with Shiprocket registered location nickname: "${matched.pickup_location}"`);
+
+                // Update nickname locally in database to match Shiprocket registered name exactly
+                if (pickupAddress.nickname !== matched.pickup_location) {
+                    await prisma.shiprocketPickupAddress.update({
+                        where: { id: pickupAddress.id },
+                        data: {
+                            nickname: matched.pickup_location,
+                            shiprocketPickupId: matched.id ? parseInt(matched.id) : null
+                        }
+                    });
+                    pickupAddress.nickname = matched.pickup_location;
+                }
+                return pickupAddress;
+            }
+        }
+    } catch (err) {
+        console.error(`[SR] Auto-matching pickup locations failed:`, err.message);
+    }
+
+    // Fallback to original logic if matching fails or Shiprocket return empty
     if (pickupAddress.shiprocketPickupId) {
         return pickupAddress;
     }
 
-    // If no shiprocketPickupId but has nickname, assume it's already in Shiprocket
-    // This avoids the "already exists" error from repeated sync attempts
     if (pickupAddress.nickname) {
-        console.log(`Using existing pickup location: ${pickupAddress.nickname}`);
         return pickupAddress;
     }
 
-    // Only try to sync if we have no pickup ID and no nickname
     try {
         const locationData = {
             pickup_location: pickupAddress.nickname || pickupAddress.name,
@@ -460,7 +492,6 @@ async function ensurePickupAddressSynced(pickupAddress) {
             console.log(`Pickup address synced to Shiprocket with ID: ${pickupId}`);
         }
     } catch (error) {
-        // Silently continue - the nickname should work if registered in Shiprocket
         console.log(`Pickup sync skipped: Using nickname "${pickupAddress.nickname}" directly`);
     }
 
