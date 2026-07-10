@@ -525,6 +525,9 @@ export const orders = {
   cancelShipment: (orderId: string) => {
     return api.post(`/api/admin/shiprocket/orders/${orderId}/cancel`);
   },
+  resyncOrder: (orderId: string) => {
+    return api.post(`/api/admin/shiprocket/orders/${orderId}/resync`);
+  },
   getShippingLabel: (orderId: string) => {
     return api.get(`/api/admin/shiprocket/orders/${orderId}/label`);
   },

@@ -21,6 +21,7 @@ import {
     handleWebhook,
     getOrderCouriers,
     bookShipment,
+    resyncOrder,
 } from "../controllers/admin.shiprocket.controller.js";
 
 const router = express.Router();
@@ -47,6 +48,7 @@ router.get("/orders/:orderId/label", isAdmin, getShippingLabel);
 router.get("/orders/:orderId/invoice", isAdmin, getOrderInvoice);
 router.get("/orders/:orderId/couriers", isAdmin, getOrderCouriers);
 router.post("/orders/:orderId/book-shipment", isAdmin, bookShipment);
+router.post("/orders/:orderId/resync", isAdmin, resyncOrder);
 
 // Webhook (public - no auth, but with security token check in controller)
 router.post("/webhook", handleWebhook);

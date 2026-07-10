@@ -251,6 +251,14 @@ export async function trackByOrderId(shiprocketOrderId) {
 }
 
 /**
+ * Get order details from Shiprocket by order ID
+ * Returns shipment_id and other order details
+ */
+export async function getShiprocketOrderDetails(shiprocketOrderId) {
+    return shiprocketRequest(`/orders/show/${shiprocketOrderId}`, "GET");
+}
+
+/**
  * Cancel order in Shiprocket
  */
 export async function cancelShiprocketOrder(shiprocketOrderId) {
@@ -658,6 +666,29 @@ export async function processOrderForShipping(orderId) {
     if (order.shiprocketOrderId && order.shiprocketShipmentId) {
         console.log(`Order ${order.orderNumber} already on Shiprocket (order_id=${order.shiprocketOrderId}, shipment_id=${order.shiprocketShipmentId}). Skipping creation.`);
         return { order_id: order.shiprocketOrderId, shipment_id: order.shiprocketShipmentId };
+    }
+
+    // ── If order has shiprocketOrderId but missing shipmentId, fetch from Shiprocket ──
+    if (order.shiprocketOrderId && !order.shiprocketShipmentId) {
+        console.log(`Order ${order.orderNumber} has shiprocketOrderId=${order.shiprocketOrderId} but no shipmentId. Fetching from Shiprocket...`);
+        try {
+            const srOrderDetails = await getShiprocketOrderDetails(order.shiprocketOrderId);
+            const shipmentId = srOrderDetails?.order?.shipment_id || srOrderDetails?.shipment_id || null;
+            if (shipmentId) {
+                await prisma.order.update({
+                    where: { id: orderId },
+                    data: { shiprocketShipmentId: shipmentId },
+                });
+                console.log(`Recovered shipment_id=${shipmentId} for order ${order.orderNumber}`);
+                return { order_id: order.shiprocketOrderId, shipment_id: shipmentId };
+            } else {
+                console.warn(`Could not recover shipment_id for order ${order.orderNumber}. Response:`, JSON.stringify(srOrderDetails));
+                // Fall through to create new order
+            }
+        } catch (fetchError) {
+            console.error(`Failed to fetch order details from Shiprocket:`, fetchError.message);
+            // Fall through to create new order
+        }
     }
 
     try {

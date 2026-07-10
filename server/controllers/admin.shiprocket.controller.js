@@ -24,6 +24,7 @@ import {
     printInvoice,
     getPickupLocations,
     addPickupLocation,
+    getShiprocketOrderDetails,
 } from "../utils/shiprocket.js";
 
 // Get Shiprocket settings
@@ -826,5 +827,107 @@ export const bookShipment = asyncHandler(async (req, res) => {
 
     res.status(200).json(
         new ApiResponsive(200, { order: updatedOrder }, "Shipment booked successfully")
+    );
+});
+
+// Re-sync order with Shiprocket — fix stuck orders
+export const resyncOrder = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+            id: true,
+            orderNumber: true,
+            shiprocketOrderId: true,
+            shiprocketShipmentId: true,
+            awbCode: true,
+            shiprocketStatus: true,
+            status: true,
+        },
+    });
+
+    if (!order) {
+        throw new ApiError(404, "Order not found");
+    }
+
+    console.log(`[RESYNC] Order ${order.orderNumber} — SROrderId: ${order.shiprocketOrderId}, SRShipmentId: ${order.shiprocketShipmentId}, AWB: ${order.awbCode}, SRStatus: ${order.shiprocketStatus}`);
+
+    // If order has no Shiprocket order at all, create fresh
+    if (!order.shiprocketOrderId) {
+        console.log(`[RESYNC] No Shiprocket order. Creating fresh...`);
+        const result = await processOrderForShipping(orderId);
+        if (!result) {
+            throw new ApiError(400, "Shiprocket is disabled or configuration is missing.");
+        }
+
+        const updatedOrder = await prisma.order.findUnique({
+            where: { id: orderId },
+            select: {
+                shiprocketOrderId: true, shiprocketShipmentId: true, awbCode: true,
+                courierName: true, shiprocketStatus: true,
+            },
+        });
+
+        return res.status(200).json(
+            new ApiResponsive(200, { order: updatedOrder, action: "created" }, "Order synced to Shiprocket successfully")
+        );
+    }
+
+    // If order has shiprocketOrderId but no shipmentId, fetch from Shiprocket
+    if (order.shiprocketOrderId && !order.shiprocketShipmentId) {
+        console.log(`[RESYNC] Fetching shipment ID from Shiprocket for order_id=${order.shiprocketOrderId}...`);
+        try {
+            const srOrderDetails = await getShiprocketOrderDetails(order.shiprocketOrderId);
+            const shipmentId = srOrderDetails?.order?.shipment_id || srOrderDetails?.shipment_id || null;
+            if (shipmentId) {
+                await prisma.order.update({
+                    where: { id: orderId },
+                    data: { shiprocketShipmentId: shipmentId, shiprocketStatus: "CREATED" },
+                });
+                console.log(`[RESYNC] Recovered shipment_id=${shipmentId}`);
+            } else {
+                console.warn(`[RESYNC] Could not recover shipment_id. Response:`, JSON.stringify(srOrderDetails));
+                throw new ApiError(400, "Could not recover shipment ID from Shiprocket. Order may need to be re-created.");
+            }
+        } catch (error) {
+            if (error instanceof ApiError) throw error;
+            throw new ApiError(400, `Failed to fetch order details from Shiprocket: ${error.message}`);
+        }
+    }
+
+    // If order has both IDs but no AWB, try to fetch current status
+    if (order.shiprocketOrderId && order.shiprocketShipmentId && !order.awbCode) {
+        console.log(`[RESYNC] Order has shipment ID but no AWB. Checking Shiprocket status...`);
+        try {
+            const srOrderDetails = await getShiprocketOrderDetails(order.shiprocketOrderId);
+            const srStatus = srOrderDetails?.order?.status || srOrderDetails?.status;
+            const shipmentId = srOrderDetails?.order?.shipment_id || srOrderDetails?.shipment_id || order.shiprocketShipmentId;
+
+            // Update with any new info from Shiprocket
+            await prisma.order.update({
+                where: { id: orderId },
+                data: {
+                    shiprocketShipmentId: shipmentId,
+                    shiprocketStatus: srStatus || order.shiprocketStatus,
+                },
+            });
+
+            console.log(`[RESYNC] Updated order status: ${srStatus}`);
+        } catch (error) {
+            console.error(`[RESYNC] Failed to fetch status:`, error.message);
+        }
+    }
+
+    const updatedOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+            shiprocketOrderId: true, shiprocketShipmentId: true, awbCode: true,
+            courierName: true, shiprocketStatus: true,
+        },
+    });
+
+    res.status(200).json(
+        new ApiResponsive(200, { order: updatedOrder, action: "resynced" }, "Order re-synced with Shiprocket")
     );
 });

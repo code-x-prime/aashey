@@ -131,6 +131,7 @@ export default function OrderDetailsPage() {
   };
 
   const [cancellingShipment, setCancellingShipment] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
   const handleCancelShipment = async () => {
     if (!id) return;
     if (!window.confirm("Are you sure you want to cancel this shipment? This cannot be undone.")) return;
@@ -146,6 +147,22 @@ export default function OrderDetailsPage() {
         ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
       toast.error(msg || "Failed to cancel shipment");
     } finally { setCancellingShipment(false); }
+  };
+
+  const handleResync = async () => {
+    if (!id) return;
+    setResyncing(true);
+    try {
+      const response = await orders.resyncOrder(id);
+      if (response?.data?.success) {
+        toast.success(response.data.message || "Order re-synced with Shiprocket");
+        fetchOrderDetails();
+      } else { toast.error(response?.data?.message || "Re-sync failed"); }
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
+      toast.error(msg || "Re-sync failed");
+    } finally { setResyncing(false); }
   };
 
   const handleDownloadLabel = async () => {
@@ -600,6 +617,21 @@ export default function OrderDetailsPage() {
                           <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.shipmentId}</p>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Re-sync button for stuck orders */}
+                  {orderDetails.shiprocket?.orderId && !orderDetails.shiprocket?.awbCode && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 text-amber-600" />
+                        <p className="text-xs text-amber-700">Order exists on Shiprocket but AWB not assigned. Try re-syncing.</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={handleResync} disabled={resyncing}
+                        className="h-7 px-3 text-xs border-amber-300 text-amber-700 hover:bg-amber-100 gap-1.5 shrink-0">
+                        {resyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                        {resyncing ? "Syncing..." : "Re-sync"}
+                      </Button>
                     </div>
                   )}
 
