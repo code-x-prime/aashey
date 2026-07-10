@@ -341,8 +341,11 @@ export const cancelShipment = asyncHandler(async (req, res) => {
     const order = await prisma.order.findUnique({
         where: { id: orderId },
         select: {
+            id: true,
+            orderNumber: true,
             shiprocketOrderId: true,
             shiprocketStatus: true,
+            awbCode: true,
         },
     });
 
@@ -351,21 +354,38 @@ export const cancelShipment = asyncHandler(async (req, res) => {
     }
 
     if (!order.shiprocketOrderId) {
-        throw new ApiError(400, "Order not synced to Shiprocket");
+        throw new ApiError(400, "Order not synced to Shiprocket yet. Nothing to cancel.");
     }
 
-    const result = await cancelShiprocketOrder(order.shiprocketOrderId);
+    if (order.shiprocketStatus === "CANCELLED") {
+        throw new ApiError(400, "Shipment is already cancelled in Shiprocket.");
+    }
 
-    await prisma.order.update({
-        where: { id: orderId },
-        data: {
-            shiprocketStatus: "CANCELLED",
-        },
-    });
+    try {
+        const result = await cancelShiprocketOrder(order.shiprocketOrderId);
 
-    res.status(200).json(
-        new ApiResponsive(200, { result }, "Shipment cancelled successfully")
-    );
+        await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                shiprocketStatus: "CANCELLED",
+                awbCode: null,
+                courierName: null,
+            },
+        });
+
+        console.log(`Shiprocket shipment cancelled for order ${order.orderNumber}: ${JSON.stringify(result)}`);
+
+        res.status(200).json(
+            new ApiResponsive(200, {
+                shiprocketStatus: "CANCELLED",
+                shiprocketOrderId: order.shiprocketOrderId,
+                result,
+            }, `Shipment cancelled successfully for order ${order.orderNumber}`)
+        );
+    } catch (error) {
+        console.error(`Shiprocket cancel failed for order ${order.orderNumber}:`, error.message);
+        throw new ApiError(400, `Shiprocket cancel failed: ${error.message}. Please cancel manually on Shiprocket dashboard.`);
+    }
 });
 
 // Get shipping label for order
@@ -376,6 +396,7 @@ export const getShippingLabel = asyncHandler(async (req, res) => {
         where: { id: orderId },
         select: {
             shiprocketShipmentId: true,
+            orderNumber: true,
         },
     });
 
@@ -384,14 +405,28 @@ export const getShippingLabel = asyncHandler(async (req, res) => {
     }
 
     if (!order.shiprocketShipmentId) {
-        throw new ApiError(400, "Order not synced to Shiprocket");
+        throw new ApiError(400, "Order not synced to Shiprocket yet. Label not available.");
     }
 
-    const result = await generateLabel(order.shiprocketShipmentId);
+    try {
+        const result = await generateLabel(order.shiprocketShipmentId);
 
-    res.status(200).json(
-        new ApiResponsive(200, { label: result }, "Shipping label generated successfully")
-    );
+        // Shiprocket returns { response: { data: { label_url: "..." } } }
+        const labelUrl = result?.response?.data?.label_url || result?.label_url || null;
+
+        console.log(`Label generated for order ${order.orderNumber}: ${labelUrl || "no URL"}`);
+
+        res.status(200).json(
+            new ApiResponsive(200, {
+                label_url: labelUrl,
+                shiprocketShipmentId: order.shiprocketShipmentId,
+                raw: result,
+            }, "Shipping label generated successfully")
+        );
+    } catch (error) {
+        console.error(`Label generation failed for order ${order.orderNumber}:`, error.message);
+        throw new ApiError(400, `Label generation failed: ${error.message}`);
+    }
 });
 
 // Get invoice for order
@@ -402,6 +437,7 @@ export const getOrderInvoice = asyncHandler(async (req, res) => {
         where: { id: orderId },
         select: {
             shiprocketOrderId: true,
+            orderNumber: true,
         },
     });
 
@@ -410,14 +446,28 @@ export const getOrderInvoice = asyncHandler(async (req, res) => {
     }
 
     if (!order.shiprocketOrderId) {
-        throw new ApiError(400, "Order not synced to Shiprocket");
+        throw new ApiError(400, "Order not synced to Shiprocket yet. Invoice not available.");
     }
 
-    const result = await printInvoice(order.shiprocketOrderId);
+    try {
+        const result = await printInvoice(order.shiprocketOrderId);
 
-    res.status(200).json(
-        new ApiResponsive(200, { invoice: result }, "Invoice generated successfully")
-    );
+        // Shiprocket returns { response: { data: { invoice_url: "..." } } }
+        const invoiceUrl = result?.response?.data?.invoice_url || result?.invoice_url || null;
+
+        console.log(`Invoice generated for order ${order.orderNumber}: ${invoiceUrl || "no URL"}`);
+
+        res.status(200).json(
+            new ApiResponsive(200, {
+                invoice_url: invoiceUrl,
+                shiprocketOrderId: order.shiprocketOrderId,
+                raw: result,
+            }, "Invoice generated successfully")
+        );
+    } catch (error) {
+        console.error(`Invoice generation failed for order ${order.orderNumber}:`, error.message);
+        throw new ApiError(400, `Invoice generation failed: ${error.message}`);
+    }
 });
 
 // Webhook handler for Shiprocket tracking updates

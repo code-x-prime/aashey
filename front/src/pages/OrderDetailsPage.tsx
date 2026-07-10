@@ -138,7 +138,7 @@ export default function OrderDetailsPage() {
     try {
       const response = await orders.cancelShipment(id);
       if (response?.data?.success) {
-        toast.success("Shipment cancelled successfully");
+        toast.success(response.data.message || "Shipment cancelled successfully");
         fetchOrderDetails();
       } else { toast.error(response?.data?.message || "Failed to cancel shipment"); }
     } catch (err: unknown) {
@@ -153,15 +153,18 @@ export default function OrderDetailsPage() {
     try {
       const response = await orders.getShippingLabel(id);
       if (response?.data?.success) {
-        const labelData = response.data.data?.label;
-        const labelUrl = labelData?.label_url || labelData?.response?.data?.label_url;
+        const labelUrl = response.data.data?.label_url;
         if (labelUrl) {
           window.open(labelUrl, "_blank");
         } else {
-          toast.success("Label generated. Check Shiprocket dashboard.");
+          toast.info("Label generated. Check Shiprocket dashboard for download.");
         }
       } else { toast.error(response?.data?.message || "Label not available yet"); }
-    } catch { toast.error("Failed to generate label"); }
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
+      toast.error(msg || "Failed to generate label");
+    }
   };
 
   const handleDownloadInvoice = async () => {
@@ -169,15 +172,18 @@ export default function OrderDetailsPage() {
     try {
       const response = await orders.getOrderInvoice(id);
       if (response?.data?.success) {
-        const invoiceData = response.data.data?.invoice;
-        const invoiceUrl = invoiceData?.invoice_url || invoiceData?.response?.data?.invoice_url;
+        const invoiceUrl = response.data.data?.invoice_url;
         if (invoiceUrl) {
           window.open(invoiceUrl, "_blank");
         } else {
-          toast.success("Invoice generated. Check Shiprocket dashboard.");
+          toast.info("Invoice generated. Check Shiprocket dashboard for download.");
         }
       } else { toast.error(response?.data?.message || "Invoice not available yet"); }
-    } catch { toast.error("Failed to generate invoice"); }
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
+      toast.error(msg || "Failed to generate invoice");
+    }
   };
 
   const handleStatusUpdate = async (newStatus: string) => {
@@ -185,8 +191,22 @@ export default function OrderDetailsPage() {
     try {
       const response = await orders.updateOrderStatus(id, { status: newStatus });
       if (response?.data?.success) {
-        toast.success(`Status updated to ${newStatus}`);
+        // Show Shiprocket status if order was cancelled
+        if (newStatus === "CANCELLED") {
+          const srCancelled = response.data.data?.shiprocketCancelled;
+          const srError = response.data.data?.shiprocketCancelError;
+          if (srCancelled) {
+            toast.success("Order cancelled. Shiprocket shipment also cancelled.");
+          } else if (srError) {
+            toast.warning("Order cancelled. Shiprocket cancellation failed — cancel manually on Shiprocket.");
+          } else {
+            toast.success("Order cancelled successfully.");
+          }
+        } else {
+          toast.success(`Status updated to ${newStatus}`);
+        }
         setOrderDetails((prev) => prev ? { ...prev, status: newStatus } : prev);
+        fetchOrderDetails();
       } else { toast.error(response.data?.message || "Update failed"); }
     } catch { toast.error("Update failed"); }
   };
@@ -211,6 +231,13 @@ export default function OrderDetailsPage() {
     RETURN_COMPLETED:  "bg-teal-50 text-teal-600 border-teal-200",
     APPROVED:          "bg-emerald-50 text-emerald-600 border-emerald-200",
     REJECTED:          "bg-red-50 text-red-500 border-red-200",
+    // Shiprocket statuses
+    CREATED:           "bg-sky-50 text-sky-600 border-sky-200",
+    AWB_ASSIGNED:      "bg-blue-50 text-blue-600 border-blue-200",
+    PICKUP_SCHEDULED:  "bg-indigo-50 text-indigo-600 border-indigo-200",
+    PICKED_UP:         "bg-purple-50 text-purple-600 border-purple-200",
+    IN_TRANSIT:        "bg-violet-50 text-violet-600 border-violet-200",
+    OUT_FOR_DELIVERY:  "bg-amber-50 text-amber-600 border-amber-200",
   };
   const statusColor = (s: string) => STATUS_COLORS[s] || "bg-gray-100 text-gray-500 border-gray-200";
 
@@ -457,7 +484,39 @@ export default function OrderDetailsPage() {
             </div>
 
             <CardContent className="px-5 py-5 space-y-4">
-              {orderDetails.shiprocket?.awbCode ? (
+              {orderDetails.shiprocket?.status === "CANCELLED" ? (
+                // ── Cancelled ──
+                <div className="space-y-3">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-5 w-5 text-red-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-red-700">Shipment Cancelled</p>
+                        <p className="text-xs text-red-500">This shipment was cancelled in Shiprocket.</p>
+                      </div>
+                    </div>
+                    {orderDetails.shiprocket.orderId && (
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <div className="bg-white rounded-lg p-2 border border-red-100">
+                          <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase">SR Order ID</p>
+                          <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.orderId}</p>
+                        </div>
+                        {orderDetails.shiprocket.shipmentId && (
+                          <div className="bg-white rounded-lg p-2 border border-red-100">
+                            <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase">Shipment ID</p>
+                            <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.shipmentId}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {orderDetails.status !== "CANCELLED" && (
+                    <p className="text-xs text-[#6B7280] bg-[#F9FAFB] rounded-lg px-3 py-2 border border-[#E5E7EB]">
+                      You can re-book a new shipment by selecting a courier below.
+                    </p>
+                  )}
+                </div>
+              ) : orderDetails.shiprocket?.awbCode ? (
                 // ── Booked ──
                 <div className="space-y-4">
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">

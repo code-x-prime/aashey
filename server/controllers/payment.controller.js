@@ -1463,6 +1463,8 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   }
 
   // Cancel Shiprocket order if it exists (non-blocking)
+  let shiprocketCancelled = false;
+  let shiprocketCancelError = null;
   if (order.shiprocketOrderId) {
     try {
       const { cancelShiprocketOrder, getShiprocketSettings } = await import("../utils/shiprocket.js");
@@ -1473,9 +1475,11 @@ export const cancelOrder = asyncHandler(async (req, res) => {
           where: { id: orderId },
           data: { shiprocketStatus: "CANCELLED" },
         });
-        console.log(`Shiprocket order ${order.shiprocketOrderId} cancelled`);
+        shiprocketCancelled = true;
+        console.log(`Shiprocket order ${order.shiprocketOrderId} cancelled for order ${order.orderNumber}`);
       }
     } catch (error) {
+      shiprocketCancelError = error.message;
       console.error("Failed to cancel Shiprocket order:", error.message);
     }
   }
@@ -1506,10 +1510,24 @@ export const cancelOrder = asyncHandler(async (req, res) => {
     console.error("Cancellation email error:", emailErr);
   }
 
+  // Build response message
+  let message = "Order cancelled successfully";
+  if (order.shiprocketOrderId) {
+    if (shiprocketCancelled) {
+      message += ". Shipping has also been cancelled with Shiprocket.";
+    } else if (shiprocketCancelError) {
+      message += ". Note: Shiprocket shipping cancellation failed — please cancel manually on Shiprocket dashboard.";
+    }
+  }
+
   res
     .status(200)
     .json(
-      new ApiResponsive(200, { success: true }, "Order cancelled successfully")
+      new ApiResponsive(200, {
+        success: true,
+        shiprocketCancelled,
+        shiprocketCancelError,
+      }, message)
     );
 });
 

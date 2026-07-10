@@ -378,6 +378,10 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // Track Shiprocket cancellation result
+  let shiprocketCancelled = false;
+  let shiprocketCancelError = null;
+
   // Start a transaction for status-specific actions
   const updatedOrder = await prisma.$transaction(async (tx) => {
     let orderData = {
@@ -405,9 +409,11 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
           if (settings.isEnabled) {
             await cancelShiprocketOrder(order.shiprocketOrderId);
             orderData.shiprocketStatus = "CANCELLED";
-            console.log(`Admin cancelled Shiprocket order ${order.shiprocketOrderId}`);
+            shiprocketCancelled = true;
+            console.log(`Admin cancelled Shiprocket order ${order.shiprocketOrderId} for order ${order.orderNumber}`);
           }
         } catch (error) {
+          shiprocketCancelError = error.message;
           console.error("Failed to cancel Shiprocket order:", error.message);
           // Continue with order cancellation even if Shiprocket fails
         }
@@ -635,13 +641,29 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
     }
   }
 
+  // Build response message with Shiprocket status
+  let message = "Order status updated successfully";
+  if (status === "CANCELLED" && order.shiprocketOrderId) {
+    if (shiprocketCancelled) {
+      message = "Order cancelled. Shiprocket shipment also cancelled successfully.";
+    } else if (shiprocketCancelError) {
+      message = `Order cancelled. Shiprocket cancellation failed: ${shiprocketCancelError}. Please cancel manually on Shiprocket dashboard.`;
+    } else {
+      message = "Order cancelled. Shiprocket was not configured for this order.";
+    }
+  }
+
   res
     .status(200)
     .json(
       new ApiResponsive(
         200,
-        { order: updatedOrder },
-        "Order status updated successfully"
+        {
+          order: updatedOrder,
+          shiprocketCancelled,
+          shiprocketCancelError,
+        },
+        message
       )
     );
 });
