@@ -673,14 +673,16 @@ export async function processOrderForShipping(orderId) {
         console.log(`Order ${order.orderNumber} has shiprocketOrderId=${order.shiprocketOrderId} but no shipmentId. Fetching from Shiprocket...`);
         try {
             const srOrderDetails = await getShiprocketOrderDetails(order.shiprocketOrderId);
-            const shipmentId = srOrderDetails?.order?.shipment_id || srOrderDetails?.shipment_id || null;
+            const srOrder = srOrderDetails?.data || srOrderDetails;
+            const shipments = srOrder?.shipments || [];
+            const shipmentId = srOrder?.shipment_id || shipments[0]?.id || shipments[0]?.shipment_id || null;
             if (shipmentId) {
                 await prisma.order.update({
                     where: { id: orderId },
-                    data: { shiprocketShipmentId: shipmentId },
+                    data: { shiprocketShipmentId: parseInt(shipmentId) },
                 });
                 console.log(`Recovered shipment_id=${shipmentId} for order ${order.orderNumber}`);
-                return { order_id: order.shiprocketOrderId, shipment_id: shipmentId };
+                return { order_id: order.shiprocketOrderId, shipment_id: parseInt(shipmentId) };
             } else {
                 console.warn(`Could not recover shipment_id for order ${order.orderNumber}. Response:`, JSON.stringify(srOrderDetails));
                 // Fall through to create new order
@@ -784,13 +786,13 @@ export async function syncOrderFromShiprocket(orderId) {
         if (srOrder) {
             const shipments = srOrder.shipments || [];
             // Find shipment with AWB code or use the first one
-            const shipment = shipments.find(s => s.awb_code) || shipments[0];
+            const shipment = shipments.find(s => s.awb_code || s.awb) || shipments[0];
 
             if (shipment) {
-                const awbCode = shipment.awb_code || null;
+                const awbCode = shipment.awb_code || shipment.awb || null;
                 const courierName = shipment.courier_name || shipment.courier || null;
-                const shipmentId = shipment.id || null;
-                const status = shipment.shipment_status || srOrder.status || null;
+                const shipmentId = shipment.id || shipment.shipment_id || null;
+                const status = shipment.shipment_status || shipment.status || srOrder.status || null;
 
                 // Update database
                 const updated = await prisma.order.update({

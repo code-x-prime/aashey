@@ -285,21 +285,20 @@ export default function OrderDetailsPage() {
   const isCancelled = ["CANCELLED", "REFUNDED", "RETURN_APPROVED", "RETURN_COMPLETED"].includes(orderDetails.status);
 
   return (
-    <div className="space-y-5 pb-10">
-
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 text-[#9CA3AF] hover:text-[#1F2937]">
-            <Link to="/orders"><ChevronLeft className="h-4 w-4 mr-1" />All Orders</Link>
+    <div className="space-y-6 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ── Header Card ── */}
+      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+        <div className="space-y-2">
+          <Button variant="ghost" size="sm" asChild className="mb-1 -ml-2 text-slate-400 hover:text-slate-700 hover:bg-slate-50 gap-1.5 rounded-lg">
+            <Link to="/orders"><ChevronLeft className="h-4 w-4" />Back to Orders</Link>
           </Button>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-bold text-[#1F2937]">#{orderDetails.orderNumber}</h1>
-            <Badge className={cn("text-xs font-semibold border px-3 py-1", statusColor(orderDetails.status))}>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">#{orderDetails.orderNumber}</h1>
+            <Badge className={cn("text-xs font-semibold px-2.5 py-1 rounded-full border shadow-2xs", statusColor(orderDetails.status))}>
               {orderDetails.status.replace(/_/g, " ")}
             </Badge>
-            <span className="text-sm text-[#9CA3AF] flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+            <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+              <Calendar className="h-3.5 w-3.5 text-slate-400" />
               {formatDate(orderDetails.createdAt)}
             </span>
           </div>
@@ -309,26 +308,26 @@ export default function OrderDetailsPage() {
         {!isCancelled && orderDetails.status !== "DELIVERED" && (
           <div className="flex flex-wrap gap-2">
             {orderDetails.status === "PENDING" && (
-              <Button size="sm" variant="outline" className="h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleStatusUpdate("PROCESSING")}>
+              <Button size="sm" variant="outline" className="h-9 text-xs border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 rounded-xl" onClick={() => handleStatusUpdate("PROCESSING")}>
                 Mark Processing
               </Button>
             )}
             {(orderDetails.status === "PROCESSING" || orderDetails.status === "PAID") && (
-              <Button size="sm" variant="outline" className="h-8 text-xs border-purple-200 text-purple-600 hover:bg-purple-50" onClick={() => handleStatusUpdate("SHIPPED")}>
+              <Button size="sm" variant="outline" className="h-9 text-xs border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 rounded-xl" onClick={() => handleStatusUpdate("SHIPPED")}>
                 Mark Shipped
               </Button>
             )}
             {orderDetails.status === "SHIPPED" && (
-              <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white border-0" onClick={() => handleStatusUpdate("DELIVERED")}>
+              <Button size="sm" className="h-9 text-xs bg-[#5C3A1E] hover:bg-[#4a2e18] text-white rounded-xl shadow-xs border-0" onClick={() => handleStatusUpdate("DELIVERED")}>
                 Mark Delivered
               </Button>
             )}
             {(orderDetails.status === "PENDING" || orderDetails.status === "PROCESSING") && (
-              <Button size="sm" variant="outline" className="h-8 text-xs border-indigo-200 text-indigo-600 hover:bg-indigo-50" onClick={() => handleStatusUpdate("PAID")}>
+              <Button size="sm" variant="outline" className="h-9 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl" onClick={() => handleStatusUpdate("PAID")}>
                 Mark Paid
               </Button>
             )}
-            <Button size="sm" variant="outline" className="h-8 text-xs border-red-200 text-red-500 hover:bg-red-50" onClick={() => handleStatusUpdate("CANCELLED")}>
+            <Button size="sm" variant="outline" className="h-9 text-xs border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-xl" onClick={() => handleStatusUpdate("CANCELLED")}>
               Cancel Order
             </Button>
           </div>
@@ -337,22 +336,22 @@ export default function OrderDetailsPage() {
 
       {/* ── Status Timeline ── */}
       {!isCancelled && (
-        <Card className="border-[#E5E7EB]">
-          <CardContent className="px-6 py-5">
-            <div className="flex items-center justify-between">
+        <Card className="border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+          <CardContent className="px-6 py-6 bg-slate-50/50">
+            <div className="flex items-center justify-between max-w-3xl mx-auto">
               {STATUS_STEPS.map((step, idx) => {
                 const done = idx <= stepIdx;
                 const current = idx === stepIdx;
                 const Icon = [ShoppingCart, Package, Truck, CheckCircle][idx];
                 return (
                   <React.Fragment key={step}>
-                    {idx > 0 && <div className={cn("flex-1 h-0.5 mx-2", done ? "bg-emerald-400" : "bg-[#E5E7EB]")} />}
+                    {idx > 0 && <div className={cn("flex-1 h-1 rounded-full mx-3 transition-colors duration-300", done ? "bg-amber-500" : "bg-slate-200")} />}
                     <div className="flex flex-col items-center gap-2 shrink-0">
-                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center",
-                        done ? "bg-emerald-500 text-white" : current ? "bg-emerald-100 text-emerald-600 ring-2 ring-emerald-300" : "bg-[#F3F4F6] text-[#9CA3AF]")}>
-                        <Icon className="w-4 h-4" />
+                      <div className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                        done ? "bg-amber-600 text-white" : current ? "bg-amber-100 text-amber-700 ring-4 ring-amber-50" : "bg-white text-slate-400 border border-slate-200")}>
+                        <Icon className="w-5 h-5" />
                       </div>
-                      <span className={cn("text-[10px] font-semibold uppercase tracking-wide", done ? "text-emerald-600" : "text-[#9CA3AF]")}>
+                      <span className={cn("text-[10px] font-bold uppercase tracking-wider", done ? "text-amber-800" : "text-slate-400")}>
                         {step === "PENDING" ? "Placed" : step.charAt(0) + step.slice(1).toLowerCase()}
                       </span>
                     </div>
@@ -366,255 +365,267 @@ export default function OrderDetailsPage() {
 
       {/* ── Cancelled banner ── */}
       {orderDetails.status === "CANCELLED" && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-4 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-red-700">Order Cancelled</p>
-            {orderDetails.cancelReason && <p className="text-sm text-red-600 mt-0.5">Reason: {orderDetails.cancelReason}</p>}
-            {orderDetails.cancelledAt && <p className="text-xs text-red-400 mt-1">{formatDate(orderDetails.cancelledAt)}</p>}
+        <div className="bg-rose-50 border border-rose-100 rounded-2xl px-6 py-5 flex items-start gap-4 shadow-sm animate-pulse">
+          <AlertTriangle className="h-6 w-6 text-rose-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold text-rose-800 text-base">Order Cancelled</p>
+            {orderDetails.cancelReason && <p className="text-sm text-rose-600">Reason: {orderDetails.cancelReason}</p>}
+            {orderDetails.cancelledAt && <p className="text-xs text-rose-400 font-medium">{formatDate(orderDetails.cancelledAt)}</p>}
           </div>
         </div>
       )}
 
-      {/* ── Main 2-col grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* ── Main Grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* LEFT: Items + Tracking */}
-        <div className="lg:col-span-2 space-y-5">
+        {/* LEFT Column: Items & Shiprocket */}
+        <div className="lg:col-span-2 space-y-6">
 
           {/* Order Items Table */}
-          <Card className="border-[#E5E7EB] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
-              <Package className="h-4 w-4 text-[#4CAF50]" />
-              <h2 className="font-semibold text-[#1F2937]">Order Items</h2>
-              <span className="text-xs text-[#9CA3AF] bg-[#F3F4F6] px-2 py-0.5 rounded-full">{orderItems.length}</span>
+          <Card className="border-slate-100 rounded-2xl shadow-sm overflow-hidden bg-white">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <Package className="h-4 w-4 text-amber-600" />
+                </div>
+                <h2 className="font-bold text-slate-800 text-lg">Order Items</h2>
+              </div>
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">{orderItems.length} {orderItems.length === 1 ? 'Item' : 'Items'}</span>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-[#F9FAFB] hover:bg-[#F9FAFB]">
-                  <TableHead className="pl-5 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Product</TableHead>
-                  <TableHead className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide text-center">Qty</TableHead>
-                  <TableHead className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide text-right">Price</TableHead>
-                  <TableHead className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide text-right pr-5">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orderItems.map((item: OrderItem) => (
-                  <TableRow key={item.id} className="border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA]">
-                    <TableCell className="pl-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] overflow-hidden shrink-0">
-                          <img
-                            src={getImageUrl(item.imageUrl || item.product?.imageUrl || (Array.isArray(item.product?.images) ? item.product.images[0] : null) || item.variant?.images?.[0]?.url || null)}
-                            alt={item.product?.name || "Product"}
-                            className="h-full w-full object-contain"
-                            onError={(e) => { e.currentTarget.src = "/images/product-placeholder.jpg"; }}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-[#1F2937] text-sm truncate max-w-[200px]">{item.product?.name || item.name || "Product"}</p>
-                          {item.variant?.sku && (
-                            <p className="text-xs text-[#9CA3AF] font-mono mt-0.5">SKU: {item.variant.sku}</p>
-                          )}
-                          {item.variant?.attributes?.map((attr, i) => (
-                            <span key={i} className="inline-flex items-center gap-1 text-xs text-[#6B7280] bg-[#F3F4F6] px-1.5 py-0.5 rounded mr-1 mt-1">
-                              {attr.attribute}: {attr.value}
-                            </span>
-                          ))}
-                          {item.flashSaleName && (
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <span className="text-[10px] bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded font-medium">⚡ {item.flashSaleName} -{item.flashSaleDiscount}%</span>
-                            </div>
-                          )}
-                          {item.returnRequest && (
-                            <Badge className={cn("text-[10px] font-medium border mt-1 h-5 px-1.5", statusColor(item.returnRequest.status))}>
-                              Return: {item.returnRequest.status.replace(/_/g, " ")}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center py-4">
-                      <span className="text-sm font-semibold text-[#1F2937] bg-[#F3F4F6] px-2.5 py-1 rounded-md">{item.quantity}</span>
-                    </TableCell>
-                    <TableCell className="text-right py-4">
-                      {item.originalPrice && item.originalPrice > item.price && (
-                        <p className="text-xs text-[#9CA3AF] line-through">{formatCurrency(item.originalPrice)}</p>
-                      )}
-                      <p className="text-sm font-medium text-[#1F2937]">{formatCurrency(item.price)}</p>
-                    </TableCell>
-                    <TableCell className="text-right py-4 pr-5">
-                      <p className="text-sm font-bold text-[#1F2937]">{formatCurrency(item.subtotal)}</p>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50 border-b border-slate-100 hover:bg-slate-50/50">
+                    <TableHead className="pl-6 text-xs font-bold text-slate-500 uppercase tracking-wider py-4">Product Details</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center py-4">Qty</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider text-right py-4">Unit Price</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-wider text-right pr-6 py-4">Total</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {orderItems.map((item) => (
+                    <TableRow key={item.id} className="border-b border-slate-100/50 hover:bg-slate-50/20 transition-colors">
+                      <TableCell className="pl-6 py-4">
+                        <div className="flex items-start gap-4">
+                          <div className="h-16 w-16 rounded-xl border border-slate-100 overflow-hidden bg-slate-50 shrink-0 flex items-center justify-center">
+                            {item.imageUrl || item.product?.imageUrl ? (
+                              <img src={getImageUrl(item.imageUrl || item.product?.imageUrl)} alt={item.name || item.product?.title} className="h-full w-full object-cover" />
+                            ) : (
+                              <Package className="h-6 w-6 text-slate-300" />
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-semibold text-slate-800 text-sm hover:text-amber-700 transition-colors cursor-pointer">{item.name || item.product?.title || item.product?.name}</p>
+                            {item.variant?.sku && (
+                              <p className="text-[11px] text-slate-400 font-mono">SKU: {item.variant.sku}</p>
+                            )}
+                            {item.variant?.attributes?.map((attr, i) => (
+                              <span key={i} className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md mr-1.5 mt-1">
+                                {attr.attribute}: {attr.value}
+                              </span>
+                            ))}
+                            {item.flashSaleName && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <span className="text-[9px] bg-orange-50 text-orange-600 border border-orange-200/50 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">⚡ {item.flashSaleName} -{item.flashSaleDiscount}%</span>
+                              </div>
+                            )}
+                            {item.returnRequest && (
+                              <Badge className={cn("text-[9px] font-bold border mt-1.5 h-5 px-2 rounded-md shadow-2xs", statusColor(item.returnRequest.status))}>
+                                Return: {item.returnRequest.status.replace(/_/g, " ")}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center py-4">
+                        <span className="text-xs font-bold text-slate-700 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200/45">{item.quantity}</span>
+                      </TableCell>
+                      <TableCell className="text-right py-4">
+                        {item.originalPrice && item.originalPrice > item.price && (
+                          <p className="text-xs text-slate-400 line-through mb-0.5">{formatCurrency(item.originalPrice)}</p>
+                        )}
+                        <p className="text-sm font-semibold text-slate-700">{formatCurrency(item.price)}</p>
+                      </TableCell>
+                      <TableCell className="text-right py-4 pr-6">
+                        <p className="text-sm font-bold text-slate-800">{formatCurrency(item.subtotal)}</p>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-            {/* Price breakdown */}
-            <div className="px-5 py-4 border-t border-[#E5E7EB] space-y-2.5 bg-[#FAFAFA]">
-              <div className="flex justify-between text-sm text-[#6B7280]">
-                <span>Subtotal</span><span className="font-medium text-[#1F2937]">{formatCurrency(subTotal)}</span>
+            {/* Price Breakdown */}
+            <div className="px-6 py-5 border-t border-slate-100 space-y-3 bg-slate-50/30">
+              <div className="flex justify-between text-xs text-slate-400 font-medium">
+                <span>Subtotal</span>
+                <span className="font-semibold text-slate-700">{formatCurrency(subTotal)}</span>
               </div>
               {shipping > 0 && (
-                <div className="flex justify-between text-sm text-[#6B7280]">
-                  <span>Shipping</span><span className="font-medium text-[#1F2937]">{formatCurrency(shipping)}</span>
+                <div className="flex justify-between text-xs text-slate-400 font-medium">
+                  <span>Shipping</span>
+                  <span className="font-semibold text-slate-700">{formatCurrency(shipping)}</span>
                 </div>
               )}
               {codCharge > 0 && (
-                <div className="flex justify-between text-sm text-[#6B7280]">
-                  <span>COD Surcharge</span><span className="font-medium text-[#1F2937]">{formatCurrency(codCharge)}</span>
+                <div className="flex justify-between text-xs text-slate-400 font-medium">
+                  <span>COD Surcharge</span>
+                  <span className="font-semibold text-slate-700">{formatCurrency(codCharge)}</span>
                 </div>
               )}
               {discount > 0 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-xs font-medium">
                   <span className="text-emerald-600">Discount{orderDetails.couponCode ? ` (${orderDetails.couponCode})` : ""}</span>
-                  <span className="font-medium text-emerald-600">-{formatCurrency(discount)}</span>
+                  <span className="font-bold text-emerald-600">-{formatCurrency(discount)}</span>
                 </div>
               )}
-              <div className="flex justify-between items-center pt-2.5 border-t border-[#E5E7EB]">
-                <span className="font-bold text-[#1F2937]">Grand Total</span>
-                <span className="text-lg font-bold text-[#1F2937] flex items-center gap-0.5">
-                  <IndianRupee className="h-4 w-4" />{grandTotal.toFixed(2)}
+              <div className="flex justify-between items-center pt-3.5 border-t border-slate-100">
+                <span className="font-bold text-slate-700 text-sm">Grand Total</span>
+                <span className="text-lg font-black text-slate-800 flex items-center gap-0.5">
+                  <IndianRupee className="h-4.5 w-4.5 text-slate-800" />{grandTotal.toFixed(2)}
                 </span>
               </div>
             </div>
           </Card>
 
-          {/* Shiprocket Shipment Card */}
-          <Card className="border-[#E5E7EB] overflow-hidden">
-            <div className="px-5 py-4 bg-linear-to-r from-emerald-50 to-white border-b border-[#E5E7EB] flex items-center justify-between">
+          {/* Shiprocket Card */}
+          <Card className="border-slate-100 rounded-2xl shadow-sm overflow-hidden bg-white">
+            <div className="px-6 py-5 bg-linear-to-r from-amber-50/40 to-white border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
-                  <Truck className="h-4 w-4 text-emerald-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+                  <Truck className="h-4 w-4 text-amber-700" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-[#1F2937]">Shiprocket Shipment</h3>
-                  <p className="text-xs text-[#9CA3AF]">Courier management & tracking</p>
+                  <h3 className="text-sm font-bold text-slate-800">Shiprocket Shipment</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Courier management & live tracking</p>
                 </div>
               </div>
               {orderDetails.shiprocket?.status && (
-                <Badge className={cn("text-xs font-semibold border", statusColor(orderDetails.shiprocket.status))}>
+                <Badge className={cn("text-xs font-bold border px-2.5 py-0.5 rounded-full shadow-2xs", statusColor(orderDetails.shiprocket.status))}>
                   {orderDetails.shiprocket.status.replace(/_/g, " ")}
                 </Badge>
               )}
             </div>
 
-            <CardContent className="px-5 py-5 space-y-4">
+            <CardContent className="px-6 py-6 space-y-5">
               {orderDetails.shiprocket?.status === "CANCELLED" ? (
-                // ── Cancelled ──
-                <div className="space-y-3">
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2">
-                      <XCircle className="h-5 w-5 text-red-500" />
-                      <div>
-                        <p className="text-sm font-semibold text-red-700">Shipment Cancelled</p>
-                        <p className="text-xs text-red-500">This shipment was cancelled in Shiprocket.</p>
-                      </div>
+                // ── Cancelled Shipment ──
+                <div className="space-y-4">
+                  <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 flex items-start gap-3">
+                    <XCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-rose-800">Shipment Cancelled</p>
+                      <p className="text-xs text-rose-500">This shipment was cancelled in Shiprocket.</p>
                     </div>
-                    {orderDetails.shiprocket.orderId && (
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        <div className="bg-white rounded-lg p-2 border border-red-100">
-                          <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase">SR Order ID</p>
-                          <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.orderId}</p>
-                        </div>
-                        {orderDetails.shiprocket.shipmentId && (
-                          <div className="bg-white rounded-lg p-2 border border-red-100">
-                            <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase">Shipment ID</p>
-                            <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.shipmentId}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
+                  {orderDetails.shiprocket.orderId && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-semibold uppercase">SR Order ID</p>
+                        <p className="text-xs font-bold text-slate-700 font-mono mt-0.5">{orderDetails.shiprocket.orderId}</p>
+                      </div>
+                      {orderDetails.shiprocket.shipmentId && (
+                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                          <p className="text-[10px] text-slate-400 font-semibold uppercase">Shipment ID</p>
+                          <p className="text-xs font-bold text-slate-700 font-mono mt-0.5">{orderDetails.shiprocket.shipmentId}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {orderDetails.status !== "CANCELLED" && (
-                    <p className="text-xs text-[#6B7280] bg-[#F9FAFB] rounded-lg px-3 py-2 border border-[#E5E7EB]">
+                    <p className="text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-150">
                       You can re-book a new shipment by selecting a courier below.
                     </p>
                   )}
                 </div>
               ) : orderDetails.shiprocket?.awbCode ? (
-                // ── Booked ──
-                <div className="space-y-4">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mb-1">AWB / Tracking No.</p>
+                // ── Booked Shipment ──
+                <div className="space-y-5">
+                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5 shadow-2xs">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-widest">AWB / Tracking Number</p>
                         <div className="flex items-center gap-2">
-                          <p className="font-mono text-xl font-bold text-[#1F2937] tracking-wider">{orderDetails.shiprocket.awbCode}</p>
-                          <button onClick={() => { navigator.clipboard.writeText(orderDetails.shiprocket!.awbCode!); toast.success("Copied!"); }}
-                            className="p-1 rounded-md hover:bg-emerald-100 text-emerald-600" title="Copy AWB">
+                          <p className="font-mono text-2xl font-black text-slate-800 tracking-wider">{orderDetails.shiprocket.awbCode}</p>
+                          <button onClick={() => { navigator.clipboard.writeText(orderDetails.shiprocket!.awbCode!); toast.success("Copied AWB!"); }}
+                            className="p-1.5 rounded-lg hover:bg-emerald-100/70 text-emerald-700 transition-colors" title="Copy AWB">
                             <Copy className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
                       <a href={`https://shiprocket.co/tracking/${orderDetails.shiprocket.awbCode}`}
                         target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors shrink-0">
-                        <ExternalLink className="h-3.5 w-3.5" /> Track Live
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors shrink-0 border-0">
+                        <ExternalLink className="h-3.5 w-3.5" /> Track Shipment
                       </a>
                     </div>
                   </div>
+
                   <div className="grid grid-cols-3 gap-3">
                     {orderDetails.shiprocket.courierName && (
-                      <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                        <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">Courier</p>
-                        <p className="text-sm font-semibold text-[#1F2937]">{orderDetails.shiprocket.courierName}</p>
+                      <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Courier</p>
+                        <p className="text-xs font-bold text-slate-700">{orderDetails.shiprocket.courierName}</p>
                       </div>
                     )}
                     {orderDetails.shiprocket.orderId && (
-                      <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                        <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">SR Order ID</p>
-                        <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.orderId}</p>
+                      <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">SR Order ID</p>
+                        <p className="text-xs font-bold text-slate-700 font-mono">{orderDetails.shiprocket.orderId}</p>
                       </div>
                     )}
                     {orderDetails.shiprocket.shipmentId && (
-                      <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                        <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">Shipment ID</p>
-                        <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.shipmentId}</p>
+                      <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Shipment ID</p>
+                        <p className="text-xs font-bold text-slate-700 font-mono">{orderDetails.shiprocket.shipmentId}</p>
                       </div>
                     )}
                   </div>
 
                   {/* Action buttons: Label, Invoice, Cancel */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
                     <Button variant="outline" size="sm" onClick={handleDownloadLabel}
-                      className="h-8 text-xs border-emerald-200 text-emerald-600 hover:bg-emerald-50 gap-1.5">
-                      <Download className="h-3.5 w-3.5" /> Label
+                      className="h-9 text-xs border-emerald-100 text-emerald-700 hover:bg-emerald-50 gap-1.5 rounded-xl">
+                      <Download className="h-3.5 w-3.5" /> Download Label
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleDownloadInvoice}
-                      className="h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 gap-1.5">
-                      <FileText className="h-3.5 w-3.5" /> Invoice
+                      className="h-9 text-xs border-blue-150 text-blue-700 hover:bg-blue-50/70 gap-1.5 rounded-xl">
+                      <FileText className="h-3.5 w-3.5" /> Print Invoice
                     </Button>
                     {orderDetails.status !== "DELIVERED" && orderDetails.status !== "CANCELLED" && (
                       <Button variant="outline" size="sm" onClick={handleCancelShipment} disabled={cancellingShipment}
-                        className="h-8 text-xs border-red-200 text-red-500 hover:bg-red-50 gap-1.5">
+                        className="h-9 text-xs border-rose-100 text-rose-600 hover:bg-rose-50 gap-1.5 rounded-xl ml-auto">
                         {cancellingShipment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
-                        {cancellingShipment ? "Cancelling..." : "Cancel Shipment"}
+                        Cancel Shipment
                       </Button>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-[#6B7280] bg-[#F9FAFB] rounded-lg px-3 py-2 border border-[#E5E7EB]">
-                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                    Shipment booked. Click "Track Live" for real-time updates.
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-150">
+                    <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                    Shipment booked successfully. Click "Track Shipment" for live location.
                   </div>
                 </div>
+              ) : orderDetails.status === "CANCELLED" ? (
+                <div className="flex items-center gap-2 text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
+                  <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                  Order is cancelled. Shipment booking is disabled.
+                </div>
               ) : (
-                // ── Not booked ──
+                // ── Courier Partner Selection (Not Booked) ──
                 <div className="space-y-4">
                   {(orderDetails.shiprocket?.orderId || orderDetails.shiprocket?.shipmentId) && (
                     <div className="grid grid-cols-2 gap-3">
                       {orderDetails.shiprocket.orderId && (
-                        <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                          <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">SR Order ID</p>
-                          <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.orderId}</p>
+                        <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                          <p className="text-[10px] text-slate-400 font-semibold uppercase">SR Order ID</p>
+                          <p className="text-xs font-bold text-slate-700 font-mono mt-0.5">{orderDetails.shiprocket.orderId}</p>
                         </div>
                       )}
                       {orderDetails.shiprocket.shipmentId && (
-                        <div className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-                          <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide mb-1">Shipment ID</p>
-                          <p className="text-xs font-mono text-[#374151]">{orderDetails.shiprocket.shipmentId}</p>
+                        <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+                          <p className="text-[10px] text-slate-400 font-semibold uppercase">Shipment ID</p>
+                          <p className="text-xs font-bold text-slate-700 font-mono mt-0.5">{orderDetails.shiprocket.shipmentId}</p>
                         </div>
                       )}
                     </div>
@@ -622,66 +633,66 @@ export default function OrderDetailsPage() {
 
                   {/* Re-sync button for stuck orders */}
                   {orderDetails.shiprocket?.orderId && !orderDetails.shiprocket?.awbCode && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <RefreshCw className="h-4 w-4 text-amber-600" />
-                        <p className="text-xs text-amber-700">Order exists on Shiprocket but AWB not assigned. Try re-syncing.</p>
+                    <div className="bg-amber-50/60 border border-amber-100 rounded-xl p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-start gap-2.5">
+                        <RefreshCw className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+                        <p className="text-xs text-amber-800 font-medium">Order is synced to Shiprocket but lacks an AWB. Try sync again.</p>
                       </div>
                       <Button variant="outline" size="sm" onClick={handleResync} disabled={resyncing}
-                        className="h-7 px-3 text-xs border-amber-300 text-amber-700 hover:bg-amber-100 gap-1.5 shrink-0">
+                        className="h-8 px-3 text-xs border-amber-200 text-amber-700 hover:bg-amber-100 gap-1.5 shrink-0 rounded-lg">
                         {resyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                        {resyncing ? "Syncing..." : "Re-sync"}
+                        Re-sync
                       </Button>
                     </div>
                   )}
 
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-semibold text-[#1F2937]">Select Courier Partner</p>
-                      <Button variant="ghost" size="sm" onClick={fetchCouriers} disabled={loadingCouriers} className="h-7 px-2 gap-1.5 text-xs text-[#6B7280]">
-                        <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} /> Refresh
+                    <div className="flex items-center justify-between mb-3.5">
+                      <p className="text-sm font-bold text-slate-700">Select Courier Partner</p>
+                      <Button variant="ghost" size="sm" onClick={fetchCouriers} disabled={loadingCouriers} className="h-8 px-2.5 gap-1.5 text-xs text-slate-500 rounded-lg hover:bg-slate-50">
+                        <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} /> Refresh rates
                       </Button>
                     </div>
 
                     {loadingCouriers ? (
-                      <div className="flex items-center justify-center gap-2 py-8 bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
-                        <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
-                        <span className="text-sm text-[#9CA3AF]">Fetching couriers...</span>
+                      <div className="flex flex-col items-center justify-center gap-2 py-10 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                        <Loader2 className="h-6 w-6 animate-spin text-amber-600" />
+                        <span className="text-xs text-slate-400 font-medium">Fetching available couriers...</span>
                       </div>
                     ) : couriers.length > 0 ? (
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {couriers.map((c) => (
                           <label key={String(c.id)} className={cn(
-                            "flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all",
-                            selectedCourierId === c.id ? "border-emerald-500 bg-emerald-50" : "border-[#E5E7EB] bg-white hover:border-[#9CA3AF]"
+                            "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all hover:border-amber-300",
+                            selectedCourierId === c.id ? "border-amber-500 bg-amber-50/40 ring-1 ring-amber-500/20" : "border-slate-200 bg-white"
                           )}>
                             <div className="flex items-center gap-3">
                               <input type="radio" name="courier" value={String(c.id)} checked={selectedCourierId === c.id}
-                                onChange={() => setSelectedCourierId(c.id)} className="h-4 w-4 accent-emerald-600" />
-                              <div>
-                                <p className="text-sm font-semibold text-[#1F2937]">{c.name}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-xs text-[#9CA3AF]">ETD: {c.etd}</span>
-                                  {c.codAvailable && <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded font-medium">COD</span>}
+                                onChange={() => setSelectedCourierId(c.id)} className="h-4 w-4 accent-amber-600" />
+                              <div className="space-y-0.5">
+                                <p className="text-sm font-bold text-slate-800">{c.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-400 font-medium">Delivery ETD: {c.etd}</span>
+                                  {c.codAvailable && <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-md font-bold">COD</span>}
                                 </div>
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-base font-bold text-[#1F2937]">₹{c.rate}</p>
-                              <p className="text-[10px] text-[#9CA3AF]">shipping</p>
+                              <p className="text-base font-black text-slate-800">₹{c.rate}</p>
+                              <p className="text-[10px] text-slate-400 font-medium">est. shipping</p>
                             </div>
                           </label>
                         ))}
                         <Button onClick={handleBookShipment} disabled={!selectedCourierId || bookingShipment}
-                          className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white h-10 text-sm font-semibold">
-                          {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin mr-2" />Booking...</>) : (<><Truck className="h-4 w-4 mr-2" />Book Shipment</>)}
+                          className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white h-11 text-sm font-bold rounded-xl shadow-xs border-0 gap-2">
+                          {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin" />Booking shipment...</>) : (<><Truck className="h-4 w-4" />Confirm & Book Shipment</>)}
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center py-8 bg-[#F9FAFB] rounded-xl border border-dashed border-[#E5E7EB]">
-                        <Truck className="h-8 w-8 text-[#D1D5DB] mb-2" />
-                        <p className="text-sm text-[#6B7280] font-medium">No couriers available</p>
-                        <p className="text-xs text-[#9CA3AF] mt-1">Check pickup address in Shiprocket settings</p>
+                      <div className="flex flex-col items-center py-10 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                        <Truck className="h-10 w-10 text-slate-300 mb-2.5" />
+                        <p className="text-sm text-slate-600 font-bold">No shipping couriers available</p>
+                        <p className="text-xs text-slate-450 mt-1 max-w-xs text-center">Verify the delivery address or default pickup address configuration in settings.</p>
                       </div>
                     )}
                   </div>
@@ -692,24 +703,24 @@ export default function OrderDetailsPage() {
 
           {/* Tracking Updates */}
           {orderDetails.tracking?.updates && orderDetails.tracking.updates.length > 0 && (
-            <Card className="border-[#E5E7EB]">
-              <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[#4CAF50]" />
-                <h2 className="font-semibold text-[#1F2937]">Tracking History</h2>
+            <Card className="border-slate-100 rounded-2xl shadow-sm overflow-hidden bg-white">
+              <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-2.5">
+                <Clock className="h-4 w-4 text-amber-650" />
+                <h2 className="font-bold text-slate-850 text-base">Tracking History</h2>
               </div>
-              <CardContent className="px-5 py-4">
-                <div className="space-y-3">
+              <CardContent className="px-6 py-5">
+                <div className="space-y-4">
                   {orderDetails.tracking.updates.map((u: OrderUpdate, i: number) => (
-                    <div key={i} className="flex gap-3">
+                    <div key={i} className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                        {i < orderDetails.tracking!.updates!.length - 1 && <div className="w-0.5 flex-1 bg-[#E5E7EB] mt-1" />}
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-xs" />
+                        {i < orderDetails.tracking!.updates!.length - 1 && <div className="w-0.5 flex-1 bg-slate-100 mt-1.5" />}
                       </div>
-                      <div className="pb-3 min-w-0">
-                        <p className="text-sm font-semibold text-[#1F2937]">{u.status}</p>
-                        {u.location && <p className="text-xs text-[#6B7280] mt-0.5">{u.location}</p>}
-                        {u.description && <p className="text-xs text-[#9CA3AF] mt-0.5">{u.description}</p>}
-                        <p className="text-xs text-[#9CA3AF] mt-1">{formatDate(u.timestamp)}</p>
+                      <div className="pb-3 min-w-0 space-y-0.5">
+                        <p className="text-sm font-bold text-slate-800">{u.status}</p>
+                        {u.location && <p className="text-xs text-slate-500 font-medium">{u.location}</p>}
+                        {u.description && <p className="text-xs text-slate-400">{u.description}</p>}
+                        <p className="text-[10px] text-slate-400 font-mono mt-1">{formatDate(u.timestamp)}</p>
                       </div>
                     </div>
                   ))}
@@ -719,92 +730,100 @@ export default function OrderDetailsPage() {
           )}
         </div>
 
-        {/* RIGHT: Sidebar */}
-        <div className="space-y-4">
+        {/* RIGHT Column: Sidebar metadata cards */}
+        <div className="space-y-6">
 
-          {/* Customer */}
-          <Card className="border-[#E5E7EB]">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
-              <User className="h-4 w-4 text-[#4CAF50]" />
-              <h2 className="font-semibold text-[#1F2937] text-sm">Customer</h2>
+          {/* Customer Profile */}
+          <Card className="border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
+            <div className="px-5 py-4.5 border-b border-slate-100 flex items-center gap-2.5">
+              <User className="h-4.5 w-4.5 text-amber-650" />
+              <h2 className="font-bold text-slate-800 text-sm">Customer Info</h2>
             </div>
-            <CardContent className="px-5 py-4 space-y-3">
+            <CardContent className="px-5 py-4 space-y-3.5">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-[#E8F5E9] flex items-center justify-center shrink-0">
-                  <User className="h-4 w-4 text-[#2E7D32]" />
+                <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100">
+                  <User className="h-5 w-5 text-amber-700" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#1F2937]">{orderDetails.user?.name || "Guest"}</p>
+                  <p className="text-sm font-bold text-slate-850">{orderDetails.user?.name || "Guest Checkout"}</p>
+                  <p className="text-[11px] text-slate-450 font-medium">Customer Profile</p>
                 </div>
               </div>
-              {orderDetails.user?.email && (
-                <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-                  <Mail className="h-3.5 w-3.5 shrink-0" />{orderDetails.user.email}
-                </div>
-              )}
-              {orderDetails.user?.phone && (
-                <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-                  <Phone className="h-3.5 w-3.5 shrink-0" />{orderDetails.user.phone}
-                </div>
-              )}
+              <div className="space-y-2 pt-1.5 border-t border-slate-100/60">
+                {orderDetails.user?.email && (
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                    <Mail className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span className="truncate">{orderDetails.user.email}</span>
+                  </div>
+                )}
+                {orderDetails.user?.phone && (
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                    <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span>{orderDetails.user.phone}</span>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
           {/* Shipping Address */}
-          <Card className="border-[#E5E7EB]">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-[#4CAF50]" />
-              <h2 className="font-semibold text-[#1F2937] text-sm">Shipping Address</h2>
+          <Card className="border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
+            <div className="px-5 py-4.5 border-b border-slate-100 flex items-center gap-2.5">
+              <MapPin className="h-4.5 w-4.5 text-amber-655" />
+              <h2 className="font-bold text-slate-800 text-sm">Shipping Location</h2>
             </div>
             <CardContent className="px-5 py-4">
               {orderDetails.shippingAddress ? (
-                <div className="text-sm text-[#374151] space-y-0.5">
-                  {orderDetails.shippingAddress.name && <p className="font-semibold text-[#1F2937]">{orderDetails.shippingAddress.name}</p>}
-                  <p>{orderDetails.shippingAddress.street}</p>
-                  <p>{orderDetails.shippingAddress.city}, {orderDetails.shippingAddress.state} {orderDetails.shippingAddress.postalCode}</p>
-                  <p>{orderDetails.shippingAddress.country}</p>
+                <div className="text-xs text-slate-600 space-y-1.5 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                  {orderDetails.shippingAddress.name && <p className="font-bold text-slate-800 text-sm mb-1">{orderDetails.shippingAddress.name}</p>}
+                  <p className="font-medium">{orderDetails.shippingAddress.street}</p>
+                  <p className="font-semibold text-slate-700">{orderDetails.shippingAddress.city}, {orderDetails.shippingAddress.state} - {orderDetails.shippingAddress.postalCode}</p>
+                  <p className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">{orderDetails.shippingAddress.country}</p>
                   {orderDetails.shippingAddress.phone && (
-                    <p className="flex items-center gap-1.5 text-[#6B7280] mt-2"><Phone className="h-3.5 w-3.5" />{orderDetails.shippingAddress.phone}</p>
+                    <div className="flex items-center gap-1.5 text-slate-500 pt-2 border-t border-slate-200/40 mt-2">
+                      <Phone className="h-3.5 w-3.5 text-slate-450" />
+                      <span className="font-mono">{orderDetails.shippingAddress.phone}</span>
+                    </div>
                   )}
                 </div>
-              ) : <p className="text-sm text-[#9CA3AF]">No address found</p>}
+              ) : <p className="text-xs text-slate-400">No address recorded.</p>}
             </CardContent>
           </Card>
 
-          {/* Payment */}
-          <Card className="border-[#E5E7EB]">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-[#4CAF50]" />
-              <h2 className="font-semibold text-[#1F2937] text-sm">Payment</h2>
+          {/* Payment Card */}
+          <Card className="border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
+            <div className="px-5 py-4.5 border-b border-slate-100 flex items-center gap-2.5">
+              <CreditCard className="h-4.5 w-4.5 text-amber-650" />
+              <h2 className="font-bold text-slate-800 text-sm">Payment Details</h2>
             </div>
-            <CardContent className="px-5 py-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[#9CA3AF]">Method</span>
-                <span className="text-sm font-semibold text-[#1F2937]">
+            <CardContent className="px-5 py-4.5 space-y-3.5 bg-slate-50/20">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium">Method</span>
+                <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                   {orderDetails.paymentMethod || orderDetails.razorpayPayment?.paymentMethod || "ONLINE"}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[#9CA3AF]">Status</span>
-                <Badge className={cn("text-xs font-medium border",
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium">Status</span>
+                <Badge className={cn("text-xs font-bold border shadow-3xs px-2 py-0.5 rounded-full",
                   (orderDetails.razorpayPayment?.status === "CAPTURED" || orderDetails.status === "PAID")
-                    ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                    : "bg-amber-50 text-amber-600 border-amber-200")}>
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-amber-50 text-amber-700 border-amber-200")}>
                   {orderDetails.razorpayPayment?.status || orderDetails.status}
                 </Badge>
               </div>
               {orderDetails.paymentGateway && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#9CA3AF]">Gateway</span>
-                  <span className="text-xs text-[#374151]">
-                    {orderDetails.paymentGateway}{orderDetails.paymentMode && ` · ${orderDetails.paymentMode}`}
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium">Gateway Details</span>
+                  <span className="font-medium text-slate-650">
+                    {orderDetails.paymentGateway}{orderDetails.paymentMode && ` (${orderDetails.paymentMode})`}
                   </span>
                 </div>
               )}
               {orderDetails.razorpayPayment?.razorpayPaymentId && (
-                <div>
-                  <p className="text-xs text-[#9CA3AF] mb-1">Payment ID</p>
-                  <p className="font-mono text-xs bg-[#F3F4F6] px-2 py-1.5 rounded border border-[#E5E7EB] text-[#374151] break-all">
+                <div className="pt-2 border-t border-slate-100">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Razorpay Payment ID</p>
+                  <p className="font-mono text-[11px] bg-slate-55/80 px-2.5 py-1.5 rounded-lg border border-slate-200/50 text-slate-700 break-all">
                     {orderDetails.razorpayPayment.razorpayPaymentId}
                   </p>
                 </div>
@@ -812,38 +831,20 @@ export default function OrderDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Order Meta */}
-          <Card className="border-[#E5E7EB]">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center gap-2">
-              <Hash className="h-4 w-4 text-[#4CAF50]" />
-              <h2 className="font-semibold text-[#1F2937] text-sm">Order Info</h2>
+          {/* Order Info Metadata */}
+          <Card className="border-slate-100 rounded-2xl shadow-sm bg-white overflow-hidden">
+            <div className="px-5 py-4.5 border-b border-slate-100 flex items-center gap-2.5">
+              <Hash className="h-4.5 w-4.5 text-amber-650" />
+              <h2 className="font-bold text-slate-800 text-sm">System Metadata</h2>
             </div>
-            <CardContent className="px-5 py-4 space-y-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9CA3AF]">Order ID</span>
-                <span className="font-mono text-xs text-[#374151] bg-[#F3F4F6] px-2 py-0.5 rounded">{orderDetails.id?.slice(0, 8)}…</span>
+            <CardContent className="px-5 py-4 space-y-3.5 bg-slate-50/20">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium">Order UUID</span>
+                <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{orderDetails.id?.slice(0, 16)}…</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9CA3AF]">Placed</span>
-                <span className="text-xs text-[#374151]">{formatDate(orderDetails.createdAt)}</span>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium">Created At</span>
+                <span className="font-medium text-slate-600">{formatDate(orderDetails.createdAt)}</span>
               </div>
               {orderDetails.couponCode && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#9CA3AF] flex items-center gap-1"><Tag className="h-3.5 w-3.5" />Coupon</span>
-                  <span className="text-xs font-mono font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{orderDetails.couponCode}</span>
-                </div>
-              )}
-              <div className="pt-2 border-t border-[#E5E7EB]">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#1F2937]">Total Paid</span>
-                  <span className="text-lg font-bold text-[#1F2937]">{formatCurrency(grandTotal)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-        </div>
-      </div>
-    </div>
-  );
 }
