@@ -742,14 +742,34 @@ export const bookShipment = asyncHandler(async (req, res) => {
     // 8. Assign AWB (this will throw if it fails, which is correct because the admin is waiting for confirmation)
     console.log(`[BOOK] Assigning AWB to shipment ${order.shiprocketShipmentId} with courier ${courierId}`);
     const awbResponse = await assignAWB(order.shiprocketShipmentId, parseInt(courierId, 10));
-    console.log(`[BOOK] AWB response:`, JSON.stringify(awbResponse?.response || awbResponse));
+    console.log(`[BOOK] AWB full response:`, JSON.stringify(awbResponse));
 
-    const awbCode = awbResponse?.response?.data?.awb_code || awbResponse?.awb_code || null;
-    const courierName = awbResponse?.response?.data?.courier_name || awbResponse?.courier_name || null;
+    // Shiprocket AWB response shapes:
+    // 1. { response: { data: { awb_code, courier_name } } }
+    // 2. { awb_code, courier_name } (direct)
+    // 3. { awb_assign_status: [{ awb_code, courier_name }] } (array format)
+    const responseData = awbResponse?.response?.data || awbResponse;
+    const assignedItem = responseData?.awb_assign_status?.[0] || responseData;
+
+    const awbCode =
+        assignedItem?.awb_code ||
+        assignedItem?.awb ||
+        awbResponse?.awb_code ||
+        null;
+
+    const courierName =
+        assignedItem?.courier_name ||
+        assignedItem?.courier ||
+        awbResponse?.courier_name ||
+        null;
 
     if (!awbCode) {
-        const errMsg = awbResponse?.response?.data?.message || awbResponse?.response?.message || "AWB assignment failed";
-        throw new ApiError(400, `${errMsg}. Response: ${JSON.stringify(awbResponse?.response || awbResponse)}`);
+        const errMsg =
+            responseData?.message ||
+            awbResponse?.response?.message ||
+            awbResponse?.message ||
+            "AWB assignment failed — no AWB code in response";
+        throw new ApiError(400, `${errMsg}. Full response: ${JSON.stringify(awbResponse)}`);
     }
 
     // Update database with AWB details
