@@ -847,4 +847,23 @@ export default function OrderDetailsPage() {
                 <span className="font-medium text-slate-600">{formatDate(orderDetails.createdAt)}</span>
               </div>
               {orderDetails.couponCode && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium flex items-center gap-1"><Tag className="h-3.5 w-3.5 text-slate-450" />Active Coupon</span>
+                  <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-250">{orderDetails.couponCode}</span>
+                </div>
+              )}
+              <div className="pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700">Net Charged</span>
+                  <span className="text-base font-black text-slate-800">{formatCurrency(grandTotal)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+        </div>
+      </div>
+    </div>
+  );
 }
+

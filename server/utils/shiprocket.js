@@ -662,6 +662,39 @@ export async function processOrderForShipping(orderId) {
         throw new Error(`Invalid phone number for Shiprocket: "${phone}". Customer phone is required.`);
     }
 
+    // ── Check if order already exists on Shiprocket by its orderNumber to prevent duplicates ──
+    if (!order.shiprocketOrderId) {
+        console.log(`Checking if order ${order.orderNumber} already exists in Shiprocket by order number...`);
+        const existingSrOrder = await findShiprocketOrderByNumber(order.orderNumber);
+        if (existingSrOrder) {
+            console.log(`Found existing order in Shiprocket: order_id=${existingSrOrder.order_id}`);
+            const shipments = existingSrOrder.shipments || [];
+            const shipment = shipments.find(s => s.awb_code || s.awb) || shipments[0];
+            const shipmentId = shipment?.id || shipment?.shipment_id || null;
+            const awbCode = shipment?.awb_code || shipment?.awb || null;
+            const courierName = shipment?.courier_name || shipment?.courier || null;
+            const status = shipment?.shipment_status || shipment?.status || existingSrOrder.status || null;
+
+            // Update database and local object reference
+            const updatedOrder = await prisma.order.update({
+                where: { id: orderId },
+                data: {
+                    shiprocketOrderId: existingSrOrder.order_id,
+                    shiprocketShipmentId: shipmentId ? parseInt(shipmentId) : null,
+                    awbCode: awbCode || null,
+                    courierName: courierName || null,
+                    shiprocketStatus: status || "CREATED",
+                },
+            });
+            
+            order.shiprocketOrderId = updatedOrder.shiprocketOrderId;
+            order.shiprocketShipmentId = updatedOrder.shiprocketShipmentId;
+            order.awbCode = updatedOrder.awbCode;
+            order.courierName = updatedOrder.courierName;
+            order.shiprocketStatus = updatedOrder.shiprocketStatus;
+        }
+    }
+
     // ── If order already exists on Shiprocket with a shipment ID, skip creation ──
     if (order.shiprocketOrderId && order.shiprocketShipmentId) {
         console.log(`Order ${order.orderNumber} already on Shiprocket (order_id=${order.shiprocketOrderId}, shipment_id=${order.shiprocketShipmentId}). Skipping creation.`);
@@ -814,4 +847,20 @@ export async function syncOrderFromShiprocket(orderId) {
     }
     return order;
 }
+
+/**
+ * Find order in Shiprocket by order number
+ */
+export async function findShiprocketOrderByNumber(orderNumber) {
+    try {
+        const response = await shiprocketRequest(`/orders?filter_val=${orderNumber}`, "GET");
+        const ordersList = response?.data || [];
+        // Find exact match
+        return ordersList.find(o => String(o.order_no) === String(orderNumber) || String(o.channel_order_id) === String(orderNumber));
+    } catch (e) {
+        console.error(`Error finding Shiprocket order by number ${orderNumber}:`, e.message);
+        return null;
+    }
+}
+
 
