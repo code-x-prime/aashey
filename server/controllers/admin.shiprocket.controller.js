@@ -856,7 +856,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
     // ── STEP 7: Save AWB to DB ───────────────────────────────────────────────
     const updatedOrder = await prisma.order.update({
         where: { id: orderId },
-        data: { awbCode, courierName, shiprocketStatus: "AWB_ASSIGNED", selectedCourierName: courierName },
+        data: { awbCode, courierName, status: "SHIPPED", shiprocketStatus: "AWB_ASSIGNED", selectedCourierName: courierName },
     });
 
     // ── STEP 8: Schedule pickup (non-critical) ───────────────────────────────
@@ -864,7 +864,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
         await schedulePickup(shipmentId);
         await prisma.order.update({
             where: { id: orderId },
-            data: { shiprocketStatus: "PICKUP_SCHEDULED" },
+            data: { status: "SHIPPED", shiprocketStatus: "PICKUP_SCHEDULED" },
         });
         console.log(`[BOOK] Pickup scheduled.`);
     } catch (e) {
