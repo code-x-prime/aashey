@@ -522,6 +522,15 @@ export const orders = {
   bookShipment: (orderId: string, courierId: number) => {
     return api.post(`/api/admin/shiprocket/orders/${orderId}/book-shipment`, { courierId });
   },
+  cancelShipment: (orderId: string) => {
+    return api.post(`/api/admin/shiprocket/orders/${orderId}/cancel`);
+  },
+  getShippingLabel: (orderId: string) => {
+    return api.get(`/api/admin/shiprocket/orders/${orderId}/label`);
+  },
+  getOrderInvoice: (orderId: string) => {
+    return api.get(`/api/admin/shiprocket/orders/${orderId}/invoice`);
+  },
   getOrderStats: async () => {
     try {
       const response = await api.get("/api/admin/orders-stats");

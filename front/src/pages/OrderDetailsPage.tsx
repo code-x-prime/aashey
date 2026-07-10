@@ -33,6 +33,9 @@ import {
   Hash,
   Calendar,
   IndianRupee,
+  XCircle,
+  Download,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -125,6 +128,56 @@ export default function OrderDetailsPage() {
         ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
       toast.error(msg || "Failed to book shipment");
     } finally { setBookingShipment(false); }
+  };
+
+  const [cancellingShipment, setCancellingShipment] = useState(false);
+  const handleCancelShipment = async () => {
+    if (!id) return;
+    if (!window.confirm("Are you sure you want to cancel this shipment? This cannot be undone.")) return;
+    setCancellingShipment(true);
+    try {
+      const response = await orders.cancelShipment(id);
+      if (response?.data?.success) {
+        toast.success("Shipment cancelled successfully");
+        fetchOrderDetails();
+      } else { toast.error(response?.data?.message || "Failed to cancel shipment"); }
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "response" in err
+        ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
+      toast.error(msg || "Failed to cancel shipment");
+    } finally { setCancellingShipment(false); }
+  };
+
+  const handleDownloadLabel = async () => {
+    if (!id) return;
+    try {
+      const response = await orders.getShippingLabel(id);
+      if (response?.data?.success) {
+        const labelData = response.data.data?.label;
+        const labelUrl = labelData?.label_url || labelData?.response?.data?.label_url;
+        if (labelUrl) {
+          window.open(labelUrl, "_blank");
+        } else {
+          toast.success("Label generated. Check Shiprocket dashboard.");
+        }
+      } else { toast.error(response?.data?.message || "Label not available yet"); }
+    } catch { toast.error("Failed to generate label"); }
+  };
+
+  const handleDownloadInvoice = async () => {
+    if (!id) return;
+    try {
+      const response = await orders.getOrderInvoice(id);
+      if (response?.data?.success) {
+        const invoiceData = response.data.data?.invoice;
+        const invoiceUrl = invoiceData?.invoice_url || invoiceData?.response?.data?.invoice_url;
+        if (invoiceUrl) {
+          window.open(invoiceUrl, "_blank");
+        } else {
+          toast.success("Invoice generated. Check Shiprocket dashboard.");
+        }
+      } else { toast.error(response?.data?.message || "Invoice not available yet"); }
+    } catch { toast.error("Failed to generate invoice"); }
   };
 
   const handleStatusUpdate = async (newStatus: string) => {
@@ -446,6 +499,26 @@ export default function OrderDetailsPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Action buttons: Label, Invoice, Cancel */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={handleDownloadLabel}
+                      className="h-8 text-xs border-emerald-200 text-emerald-600 hover:bg-emerald-50 gap-1.5">
+                      <Download className="h-3.5 w-3.5" /> Label
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleDownloadInvoice}
+                      className="h-8 text-xs border-blue-200 text-blue-600 hover:bg-blue-50 gap-1.5">
+                      <FileText className="h-3.5 w-3.5" /> Invoice
+                    </Button>
+                    {orderDetails.status !== "DELIVERED" && orderDetails.status !== "CANCELLED" && (
+                      <Button variant="outline" size="sm" onClick={handleCancelShipment} disabled={cancellingShipment}
+                        className="h-8 text-xs border-red-200 text-red-500 hover:bg-red-50 gap-1.5">
+                        {cancellingShipment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
+                        {cancellingShipment ? "Cancelling..." : "Cancel Shipment"}
+                      </Button>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-2 text-xs text-[#6B7280] bg-[#F9FAFB] rounded-lg px-3 py-2 border border-[#E5E7EB]">
                     <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                     Shipment booked. Click "Track Live" for real-time updates.

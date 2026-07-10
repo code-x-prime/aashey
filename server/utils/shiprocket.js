@@ -14,6 +14,14 @@ const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 // Token validity: 10 days (240 hours)
 const TOKEN_EXPIRY_HOURS = 240;
 
+// Helper to clean phone number (10 digits)
+function cleanPhone(phone) {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length > 10) return digits.slice(-10);
+    return digits;
+}
+
 /**
  * Get Shiprocket settings from database
  */
@@ -631,10 +639,29 @@ export async function processOrderForShipping(orderId) {
         throw new Error("Order not found");
     }
 
+    // Validate required data before calling Shiprocket
+    if (!order.shippingAddress) {
+        throw new Error("Order has no shipping address");
+    }
+    if (!order.user) {
+        throw new Error("Order has no user");
+    }
+    if (!order.items || order.items.length === 0) {
+        throw new Error("Order has no items");
+    }
+
+    const phone = cleanPhone(order.shippingAddress.phone || order.user.phone || "");
+    if (!phone || phone.length < 10) {
+        throw new Error(`Invalid phone number for Shiprocket: "${phone}". Customer phone is required.`);
+    }
+
     try {
         // Build and send order to Shiprocket
         const payload = await buildShiprocketOrderPayload(order);
+        console.log(`Creating Shiprocket order for ${order.orderNumber}, payload keys: ${Object.keys(payload).join(", ")}`);
+        
         const shiprocketResponse = await createShiprocketOrder(payload);
+        console.log(`Shiprocket order created: order_id=${shiprocketResponse.order_id}, shipment_id=${shiprocketResponse.shipment_id}`);
 
         // Update order with Shiprocket details
         await prisma.order.update({
@@ -653,36 +680,46 @@ export async function processOrderForShipping(orderId) {
                 order.selectedCourierId || null
             );
 
-            await prisma.order.update({
-                where: { id: orderId },
-                data: {
-                    awbCode: awbResponse.response?.data?.awb_code || null,
-                    courierName: awbResponse.response?.data?.courier_name || null,
-                    shiprocketStatus: "AWB_ASSIGNED",
-                },
-            });
+            const awbCode = awbResponse.response?.data?.awb_code || null;
+            const courierName = awbResponse.response?.data?.courier_name || null;
 
-            // Try to schedule pickup
-            try {
-                await schedulePickup(shiprocketResponse.shipment_id);
+            if (awbCode) {
                 await prisma.order.update({
                     where: { id: orderId },
                     data: {
-                        shiprocketStatus: "PICKUP_SCHEDULED",
+                        awbCode,
+                        courierName,
+                        shiprocketStatus: "AWB_ASSIGNED",
+                        selectedCourierName: courierName,
                     },
                 });
-            } catch (pickupError) {
-                console.error("Failed to schedule pickup:", pickupError);
-                // Non-critical, continue
+                console.log(`AWB assigned: ${awbCode} (${courierName})`);
+
+                // Try to schedule pickup
+                try {
+                    await schedulePickup(shiprocketResponse.shipment_id);
+                    await prisma.order.update({
+                        where: { id: orderId },
+                        data: {
+                            shiprocketStatus: "PICKUP_SCHEDULED",
+                        },
+                    });
+                    console.log(`Pickup scheduled for shipment ${shiprocketResponse.shipment_id}`);
+                } catch (pickupError) {
+                    console.error("Failed to schedule pickup:", pickupError.message);
+                    // Non-critical, continue
+                }
+            } else {
+                console.warn("AWB assignment returned no code. Response:", JSON.stringify(awbResponse));
             }
         } catch (awbError) {
-            console.error("Failed to assign AWB:", awbError);
+            console.error("Failed to assign AWB:", awbError.message);
             // Non-critical, admin can retry later
         }
 
         return shiprocketResponse;
     } catch (error) {
-        console.error("Failed to process order for Shiprocket:", error);
+        console.error(`Failed to process order ${order.orderNumber} for Shiprocket:`, error.message);
         throw error;
     }
 }

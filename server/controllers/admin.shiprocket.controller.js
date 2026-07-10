@@ -602,9 +602,12 @@ export const bookShipment = asyncHandler(async (req, res) => {
         where: { id: orderId },
         select: {
             id: true,
+            orderNumber: true,
             shiprocketOrderId: true,
             shiprocketShipmentId: true,
             awbCode: true,
+            shiprocketStatus: true,
+            status: true,
         },
     });
 
@@ -612,46 +615,83 @@ export const bookShipment = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Order not found");
     }
 
+    // Check if shipment is already fully booked (has AWB code)
     if (order.awbCode) {
-        throw new ApiError(400, "Shipment already booked. AWB: " + order.awbCode);
+        throw new ApiError(400, `Shipment already booked for this order. AWB: ${order.awbCode}. Cancel existing shipment first if you want to rebook.`);
     }
 
-    if (order.shiprocketShipmentId) {
-        // Order already on Shiprocket — just assign AWB with selected courier
-        const awbResponse = await assignAWB(order.shiprocketShipmentId, parseInt(courierId));
-        const awbCode = awbResponse.response?.data?.awb_code || null;
-        const courierName = awbResponse.response?.data?.courier_name || null;
-
+    // Check if shipment is already cancelled — allow rebooking
+    if (order.shiprocketStatus === "CANCELLED") {
+        // Reset Shiprocket fields so we can create fresh
         await prisma.order.update({
             where: { id: orderId },
             data: {
-                awbCode,
-                courierName,
-                shiprocketStatus: "AWB_ASSIGNED",
-                selectedCourierId: parseInt(courierId),
+                shiprocketOrderId: null,
+                shiprocketShipmentId: null,
+                shiprocketStatus: null,
+                awbCode: null,
+                courierName: null,
             },
         });
+    }
 
-        try {
-            await schedulePickup(order.shiprocketShipmentId);
+    try {
+        if (order.shiprocketShipmentId) {
+            // Order already on Shiprocket — just assign AWB with selected courier
+            console.log(`Assigning AWB to existing shipment ${order.shiprocketShipmentId} with courier ${courierId}`);
+            const awbResponse = await assignAWB(order.shiprocketShipmentId, parseInt(courierId));
+            const awbCode = awbResponse.response?.data?.awb_code || null;
+            const courierName = awbResponse.response?.data?.courier_name || null;
+
+            if (!awbCode) {
+                throw new ApiError(400, `AWB assignment failed. Shiprocket response: ${JSON.stringify(awbResponse.response || awbResponse)}`);
+            }
+
             await prisma.order.update({
                 where: { id: orderId },
-                data: { shiprocketStatus: "PICKUP_SCHEDULED" },
+                data: {
+                    awbCode,
+                    courierName,
+                    shiprocketStatus: "AWB_ASSIGNED",
+                    selectedCourierId: parseInt(courierId),
+                    selectedCourierName: courierName,
+                },
             });
-        } catch (e) {
-            // non-critical
-        }
-    } else {
-        // Order not yet on Shiprocket — update courier preference then sync
-        await prisma.order.update({
-            where: { id: orderId },
-            data: { selectedCourierId: parseInt(courierId) },
-        });
 
-        const result = await processOrderForShipping(orderId);
-        if (!result) {
-            throw new ApiError(400, "Shiprocket is disabled or configuration is missing");
+            // Try to schedule pickup (non-critical)
+            try {
+                await schedulePickup(order.shiprocketShipmentId);
+                await prisma.order.update({
+                    where: { id: orderId },
+                    data: { shiprocketStatus: "PICKUP_SCHEDULED" },
+                });
+                console.log(`Pickup scheduled for order ${order.orderNumber}`);
+            } catch (e) {
+                console.error(`Pickup scheduling failed for order ${order.orderNumber}:`, e.message);
+                // Non-critical — AWB is already assigned
+            }
+        } else {
+            // Order not yet on Shiprocket — save courier preference then sync
+            console.log(`Creating new Shiprocket order for ${order.orderNumber} with courier ${courierId}`);
+            await prisma.order.update({
+                where: { id: orderId },
+                data: {
+                    selectedCourierId: parseInt(courierId),
+                    selectedCourierName: null, // will be set after AWB
+                },
+            });
+
+            const result = await processOrderForShipping(orderId);
+            if (!result) {
+                throw new ApiError(400, "Shiprocket is disabled or configuration is missing. Check Shiprocket settings.");
+            }
+            console.log(`Shiprocket order created for ${order.orderNumber}: order_id=${result.order_id}, shipment_id=${result.shipment_id}`);
         }
+    } catch (error) {
+        console.error(`Shiprocket booking failed for order ${order.orderNumber}:`, error.message);
+        // Re-throw with context
+        if (error instanceof ApiError) throw error;
+        throw new ApiError(400, `Shiprocket booking failed: ${error.message}`);
     }
 
     const updatedOrder = await prisma.order.findUnique({
@@ -662,6 +702,8 @@ export const bookShipment = asyncHandler(async (req, res) => {
             awbCode: true,
             courierName: true,
             shiprocketStatus: true,
+            selectedCourierId: true,
+            selectedCourierName: true,
         },
     });
 
