@@ -557,7 +557,7 @@ export async function buildShiprocketOrderPayload(order) {
     const payload = {
         order_id: order.orderNumber,
         order_date: formatDate(order.createdAt),
-        pickup_location: syncedPickupAddress.nickname,
+        pickup_location: (syncedPickupAddress.nickname || syncedPickupAddress.name || "warehouse").trim().toLowerCase(),
         comment: order.notes || "",
 
         // Billing details
@@ -796,7 +796,21 @@ export async function processOrderForShipping(orderId) {
         console.log(`Creating Shiprocket order for ${order.orderNumber}, payload keys: ${Object.keys(payload).join(", ")}`);
         
         const shiprocketResponse = await createShiprocketOrder(payload);
-        console.log(`Shiprocket order created: order_id=${shiprocketResponse.order_id}, shipment_id=${shiprocketResponse.shipment_id}`);
+        console.log(`[SR] createShiprocketOrder raw response:`, JSON.stringify(shiprocketResponse));
+
+        // Shiprocket sometimes returns HTTP 200 even for errors (e.g., "Wrong Pickup location")
+        // Detect this by checking if order_id is missing
+        if (!shiprocketResponse.order_id && !shiprocketResponse.shipment_id) {
+            const srErrMsg = shiprocketResponse.message || "Unknown error from Shiprocket";
+
+            // Extract valid pickup locations from error response if available
+            const validLocations = shiprocketResponse?.data?.data;
+            const locationHint = Array.isArray(validLocations) && validLocations.length > 0
+                ? ` Valid pickup locations: ${validLocations.map(l => `"${l.pickup_location}"`).join(", ")}`
+                : "";
+
+            throw new Error(`Shiprocket rejected order creation: ${srErrMsg}.${locationHint}`);
+        }
 
         // Update order with Shiprocket details FIRST (before AWB)
         await prisma.order.update({
@@ -807,6 +821,7 @@ export async function processOrderForShipping(orderId) {
                 shiprocketStatus: "CREATED",
             },
         });
+
 
         // Now try to assign AWB with the selected courier (if any)
         try {
