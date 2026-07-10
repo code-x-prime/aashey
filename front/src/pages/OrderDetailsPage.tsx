@@ -112,7 +112,18 @@ export default function OrderDetailsPage() {
   }, [id]);
 
   useEffect(() => { fetchOrderDetails(); }, [fetchOrderDetails]);
-  useEffect(() => { if (orderDetails && !orderDetails.shiprocket?.awbCode) fetchCouriers(); }, [orderDetails, fetchCouriers]);
+
+  // Only fetch couriers if: order is not cancelled, shipment is not cancelled, and no AWB yet
+  useEffect(() => {
+    if (
+      orderDetails &&
+      !orderDetails.shiprocket?.awbCode &&
+      orderDetails.status !== "CANCELLED" &&
+      orderDetails.shiprocket?.status !== "CANCELLED"
+    ) {
+      fetchCouriers();
+    }
+  }, [orderDetails, fetchCouriers]);
 
   const handleBookShipment = async () => {
     if (!id || !selectedCourierId) return;
@@ -500,11 +511,23 @@ export default function OrderDetailsPage() {
                   <p className="text-[11px] text-slate-400 font-medium">Courier management & live tracking</p>
                 </div>
               </div>
-              {orderDetails.shiprocket?.status && (
-                <Badge className={cn("text-xs font-bold border px-2.5 py-0.5 rounded-full shadow-2xs", statusColor(orderDetails.shiprocket.status))}>
-                  {orderDetails.shiprocket.status.replace(/_/g, " ")}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {/* Shiprocket Sync Status Badge */}
+                {orderDetails.shiprocket?.orderId ? (
+                  <span className="text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" /> Synced to Shiprocket
+                  </span>
+                ) : orderDetails.status !== "CANCELLED" ? (
+                  <span className="text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 px-2.5 py-1 rounded-full">
+                    Not yet sent
+                  </span>
+                ) : null}
+                {orderDetails.shiprocket?.status && (
+                  <Badge className={cn("text-xs font-bold border px-2.5 py-0.5 rounded-full shadow-2xs", statusColor(orderDetails.shiprocket.status))}>
+                    {orderDetails.shiprocket.status.replace(/_/g, " ")}
+                  </Badge>
+                )}
+              </div>
             </div>
 
             <CardContent className="px-6 py-6 space-y-5">
@@ -514,8 +537,8 @@ export default function OrderDetailsPage() {
                   <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 flex items-start gap-3">
                     <XCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-bold text-rose-800">Shipment Cancelled</p>
-                      <p className="text-xs text-rose-500">This shipment was cancelled in Shiprocket.</p>
+                      <p className="text-sm font-bold text-rose-800">Shipment Cancelled in Shiprocket</p>
+                      <p className="text-xs text-rose-500 mt-0.5">The shipment for this order was cancelled. You can re-book by selecting a courier below.</p>
                     </div>
                   </div>
                   {orderDetails.shiprocket.orderId && (
@@ -532,14 +555,55 @@ export default function OrderDetailsPage() {
                       )}
                     </div>
                   )}
+                  {/* Allow re-booking after Shiprocket cancel if order itself is not cancelled */}
                   {orderDetails.status !== "CANCELLED" && (
-                    <p className="text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-150">
-                      You can re-book a new shipment by selecting a courier below.
-                    </p>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-bold text-slate-700">Re-book Shipment</p>
+                        <Button variant="ghost" size="sm" onClick={fetchCouriers} disabled={loadingCouriers} className="h-8 px-2.5 gap-1.5 text-xs text-slate-500 rounded-lg hover:bg-slate-50">
+                          <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} /> Refresh rates
+                        </Button>
+                      </div>
+                      {loadingCouriers ? (
+                        <div className="flex items-center justify-center gap-2 py-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                          <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
+                          <span className="text-xs text-slate-400">Fetching couriers...</span>
+                        </div>
+                      ) : couriers.length > 0 ? (
+                        <div className="space-y-2.5">
+                          {couriers.map((c) => (
+                            <label key={String(c.id)} className={cn(
+                              "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all hover:border-amber-300",
+                              selectedCourierId === c.id ? "border-amber-500 bg-amber-50/40 ring-1 ring-amber-500/20" : "border-slate-200 bg-white"
+                            )}>
+                              <div className="flex items-center gap-3">
+                                <input type="radio" name="courier" value={String(c.id)} checked={selectedCourierId === c.id}
+                                  onChange={() => setSelectedCourierId(c.id)} className="h-4 w-4 accent-amber-600" />
+                                <div className="space-y-0.5">
+                                  <p className="text-sm font-bold text-slate-800">{c.name}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-400 font-medium">Delivery ETD: {c.etd}</span>
+                                    {c.codAvailable && <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-md font-bold">COD</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-base font-black text-slate-800">₹{c.rate}</p>
+                                <p className="text-[10px] text-slate-400 font-medium">est. shipping</p>
+                              </div>
+                            </label>
+                          ))}
+                          <Button onClick={handleBookShipment} disabled={!selectedCourierId || bookingShipment}
+                            className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white h-11 text-sm font-bold rounded-xl shadow-xs border-0 gap-2">
+                            {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin" />Booking shipment...</>) : (<><Truck className="h-4 w-4" />Re-Book Shipment</>)}
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
                   )}
                 </div>
               ) : orderDetails.shiprocket?.awbCode ? (
-                // ── Booked Shipment ──
+                // ── Booked Shipment — AWB assigned ──
                 <div className="space-y-5">
                   <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5 shadow-2xs">
                     <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -556,7 +620,7 @@ export default function OrderDetailsPage() {
                       <a href={`https://shiprocket.co/tracking/${orderDetails.shiprocket.awbCode}`}
                         target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors shrink-0 border-0">
-                        <ExternalLink className="h-3.5 w-3.5" /> Track Shipment
+                        <ExternalLink className="h-3.5 w-3.5" /> Track Live
                       </a>
                     </div>
                   </div>
@@ -603,7 +667,7 @@ export default function OrderDetailsPage() {
 
                   <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-150">
                     <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-                    Shipment booked successfully. Click "Track Shipment" for live location.
+                    Shipment booked in Shiprocket. AWB assigned. Click &ldquo;Track Live&rdquo; for live location updates.
                   </div>
                 </div>
               ) : orderDetails.status === "CANCELLED" ? (
@@ -612,32 +676,37 @@ export default function OrderDetailsPage() {
                   Order is cancelled. Shipment booking is disabled.
                 </div>
               ) : (
-                // ── Courier Partner Selection (Not Booked) ──
+                // ── Courier Partner Selection (Not Booked Yet) ──
                 <div className="space-y-4">
-                  {(orderDetails.shiprocket?.orderId || orderDetails.shiprocket?.shipmentId) && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {orderDetails.shiprocket.orderId && (
-                        <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
-                          <p className="text-[10px] text-slate-400 font-semibold uppercase">SR Order ID</p>
-                          <p className="text-xs font-bold text-slate-700 font-mono mt-0.5">{orderDetails.shiprocket.orderId}</p>
+                  {/* Show if already synced to Shiprocket but AWB not assigned yet */}
+                  {orderDetails.shiprocket?.orderId ? (
+                    <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-3.5 flex items-start gap-2.5">
+                      <CheckCircle className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 w-full">
+                        <div>
+                          <p className="text-[10px] text-sky-500 font-semibold uppercase">SR Order ID</p>
+                          <p className="text-xs font-bold text-slate-700 font-mono">{orderDetails.shiprocket.orderId}</p>
                         </div>
-                      )}
-                      {orderDetails.shiprocket.shipmentId && (
-                        <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
-                          <p className="text-[10px] text-slate-400 font-semibold uppercase">Shipment ID</p>
-                          <p className="text-xs font-bold text-slate-700 font-mono mt-0.5">{orderDetails.shiprocket.shipmentId}</p>
-                        </div>
-                      )}
+                        {orderDetails.shiprocket.shipmentId && (
+                          <div>
+                            <p className="text-[10px] text-sky-500 font-semibold uppercase">Shipment ID</p>
+                            <p className="text-xs font-bold text-slate-700 font-mono">{orderDetails.shiprocket.shipmentId}</p>
+                          </div>
+                        )}
+                        <p className="col-span-2 text-[11px] text-sky-700 font-medium mt-1">Order synced to Shiprocket. Now select a courier and book the shipment.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50/60 border border-amber-100 rounded-xl p-3.5 flex items-start gap-2.5">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-800 font-medium">This order has not been sent to Shiprocket yet. Select a courier and click &ldquo;Confirm &amp; Book Shipment&rdquo; — it will be automatically created in Shiprocket.</p>
                     </div>
                   )}
 
-                  {/* Re-sync button for stuck orders */}
+                  {/* Re-sync button for stuck orders (has SR order but no AWB) */}
                   {orderDetails.shiprocket?.orderId && !orderDetails.shiprocket?.awbCode && (
-                    <div className="bg-amber-50/60 border border-amber-100 rounded-xl p-4 flex items-center justify-between gap-4">
-                      <div className="flex items-start gap-2.5">
-                        <RefreshCw className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
-                        <p className="text-xs text-amber-800 font-medium">Order is synced to Shiprocket but lacks an AWB. Try sync again.</p>
-                      </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-4">
+                      <p className="text-xs text-slate-600 font-medium">Order synced but AWB not assigned. Try re-syncing if it's been a while.</p>
                       <Button variant="outline" size="sm" onClick={handleResync} disabled={resyncing}
                         className="h-8 px-3 text-xs border-amber-200 text-amber-700 hover:bg-amber-100 gap-1.5 shrink-0 rounded-lg">
                         {resyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
@@ -799,9 +868,17 @@ export default function OrderDetailsPage() {
             <CardContent className="px-5 py-4.5 space-y-3.5 bg-slate-50/20">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 font-medium">Method</span>
-                <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                  {orderDetails.paymentMethod || orderDetails.razorpayPayment?.paymentMethod || "ONLINE"}
-                </span>
+                <div className="flex items-center gap-2">
+                  {orderDetails.paymentMethod === "CASH" ? (
+                    <span className="text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      💵 COD (Cash on Delivery)
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      💳 {orderDetails.razorpayPayment?.paymentMethod || orderDetails.paymentMethod || "Online"}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400 font-medium">Status</span>
