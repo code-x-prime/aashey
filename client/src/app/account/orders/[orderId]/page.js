@@ -153,13 +153,16 @@ export default function OrderDetailPage() {
             CREATED: "Order Created",
             AWB_ASSIGNED: "AWB Assigned",
             PICKUP_SCHEDULED: "Pickup Scheduled",
+            PICKED_UP: "Picked Up",
+            IN_TRANSIT: "In Transit",
+            OUT_FOR_DELIVERY: "Out for Delivery",
             SHIPPED: "Shipped",
             DELIVERED: "Delivered",
             CANCELLED: "Cancelled",
             RETURN_INITIATED: "Return Initiated",
             RETURN_APPROVED: "Return Approved",
         };
-        return labels[status] || status;
+        return labels[status] || status?.replace(/_/g, " ") || "";
     };
 
     const canReturn = order?.status === "DELIVERED" && returnSettings?.isEnabled;

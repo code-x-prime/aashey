@@ -1359,6 +1359,8 @@ export const getOrderDetails = asyncHandler(async (req, res, next) => {
     shippingCost: parseFloat(order.shippingCost),
     discount: parseFloat(order.discount),
     total: parseFloat(order.total),
+    // Add tracking URL for Shiprocket
+    trackingUrl: order.awbCode ? `https://shiprocket.co/tracking/${order.awbCode}` : null,
     razorpayPayment: order.razorpayPayment ? {
       ...order.razorpayPayment,
       amount: parseFloat(order.razorpayPayment.amount)

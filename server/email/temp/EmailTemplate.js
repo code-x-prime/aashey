@@ -177,9 +177,113 @@ export const getEmailOtpTemplate = (
                 © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline
         }<br/>
                 This is an automated message. Please do not reply.
+        </div>
+    </div>
+</body>
+</html>
+`;
+};
+
+export const getShippingNotificationTemplate = (data, storeConfig = null) => {
+    const store = storeConfig || getStoreConfig();
+    const trackingUrl = `https://shiprocket.co/tracking/${data.awbCode}`;
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Shipped - ${store.storeName}</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+        .header { background: linear-gradient(135deg, #3F1F00 0%, #C9933A 100%); color: white; padding: 30px; text-align: center; border-radius: 0; }
+        .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+        .content { padding: 30px; }
+        .tracking-box { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 2px solid #4caf50; border-radius: 12px; padding: 25px; text-align: center; margin: 20px 0; }
+        .tracking-box h2 { color: #2e7d32; margin: 0 0 10px 0; font-size: 20px; }
+        .awb-code { font-size: 28px; font-weight: bold; color: #1b5e20; letter-spacing: 3px; font-family: 'Courier New', monospace; margin: 15px 0; }
+        .carrier-name { font-size: 16px; color: #555; margin: 5px 0; }
+        .button { display: inline-block; background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); color: white !important; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 20px 0; transition: transform 0.2s; }
+        .button:hover { transform: translateY(-2px); box-shadow: 0 7px 14px rgba(76, 175, 80, 0.3); }
+        .order-details { background-color: #f9f9f9; border-radius: 8px; padding: 20px; margin: 20px 0; border: 1px solid #e0e0e0; }
+        .order-details h3 { margin: 0 0 15px 0; color: #333; font-size: 16px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #666; font-size: 14px; }
+        .detail-value { font-weight: bold; color: #333; font-size: 14px; }
+        .address-box { background-color: #fff; border-radius: 8px; padding: 15px; margin: 15px 0; border: 1px solid #e0e0e0; }
+        .footer { text-align: center; padding: 20px; font-size: 14px; color: #666666; background-color: #f8f8f8; }
+        .note { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Your Order Has Been Shipped!</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${data.userName || "Customer"},</p>
+            <p>Great news! Your order <strong>#${data.orderNumber}</strong> has been shipped and is on its way to you.</p>
+
+            <div class="tracking-box">
+                <h2>Track Your Shipment</h2>
+                <div class="awb-code">${data.awbCode}</div>
+                <div class="carrier-name">via ${data.courierName || "Shiprocket"}</div>
+                <p style="font-size: 13px; color: #666; margin-top: 10px;">Use this AWB number to track your shipment in real-time</p>
+                <a href="${trackingUrl}" class="button">Track Shipment Now</a>
+            </div>
+
+            <div class="order-details">
+                <h3>Order Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Order Number</span>
+                    <span class="detail-value">#${data.orderNumber}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">AWB / Tracking Number</span>
+                    <span class="detail-value">${data.awbCode}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Courier Partner</span>
+                    <span class="detail-value">${data.courierName || "Shiprocket"}</span>
+                </div>
+                ${data.estimatedDelivery ? `
+                <div class="detail-row">
+                    <span class="detail-label">Estimated Delivery</span>
+                    <span class="detail-value">${data.estimatedDelivery}</span>
+                </div>` : ""}
+                <div class="detail-row">
+                    <span class="detail-label">Order Date</span>
+                    <span class="detail-value">${data.orderDate || new Date().toLocaleDateString("en-IN")}</span>
+                </div>
+            </div>
+
+            ${data.shippingAddress ? `
+            <div class="order-details">
+                <h3>Shipping Address</h3>
+                <div class="address-box">
+                    <p style="margin: 0; font-size: 14px;">
+                        <strong>${data.shippingAddress.name || ""}</strong><br>
+                        ${data.shippingAddress.street || ""}<br>
+                        ${data.shippingAddress.city || ""}, ${data.shippingAddress.state || ""} - ${data.shippingAddress.postalCode || ""}<br>
+                        ${data.shippingAddress.country || "India"}
+                        ${data.shippingAddress.phone ? `<br>Phone: ${data.shippingAddress.phone}` : ""}
+                    </p>
+                </div>
+            </div>` : ""}
+
+            <div class="note">
+                <strong>Note:</strong> You can track your shipment anytime using the tracking link above. If you have any questions about your shipment, please contact our support team.
             </div>
         </div>
-    </body>
+        <div class="footer">
+            © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
+            This is an automated message. Please do not reply to this email.
+        </div>
+    </div>
+</body>
 </html>
 `;
 };

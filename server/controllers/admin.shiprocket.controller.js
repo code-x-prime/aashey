@@ -8,6 +8,8 @@ import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../config/db.js";
 import { encrypt, decrypt } from "../utils/encryption.js";
+import sendEmail from "../utils/sendEmail.js";
+import { getShippingNotificationTemplate } from "../email/temp/EmailTemplate.js";
 import {
     authenticate,
     getShiprocketSettings,
@@ -658,6 +660,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
             awbCode: true,
             shiprocketStatus: true,
             status: true,
+            selectedCourierId: true,
         },
     });
 
@@ -665,14 +668,16 @@ export const bookShipment = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Order not found");
     }
 
-    // Check if shipment is already fully booked (has AWB code)
+    console.log(`[BOOK] Order ${order.orderNumber} — SROrderId: ${order.shiprocketOrderId}, SRShipmentId: ${order.shiprocketShipmentId}, AWB: ${order.awbCode}, SRStatus: ${order.shiprocketStatus}`);
+
+    // Case 1: Already fully booked
     if (order.awbCode) {
-        throw new ApiError(400, `Shipment already booked for this order. AWB: ${order.awbCode}. Cancel existing shipment first if you want to rebook.`);
+        throw new ApiError(400, `Shipment already booked. AWB: ${order.awbCode}. Cancel first to rebook.`);
     }
 
-    // Check if shipment is already cancelled — allow rebooking
+    // Case 2: Cancelled — reset for fresh booking
     if (order.shiprocketStatus === "CANCELLED") {
-        // Reset Shiprocket fields so we can create fresh
+        console.log(`[BOOK] Order was cancelled, resetting for rebooking`);
         await prisma.order.update({
             where: { id: orderId },
             data: {
@@ -683,18 +688,37 @@ export const bookShipment = asyncHandler(async (req, res) => {
                 courierName: null,
             },
         });
+        // Reload order
+        const reloaded = await prisma.order.findUnique({
+            where: { id: orderId },
+            select: { shiprocketOrderId: true, shiprocketShipmentId: true, awbCode: true, shiprocketStatus: true },
+        });
+        if (!reloaded) throw new ApiError(404, "Order not found after reset");
+        Object.assign(order, reloaded);
     }
 
     try {
-        if (order.shiprocketShipmentId) {
-            // Order already on Shiprocket — just assign AWB with selected courier
-            console.log(`Assigning AWB to existing shipment ${order.shiprocketShipmentId} with courier ${courierId}`);
+        // Save courier preference
+        await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                selectedCourierId: parseInt(courierId),
+                selectedCourierName: null,
+            },
+        });
+
+        if (order.shiprocketOrderId && order.shiprocketShipmentId) {
+            // ── Case 3: Order exists on Shiprocket with shipment — assign AWB directly ──
+            console.log(`[BOOK] Assigning AWB to existing shipment ${order.shiprocketShipmentId} with courier ${courierId}`);
             const awbResponse = await assignAWB(order.shiprocketShipmentId, parseInt(courierId));
-            const awbCode = awbResponse.response?.data?.awb_code || null;
-            const courierName = awbResponse.response?.data?.courier_name || null;
+            console.log(`[BOOK] AWB response:`, JSON.stringify(awbResponse?.response || awbResponse));
+
+            const awbCode = awbResponse?.response?.data?.awb_code || awbResponse?.awb_code || null;
+            const courierName = awbResponse?.response?.data?.courier_name || awbResponse?.courier_name || null;
 
             if (!awbCode) {
-                throw new ApiError(400, `AWB assignment failed. Shiprocket response: ${JSON.stringify(awbResponse.response || awbResponse)}`);
+                const errMsg = awbResponse?.response?.data?.message || awbResponse?.response?.message || "AWB assignment failed";
+                throw new ApiError(400, `${errMsg}. Response: ${JSON.stringify(awbResponse?.response || awbResponse)}`);
             }
 
             await prisma.order.update({
@@ -703,45 +727,45 @@ export const bookShipment = asyncHandler(async (req, res) => {
                     awbCode,
                     courierName,
                     shiprocketStatus: "AWB_ASSIGNED",
-                    selectedCourierId: parseInt(courierId),
                     selectedCourierName: courierName,
                 },
             });
+            console.log(`[BOOK] AWB assigned: ${awbCode} (${courierName})`);
 
-            // Try to schedule pickup (non-critical)
+            // Schedule pickup
             try {
                 await schedulePickup(order.shiprocketShipmentId);
                 await prisma.order.update({
                     where: { id: orderId },
                     data: { shiprocketStatus: "PICKUP_SCHEDULED" },
                 });
-                console.log(`Pickup scheduled for order ${order.orderNumber}`);
+                console.log(`[BOOK] Pickup scheduled for order ${order.orderNumber}`);
             } catch (e) {
-                console.error(`Pickup scheduling failed for order ${order.orderNumber}:`, e.message);
-                // Non-critical — AWB is already assigned
+                console.error(`[BOOK] Pickup scheduling failed (non-critical):`, e.message);
             }
-        } else {
-            // Order not yet on Shiprocket — save courier preference then sync
-            console.log(`Creating new Shiprocket order for ${order.orderNumber} with courier ${courierId}`);
-            await prisma.order.update({
-                where: { id: orderId },
-                data: {
-                    selectedCourierId: parseInt(courierId),
-                    selectedCourierName: null, // will be set after AWB
-                },
-            });
 
+        } else if (order.shiprocketOrderId && !order.shiprocketShipmentId) {
+            // ── Case 4: Order exists on Shiprocket but no shipment ID — shouldn't happen, but recover ──
+            console.log(`[BOOK] Order has SROrderId=${order.shiprocketOrderId} but no shipmentId. Attempting full re-sync...`);
+            const result = await processOrderForShipping(orderId);
+            if (!result) {
+                throw new ApiError(400, "Shiprocket is disabled or configuration is missing.");
+            }
+            console.log(`[BOOK] Re-sync complete: order_id=${result.order_id}, shipment_id=${result.shipment_id}`);
+
+        } else {
+            // ── Case 5: No Shiprocket order yet — create fresh ──
+            console.log(`[BOOK] Creating new Shiprocket order for ${order.orderNumber}`);
             const result = await processOrderForShipping(orderId);
             if (!result) {
                 throw new ApiError(400, "Shiprocket is disabled or configuration is missing. Check Shiprocket settings.");
             }
-            console.log(`Shiprocket order created for ${order.orderNumber}: order_id=${result.order_id}, shipment_id=${result.shipment_id}`);
+            console.log(`[BOOK] Shiprocket order created: order_id=${result.order_id}, shipment_id=${result.shipment_id}`);
         }
     } catch (error) {
-        console.error(`Shiprocket booking failed for order ${order.orderNumber}:`, error.message);
-        // Re-throw with context
+        console.error(`[BOOK] Failed for order ${order.orderNumber}:`, error.message);
         if (error instanceof ApiError) throw error;
-        throw new ApiError(400, `Shiprocket booking failed: ${error.message}`);
+        throw new ApiError(400, `Booking failed: ${error.message}`);
     }
 
     const updatedOrder = await prisma.order.findUnique({
@@ -754,8 +778,35 @@ export const bookShipment = asyncHandler(async (req, res) => {
             shiprocketStatus: true,
             selectedCourierId: true,
             selectedCourierName: true,
+            orderNumber: true,
+            user: { select: { name: true, email: true } },
+            shippingAddress: { select: { name: true, street: true, city: true, state: true, postalCode: true, country: true, phone: true } },
         },
     });
+
+    // ── Send shipping notification email to customer ──
+    if (updatedOrder?.awbCode && updatedOrder?.user?.email) {
+        try {
+            const emailHtml = getShippingNotificationTemplate({
+                userName: updatedOrder.user.name,
+                orderNumber: updatedOrder.orderNumber,
+                awbCode: updatedOrder.awbCode,
+                courierName: updatedOrder.courierName,
+                shippingAddress: updatedOrder.shippingAddress,
+                orderDate: new Date().toLocaleDateString("en-IN"),
+            });
+
+            await sendEmail({
+                email: updatedOrder.user.email,
+                subject: `Your Order #${updatedOrder.orderNumber} Has Been Shipped! - Tracking: ${updatedOrder.awbCode}`,
+                html: emailHtml,
+            });
+
+            console.log(`[BOOK] Shipping notification email sent to ${updatedOrder.user.email} for order ${updatedOrder.orderNumber}`);
+        } catch (emailError) {
+            console.error(`[BOOK] Failed to send shipping email (non-critical):`, emailError.message);
+        }
+    }
 
     res.status(200).json(
         new ApiResponsive(200, { order: updatedOrder }, "Shipment booked successfully")
