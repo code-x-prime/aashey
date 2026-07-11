@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import { User, Package, MapPin, LogOut, Plus, Truck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { formatPrice } from "@/lib/products";
+import { fetchApi, formatCurrency, formatDate } from "@/lib/utils";
 
 function ProfileContent() {
     const { user, isAuthenticated, logout } = useAuth();
@@ -14,6 +14,10 @@ function ProfileContent() {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
     const [activeTab, setActiveTab] = useState(tabParam || "orders");
+    const [orders, setOrders] = useState([]);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+    const [addresses, setAddresses] = useState([]);
+    const [addressesLoading, setAddressesLoading] = useState(true);
 
     // Update active tab when URL parameter changes
     useEffect(() => {
@@ -21,6 +25,41 @@ function ProfileContent() {
             setActiveTab(tabParam);
         }
     }, [tabParam]);
+
+    const fetchOrders = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setOrdersLoading(true);
+        try {
+            const response = await fetchApi("/users/orders", { credentials: "include" });
+            if (response.success) {
+                setOrders(response.data.orders || []);
+            }
+        } catch (err) {
+            console.error("Failed to fetch orders:", err);
+        } finally {
+            setOrdersLoading(false);
+        }
+    }, [isAuthenticated]);
+
+    const fetchAddresses = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setAddressesLoading(true);
+        try {
+            const response = await fetchApi("/users/addresses", { credentials: "include" });
+            if (response.success) {
+                setAddresses(response.data.addresses || []);
+            }
+        } catch (err) {
+            console.error("Failed to fetch addresses:", err);
+        } finally {
+            setAddressesLoading(false);
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (activeTab === "orders") fetchOrders();
+        if (activeTab === "addresses") fetchAddresses();
+    }, [activeTab, fetchOrders, fetchAddresses]);
 
     // Update URL when tab changes internally
     const handleTabChange = (tabId) => {
@@ -96,44 +135,52 @@ function ProfileContent() {
                             <div>
                                 <h1 className="font-sans text-2xl font-bold mb-6">My Orders</h1>
 
-                                {mockOrders.length > 0 ? (
+                                {ordersLoading ? (
+                                    <div className="bg-white rounded-2xl p-12 text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                                        <p className="text-[#6B4423]">Loading orders...</p>
+                                    </div>
+                                ) : orders.length > 0 ? (
                                     <div className="space-y-4">
-                                        {mockOrders.map((order) => (
-                                            <div key={order.id} className="bg-white rounded-2xl p-6">
-                                                <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-border">
-                                                    <div>
-                                                        <p className="font-mono font-bold">{order.id}</p>
-                                                        <p className="text-sm text-[#6B4423]">{order.date}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {order.status === "Delivered" ? (
-                                                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                                        ) : (
-                                                            <Truck className="h-5 w-5 text-primary" />
-                                                        )}
-                                                        <span className={`font-medium ${order.status === "Delivered" ? "text-green-600" : "text-primary"
-                                                            }`}>
-                                                            {order.status}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-3 mb-4">
-                                                    {order.items.map((item, i) => (
-                                                        <div key={i} className="flex justify-between">
-                                                            <span className="text-[#6B4423]">
-                                                                {item.name} x{item.qty}
-                                                            </span>
-                                                            <span className="font-medium">{formatPrice(item.price * item.qty)}</span>
+                                        {orders.map((order) => (
+                                            <Link key={order.id} href={`/account/orders/${order.id}`}>
+                                                <div className="bg-white rounded-2xl p-6 hover:shadow-md transition-shadow cursor-pointer">
+                                                    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-border">
+                                                        <div>
+                                                            <p className="font-mono font-bold">#{order.orderNumber}</p>
+                                                            <p className="text-sm text-[#6B4423]">{formatDate(order.createdAt)}</p>
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {order.status === "DELIVERED" ? (
+                                                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                                            ) : order.status === "CANCELLED" ? (
+                                                                <span className="font-medium text-red-500">Cancelled</span>
+                                                            ) : (
+                                                                <Truck className="h-5 w-5 text-primary" />
+                                                            )}
+                                                            <span className={`font-medium ${order.status === "DELIVERED" ? "text-green-600" : order.status === "CANCELLED" ? "text-red-500" : "text-primary"}`}>
+                                                                {order.status}
+                                                            </span>
+                                                        </div>
+                                                    </div>
 
-                                                <div className="flex items-center justify-between pt-4 border-t border-border">
-                                                    <span className="font-bold">Total</span>
-                                                    <span className="font-sans font-bold text-lg">{formatPrice(order.total)}</span>
+                                                    <div className="space-y-3 mb-4">
+                                                        {order.items?.map((item, i) => (
+                                                            <div key={i} className="flex justify-between">
+                                                                <span className="text-[#6B4423]">
+                                                                    {item.productName || item.product?.name || "Product"} x{item.quantity}
+                                                                </span>
+                                                                <span className="font-medium">{formatCurrency(item.subtotal)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                                                        <span className="font-bold">Total</span>
+                                                        <span className="font-sans font-bold text-lg">{formatCurrency(order.total)}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            </Link>
                                         ))}
                                     </div>
                                 ) : (
@@ -161,23 +208,30 @@ function ProfileContent() {
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    {mockAddresses.map((addr) => (
-                                        <div key={addr.id} className="bg-white rounded-2xl p-6 relative">
-                                            {addr.isDefault && (
-                                                <span className="absolute top-4 right-4 px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                                                    Default
-                                                </span>
-                                            )}
-                                            <p className="font-semibold mb-2">{addr.name}</p>
-                                            <p className="text-[#6B4423] text-sm mb-1">{addr.address}</p>
-                                            <p className="text-[#6B4423] text-sm mb-1">{addr.city}, {addr.state} - {addr.pincode}</p>
-                                            <p className="text-[#6B4423] text-sm">{addr.phone}</p>
-                                            <div className="flex gap-4 mt-4 pt-4 border-t border-border">
-                                                <button className="text-sm text-primary hover:underline">Edit</button>
-                                                <button className="text-sm text-destructive hover:underline">Delete</button>
-                                            </div>
+                                    {addressesLoading ? (
+                                        <div className="col-span-2 bg-white rounded-2xl p-12 text-center">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                                            <p className="text-[#6B4423]">Loading addresses...</p>
                                         </div>
-                                    ))}
+                                    ) : addresses.length > 0 ? (
+                                        addresses.map((addr) => (
+                                            <div key={addr.id} className="bg-white rounded-2xl p-6 relative">
+                                                {addr.isDefault && (
+                                                    <span className="absolute top-4 right-4 px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                                                        Default
+                                                    </span>
+                                                )}
+                                                <p className="font-semibold mb-2">{addr.name}</p>
+                                                <p className="text-[#6B4423] text-sm mb-1">{addr.street}</p>
+                                                <p className="text-[#6B4423] text-sm mb-1">{addr.city}, {addr.state} - {addr.postalCode}</p>
+                                                <p className="text-[#6B4423] text-sm">{addr.phone}</p>
+                                                <div className="flex gap-4 mt-4 pt-4 border-t border-border">
+                                                    <button className="text-sm text-primary hover:underline">Edit</button>
+                                                    <button className="text-sm text-destructive hover:underline">Delete</button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : null}
 
                                     <button className="border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center justify-center text-[#6B4423] hover:border-primary hover:text-primary transition-colors">
                                         <Plus className="h-8 w-8 mb-2" />
