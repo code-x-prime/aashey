@@ -882,10 +882,16 @@ export const paymentVerification = asyncHandler(async (req, res) => {
 
     // Process Shiprocket shipping (outside transaction, non-blocking)
     // This creates the order in Shiprocket and assigns AWB if enabled
-    processOrderForShipping(result.order.id).catch((err) => {
-      console.error("Shiprocket order processing error:", err);
-      // Non-critical - admin can manually sync later
-    });
+    // Skip if booking mode is MANUAL (admin will book manually)
+    const srSettings = await prisma.shiprocketSettings.findFirst();
+    if (srSettings?.bookingMode !== "MANUAL") {
+      processOrderForShipping(result.order.id).catch((err) => {
+        console.error("Shiprocket order processing error:", err);
+        // Non-critical - admin can manually sync later
+      });
+    } else {
+      console.log(`Shiprocket booking skipped for order ${result.order.orderNumber} (MANUAL mode)`);
+    }
 
     // Send order confirmation email
     try {
@@ -2033,9 +2039,15 @@ export const createCashOrder = asyncHandler(async (req, res) => {
     });
 
     // Process Shiprocket shipping (outside transaction, non-blocking)
-    processOrderForShipping(result.order.id).catch((err) => {
-      console.error("Shiprocket order processing error:", err);
-    });
+    // Skip if booking mode is MANUAL (admin will book manually)
+    const srSettingsCod = await prisma.shiprocketSettings.findFirst();
+    if (srSettingsCod?.bookingMode !== "MANUAL") {
+      processOrderForShipping(result.order.id).catch((err) => {
+        console.error("Shiprocket order processing error:", err);
+      });
+    } else {
+      console.log(`Shiprocket booking skipped for order ${result.order.orderNumber} (MANUAL mode)`);
+    }
 
     // Send order confirmation email
     try {

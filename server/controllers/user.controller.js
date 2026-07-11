@@ -1415,7 +1415,8 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
   }
 
   // Check if order can be cancelled
-  if (order.status !== "PENDING" && order.status !== "PROCESSING") {
+  const cancellableStatuses = ["PENDING", "PROCESSING", "PAID"];
+  if (!cancellableStatuses.includes(order.status)) {
     throw new ApiError(400, "This order cannot be cancelled");
   }
 

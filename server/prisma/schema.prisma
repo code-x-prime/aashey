@@ -1145,6 +1145,9 @@ model ShiprocketSettings {
   token       String?
   tokenExpiry DateTime?
 
+  // Booking mode: AUTO (auto-create shipment on payment) or MANUAL (admin books manually)
+  bookingMode String    @default("AUTO")
+
   // Default shipping dimensions (fallback values)
   defaultLength  Float @default(10) // cm
   defaultBreadth Float @default(10) // cm

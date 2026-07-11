@@ -49,6 +49,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
         isEnabled,
         email,
         password,
+        bookingMode,
         defaultLength,
         defaultBreadth,
         defaultHeight,
@@ -63,6 +64,10 @@ export const updateSettings = asyncHandler(async (req, res) => {
 
     if (typeof isEnabled === "boolean") {
         updateData.isEnabled = isEnabled;
+    }
+
+    if (bookingMode !== undefined && ["AUTO", "MANUAL"].includes(bookingMode)) {
+        updateData.bookingMode = bookingMode;
     }
 
     if (email !== undefined) {

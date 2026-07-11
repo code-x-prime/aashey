@@ -570,9 +570,15 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
   );
   notifyAdminNewOrder(result.order.id).catch(console.error);
 
-  processOrderForShipping(result.order.id).catch((err) => {
-    console.error("Shiprocket error for guest Razorpay order:", err);
-  });
+  // Skip if booking mode is MANUAL
+  const srSettingsGuest = await prisma.shiprocketSettings.findFirst();
+  if (srSettingsGuest?.bookingMode !== "MANUAL") {
+    processOrderForShipping(result.order.id).catch((err) => {
+      console.error("Shiprocket error for guest Razorpay order:", err);
+    });
+  } else {
+    console.log(`Shiprocket booking skipped for guest order ${result.order.orderNumber} (MANUAL mode)`);
+  }
 
   res.status(200).json(
     new ApiResponsive(
@@ -674,8 +680,15 @@ export const createGuestCashOrder = asyncHandler(async (req, res) => {
   );
   notifyAdminNewOrder(result.order.id).catch(console.error);
 
-  processOrderForShipping(result.order.id).catch((err) => {
-    console.error("Shiprocket error for guest COD order:", err);
+  // Skip if booking mode is MANUAL
+  const srSettingsGuestCod = await prisma.shiprocketSettings.findFirst();
+  if (srSettingsGuestCod?.bookingMode !== "MANUAL") {
+    processOrderForShipping(result.order.id).catch((err) => {
+      console.error("Shiprocket error for guest COD order:", err);
+    });
+  } else {
+    console.log(`Shiprocket booking skipped for guest COD order ${result.order.orderNumber} (MANUAL mode)`);
+  }
   });
 
   res.status(200).json(
