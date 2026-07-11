@@ -759,6 +759,16 @@ export const updateUserStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
+  // Safeguard: prevent deactivating admin accounts
+  if (user.role === "ADMIN" && !isActive) {
+    throw new ApiError(400, "Cannot deactivate admin accounts");
+  }
+
+  // Safeguard: prevent deactivating yourself
+  if (userId === req.admin?.id && !isActive) {
+    throw new ApiError(400, "Cannot deactivate your own account");
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: { isActive },

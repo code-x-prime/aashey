@@ -38,6 +38,8 @@ import {
   Eye,
   AlertTriangle,
   Loader2,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -107,6 +109,20 @@ const UserDetailsDialog = ({
               ) : (
                 <Badge className="bg-[#FEF2F2] text-[#EF4444] border-[#FEE2E2] text-xs font-medium">
                   {t("user_management.status.not_verified")}
+                </Badge>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-[#9CA3AF] mb-1">Account Status</p>
+              {user.isActive ? (
+                <Badge className="bg-[#ECFDF5] text-[#22C55E] border-[#D1FAE5] text-xs font-medium">
+                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                  Active
+                </Badge>
+              ) : (
+                <Badge className="bg-[#FEF2F2] text-[#EF4444] border-[#FEE2E2] text-xs font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                  Deactivated
                 </Badge>
               )}
             </div>
@@ -536,6 +552,31 @@ export default function UserManagementPage() {
     }
   };
 
+  // Handle toggle user active status
+  const handleToggleActive = async (userId: string, currentStatus: boolean) => {
+    try {
+      setIsUpdating(true);
+      const newStatus = !currentStatus;
+      const response = await customerUsers.updateUserStatus(userId, newStatus);
+
+      if (response.data.success) {
+        toast.success(newStatus ? "User activated successfully" : "User deactivated successfully");
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user.id === userId ? { ...user, isActive: newStatus } : user
+          )
+        );
+      } else {
+        toast.error(response.data.message || "Failed to update user status");
+      }
+    } catch (error: any) {
+      console.error("Error toggling user status:", error);
+      toast.error(error.message || "Failed to update user status");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Premium Page Header */}
@@ -665,7 +706,18 @@ export default function UserManagementPage() {
                     </div>
                     <div className="flex items-center gap-4 flex-shrink-0">
                       <div className="text-right">
-                        <div className="mb-2">
+                        <div className="mb-2 flex flex-wrap gap-1.5 justify-end">
+                          {user.isActive ? (
+                            <Badge className="bg-[#ECFDF5] text-[#22C55E] border-[#D1FAE5] text-xs font-medium">
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-[#FEF2F2] text-[#EF4444] border-[#FEE2E2] text-xs font-medium">
+                              <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+                              Deactivated
+                            </Badge>
+                          )}
                           {user.emailVerified ? (
                             <Badge className="bg-[#ECFDF5] text-[#22C55E] border-[#D1FAE5] text-xs font-medium">
                               <CheckCircle className="h-3.5 w-3.5 mr-1" />
@@ -729,6 +781,22 @@ export default function UserManagementPage() {
                               {t("user_management.actions.verify_email")}
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem
+                            className={user.isActive ? "text-[#F59E0B] hover:bg-[#FFFBEB]" : "text-[#22C55E] hover:bg-[#ECFDF5]"}
+                            onClick={() => handleToggleActive(user.id, user.isActive)}
+                          >
+                            {user.isActive ? (
+                              <>
+                                <UserX className="h-4 w-4 mr-2" />
+                                Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Activate
+                              </>
+                            )}
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-[#EF4444] hover:bg-[#FEF2F2]"
                             onClick={() => {
