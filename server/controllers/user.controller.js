@@ -1324,6 +1324,7 @@ export const getOrderDetails = asyncHandler(async (req, res, next) => {
           },
           variant: {
             include: {
+              images: true,
               attributes: {
                 include: {
                   attributeValue: {
