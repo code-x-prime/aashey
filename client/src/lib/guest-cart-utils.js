@@ -1,7 +1,7 @@
 // Guest Cart Utilities
 // This file handles cart functionality for non-logged-in users
 
-const GUEST_CART_KEY = "dj_guest_cart";
+const GUEST_CART_KEY = "aashey_guest_cart";
 
 // Get guest cart from localStorage
 export const getGuestCart = () => {

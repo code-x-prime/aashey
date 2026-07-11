@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
 import { fetchApi, formatCurrency, loadScript } from "@/lib/utils";
+import { clearGuestCart } from "@/lib/guest-cart-utils";
 import { playSuccessSound, fireConfetti } from "@/lib/sound-utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -597,6 +598,10 @@ export default function CheckoutPage() {
                     return;
                 }
 
+                // Clear guest cart from localStorage immediately after snapshot
+                // This prevents cart-context merge from adding duplicate items
+                clearGuestCart();
+
                 // Step 3: auto-login in React (backend already set httpOnly cookies)
                 autoLogin(registerRes.data.user);
                 setWasAutoCreated(true);
@@ -712,6 +717,11 @@ export default function CheckoutPage() {
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
                             discountAmount: totals.discount || 0,
+                            shippingCost: selectedShippingOption ? parseFloat(selectedShippingOption.rate) : 0,
+                            selectedCourierId: selectedShippingOption?.id || null,
+                            selectedCourierName: selectedShippingOption?.name || null,
+                            selectedCourierRate: selectedShippingOption?.rate || null,
+                            selectedCourierEtd: selectedShippingOption?.etd || null,
                         }),
                     });
 
