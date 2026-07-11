@@ -5,7 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import sendEmail from "../utils/sendEmail.js";
-import { getOrderConfirmationTemplate } from "../email/temp/EmailTemplate.js";
+import { getOrderConfirmationTemplate, getOrderCancellationTemplate, getOrderStatusUpdateTemplate } from "../email/temp/EmailTemplate.js";
 import { getFileUrl } from "../utils/deleteFromS3.js";
 import { processReferralReward } from "./referral.controller.js";
 import { decrypt } from "../utils/encryption.js";
@@ -916,15 +916,21 @@ export const paymentVerification = asyncHandler(async (req, res) => {
         });
 
         // Format items for email
-        const emailItems = orderItems.map((item) => ({
-          name: item.product.name,
-          variant: item.variant.attributes.map(attr =>
-            `${attr.attributeValue.attribute.name}: ${attr.attributeValue.value}`
-          ).join(", ") + (item.flashSaleName ? ` ⚡ ${item.flashSaleName}` : ""),
-          quantity: item.quantity,
-          price: parseFloat(item.price).toFixed(2),
-          originalPrice: item.originalPrice ? parseFloat(item.originalPrice).toFixed(2) : null,
-        }));
+        const emailItems = orderItems.map((item) => {
+          const primaryImage = item.variant?.images?.find(img => img.isPrimary) || item.variant?.images?.[0];
+          const productImage = primaryImage?.url || item.product?.imageUrl || null;
+          return {
+            name: item.product.name,
+            variant: item.variant?.attributes?.map(attr =>
+              `${attr.attributeValue.attribute.name}: ${attr.attributeValue.value}`
+            ).join(", ") || "",
+            quantity: item.quantity,
+            price: parseFloat(item.price).toFixed(2),
+            originalPrice: item.originalPrice ? parseFloat(item.originalPrice).toFixed(2) : null,
+            imageUrl: productImage,
+            sku: item.variant?.sku || "",
+          };
+        });
 
         // Send email
         await sendEmail({
@@ -1491,20 +1497,30 @@ export const cancelOrder = asyncHandler(async (req, res) => {
       const storeConfig = getStoreConfig();
       const refundNote = order.paymentMethod === "RAZORPAY"
         ? "Your refund has been initiated and will reflect in 5-7 business days."
-        : "";
+        : order.paymentMethod === "CASH" ? "No payment was collected for this order." : "";
+      
+      // Fetch order items for email
+      const orderItems = await prisma.orderItem.findMany({
+        where: { orderId: order.id },
+        include: { product: { select: { name: true } } },
+      });
+
       await sendEmail({
         email: order.user.email,
         subject: `Order Cancelled — #${order.orderNumber}`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
-            <h2 style="color:#3F1F00">Order Cancelled — #${order.orderNumber}</h2>
-            <p>Hi ${order.user.name || "Customer"},</p>
-            <p>Your order <strong>#${order.orderNumber}</strong> has been cancelled.</p>
-            ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
-            ${refundNote ? `<p>${refundNote}</p>` : ""}
-            <p>If you have questions, contact us at ${storeConfig.supportEmail}.</p>
-            <p>— ${storeConfig.storeName} Team</p>
-          </div>`,
+        html: getOrderCancellationTemplate({
+          userName: order.user.name || "Customer",
+          orderNumber: order.orderNumber,
+          orderDate: order.createdAt,
+          total: order.total,
+          cancelReason: reason || order.cancelReason || "",
+          refundNote,
+          items: orderItems.map(item => ({
+            name: item.product?.name || "Product",
+            quantity: item.quantity,
+            price: parseFloat(item.price).toFixed(2),
+          })),
+        }, storeConfig),
       });
     }
   } catch (emailErr) {
@@ -2048,14 +2064,18 @@ export const createCashOrder = asyncHandler(async (req, res) => {
           },
         });
 
-        const emailItems = orderItems.map((item) => ({
-          name: item.product.name,
-          variant: item.variant.attributes
-            .map((va) => va.attributeValue.value)
-            .join(" "),
-          quantity: item.quantity,
-          price: parseFloat(item.price).toFixed(2),
-        }));
+        const emailItems = orderItems.map((item) => {
+          const primaryImage = item.variant?.images?.find(img => img.isPrimary) || item.variant?.images?.[0];
+          return {
+            name: item.product.name,
+            variant: item.variant?.attributes?.map(va => va.attributeValue.value).join(", ") || "",
+            quantity: item.quantity,
+            price: parseFloat(item.price).toFixed(2),
+            originalPrice: item.originalPrice ? parseFloat(item.originalPrice).toFixed(2) : null,
+            imageUrl: primaryImage?.url || item.product?.imageUrl || null,
+            sku: item.variant?.sku || "",
+          };
+        });
 
         await sendEmail({
           email: user.email,

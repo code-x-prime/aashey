@@ -6,6 +6,7 @@ import { razorpay } from "../app.js";
 import { cancelShiprocketOrder, getShiprocketSettings } from "../utils/shiprocket.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getStoreConfig } from "../utils/storeConfig.js";
+import { getOrderCancellationTemplate, getOrderStatusUpdateTemplate } from "../email/temp/EmailTemplate.js";
 
 // Get all orders with pagination, filtering, and sorting
 export const getOrders = asyncHandler(async (req, res, next) => {
@@ -636,20 +637,29 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
       const cancelNotes = notes || "Cancelled by store";
       const refundNote = order.razorpayPayment?.razorpayPaymentId
         ? "Your refund has been initiated and will reflect in 5-7 business days."
-        : "";
+        : order.paymentMethod === "CASH" ? "No payment was collected for this order." : "";
+      
+      const orderItems = await prisma.orderItem.findMany({
+        where: { orderId: order.id },
+        include: { product: { select: { name: true } } },
+      });
+
       await sendEmail({
         email: order.user.email,
         subject: `Order Cancelled — #${order.orderNumber}`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
-            <h2 style="color:#3F1F00">Order Cancelled — #${order.orderNumber}</h2>
-            <p>Hi ${order.user.name || "Customer"},</p>
-            <p>Your order <strong>#${order.orderNumber}</strong> has been cancelled.</p>
-            <p><strong>Reason:</strong> ${cancelNotes}</p>
-            ${refundNote ? `<p>${refundNote}</p>` : ""}
-            <p>Questions? Contact us at ${storeConfig.supportEmail}.</p>
-            <p>— ${storeConfig.storeName} Team</p>
-          </div>`,
+        html: getOrderCancellationTemplate({
+          userName: order.user.name || "Customer",
+          orderNumber: order.orderNumber,
+          orderDate: order.createdAt,
+          total: order.total,
+          cancelReason: cancelNotes,
+          refundNote,
+          items: orderItems.map(item => ({
+            name: item.product?.name || "Product",
+            quantity: item.quantity,
+            price: parseFloat(item.price).toFixed(2),
+          })),
+        }, storeConfig),
       });
     } catch (emailErr) {
       console.error("Admin cancel email error:", emailErr);

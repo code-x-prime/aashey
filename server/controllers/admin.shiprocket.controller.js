@@ -886,6 +886,19 @@ export const bookShipment = asyncHandler(async (req, res) => {
     // ── STEP 10: Send shipping email (non-critical) ──────────────────────────
     if (finalOrder?.awbCode && finalOrder?.user?.email) {
         try {
+            // Fetch order items for email
+            const orderItems = await prisma.orderItem.findMany({
+                where: { orderId: finalOrder.id },
+                include: {
+                    product: { select: { name: true } },
+                    variant: {
+                        include: {
+                            attributes: { include: { attributeValue: { include: { attribute: true } } } },
+                        },
+                    },
+                },
+            });
+
             const emailHtml = getShippingNotificationTemplate({
                 userName: finalOrder.user.name,
                 orderNumber: finalOrder.orderNumber,
@@ -893,6 +906,13 @@ export const bookShipment = asyncHandler(async (req, res) => {
                 courierName: finalOrder.courierName,
                 shippingAddress: finalOrder.shippingAddress,
                 orderDate: new Date().toLocaleDateString("en-IN"),
+                items: orderItems.map(item => ({
+                    name: item.product?.name || "Product",
+                    variant: item.variant?.attributes?.map(a => `${a.attributeValue.attribute.name}: ${a.attributeValue.value}`).join(", ") || "",
+                    quantity: item.quantity,
+                    price: parseFloat(item.price).toFixed(2),
+                })),
+                total: finalOrder.total,
             });
             await sendEmail({
                 email: finalOrder.user.email,

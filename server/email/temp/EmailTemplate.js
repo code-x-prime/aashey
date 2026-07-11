@@ -279,6 +279,18 @@ export const getShippingNotificationTemplate = (data, storeConfig = null) => {
                 </div>
             </div>` : ""}
 
+            ${data.items && data.items.length > 0 ? `
+            <div class="order-details">
+                <h3 style="margin:0 0 12px 0;color:#333;font-size:16px">Order Items</h3>
+                <table style="width:100%;border-collapse:collapse;margin:10px 0">
+                    <thead><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Product</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:right">Price</th></tr></thead>
+                    <tbody>
+                        ${data.items.map(item => `<tr><td style="padding:8px;border-bottom:1px solid #eee">${item.name}${item.variant ? `<br><small style="color:#999">${item.variant}</small>` : ""}</td><td style="padding:8px;text-align:center;border-bottom:1px solid #eee">${item.quantity}</td><td style="padding:8px;text-align:right;border-bottom:1px solid #eee">₹${parseFloat(item.price).toFixed(2)}</td></tr>`).join("")}
+                    </tbody>
+                </table>
+                ${data.total ? `<div style="text-align:right;padding-top:8px;border-top:2px solid #333;margin-top:8px"><strong style="font-size:16px">Total: ₹${parseFloat(data.total).toFixed(2)}</strong></div>` : ""}
+            </div>` : ""}
+
             <div class="note">
                 <strong>Note:</strong> You can track your shipment anytime using the tracking link above. If you have any questions about your shipment, please contact our support team.
             </div>
@@ -1406,6 +1418,19 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             padding: 12px 10px;
             border-bottom: 1px solid #e9ecef;
             font-size: 14px;
+            vertical-align: top;
+        }
+        .product-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            object-fit: cover;
+            margin-right: 10px;
+            float: left;
+            border: 1px solid #eee;
+        }
+        .product-info {
+            overflow: hidden;
         }
         .product-name {
             font-weight: 600;
@@ -1549,11 +1574,15 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
                 (item) => `
                     <tr>
                         <td>
-                            <div class="product-name">${item.name}</div>
-                            ${item.variant ? `<div class="product-variant">${item.variant}</div>` : ""}
+                            <div class="product-info">
+                                ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}" class="product-image" />` : ''}
+                                <div class="product-name">${item.name}</div>
+                                ${item.sku ? `<div style="font-size:11px;color:#999;margin-top:2px">SKU: ${item.sku}</div>` : ""}
+                                ${item.variant ? `<div class="product-variant">${item.variant}</div>` : ""}
+                            </div>
                         </td>
-                        <td style="text-align: center;">${item.quantity}</td>
-                        <td style="text-align: right;">
+                        <td style="text-align: center; padding-top: 16px;">${item.quantity}</td>
+                        <td style="text-align: right; padding-top: 16px;">
                             ${item.originalPrice && parseFloat(item.originalPrice) > parseFloat(item.price)
                         ? `<div class="original-price">₹${parseFloat(item.originalPrice).toFixed(2)}</div>`
                         : ""
@@ -1627,6 +1656,181 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
         <div class="footer">
             © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
             Questions? Email ${store.supportEmail || store.storeEmail} or WhatsApp +91 89990 46484
+        </div>
+    </div>
+</body>
+</html>
+`;
+};
+
+export const getOrderCancellationTemplate = (data, storeConfig = null) => {
+    const store = storeConfig || getStoreConfig();
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Cancelled - ${store.storeName}</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); }
+        .header { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #ffffff; text-align: center; padding: 30px; }
+        .logo { max-width: 160px; height: auto; margin-bottom: 15px; }
+        .content { padding: 30px; }
+        .order-details { background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #fecaca; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #666; font-size: 14px; }
+        .detail-value { font-weight: bold; color: #333; font-size: 14px; }
+        .refund-note { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin: 15px 0; color: #166534; }
+        .footer { text-align: center; padding: 20px; font-size: 14px; color: #666; background-color: #f8f8f8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            ${store.storeLogo ? `<img src="${store.storeLogo}" alt="${store.storeName}" class="logo" />` : ''}
+            <h1>❌ Order Cancelled</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${data.userName || "Customer"},</p>
+            <p>Your order <strong>#${data.orderNumber}</strong> has been cancelled.</p>
+
+            <div class="order-details">
+                <div class="detail-row">
+                    <span class="detail-label">Order Number</span>
+                    <span class="detail-value">#${data.orderNumber}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Order Date</span>
+                    <span class="detail-value">${data.orderDate ? new Date(data.orderDate).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" }) : "N/A"}</span>
+                </div>
+                ${data.cancelReason ? `
+                <div class="detail-row">
+                    <span class="detail-label">Reason</span>
+                    <span class="detail-value">${data.cancelReason}</span>
+                </div>` : ""}
+                <div class="detail-row">
+                    <span class="detail-label">Total Amount</span>
+                    <span class="detail-value" style="color:#dc2626">₹${parseFloat(data.total).toFixed(2)}</span>
+                </div>
+            </div>
+
+            ${data.refundNote ? `<div class="refund-note"><strong>💰 Refund:</strong> ${data.refundNote}</div>` : ""}
+
+            ${data.items && data.items.length > 0 ? `
+            <h3 style="color:#333;margin-top:20px">Cancelled Items:</h3>
+            <table style="width:100%;border-collapse:collapse;margin:10px 0">
+                <thead><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Product</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:right">Price</th></tr></thead>
+                <tbody>
+                    ${data.items.map(item => `<tr><td style="padding:8px;border-bottom:1px solid #eee">${item.name}</td><td style="padding:8px;text-align:center;border-bottom:1px solid #eee">${item.quantity}</td><td style="padding:8px;text-align:right;border-bottom:1px solid #eee">₹${parseFloat(item.price).toFixed(2)}</td></tr>`).join("")}
+                </tbody>
+            </table>` : ""}
+
+            <p>We're sorry for any inconvenience. If you have any questions, please contact us at ${store.supportEmail || store.storeEmail}.</p>
+        </div>
+        <div class="footer">
+            © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
+            This is an automated message. Please do not reply.
+        </div>
+    </div>
+</body>
+</html>
+`;
+};
+
+export const getOrderStatusUpdateTemplate = (data, storeConfig = null) => {
+    const store = storeConfig || getStoreConfig();
+    const statusColors = {
+        PROCESSING: "#2563eb",
+        SHIPPED: "#7c3aed",
+        DELIVERED: "#16a34a",
+        RETURN_APPROVED: "#ea580c",
+        RETURN_COMPLETED: "#0891b2",
+    };
+    const statusLabels = {
+        PROCESSING: "📦 Order Processing",
+        SHIPPED: "🚚 Order Shipped",
+        DELIVERED: "✅ Order Delivered",
+        RETURN_APPROVED: "↩️ Return Approved",
+        RETURN_COMPLETED: "↩️ Return Completed",
+    };
+    const headerBg = statusColors[data.status] || "#3F1F00";
+    const headerTitle = statusLabels[data.status] || `Order ${data.status}`;
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${headerTitle} - ${store.storeName}</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); }
+        .header { background: ${headerBg}; color: #ffffff; text-align: center; padding: 30px; }
+        .logo { max-width: 160px; height: auto; margin-bottom: 15px; }
+        .content { padding: 30px; }
+        .order-details { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { color: #666; font-size: 14px; }
+        .detail-value { font-weight: bold; color: #333; font-size: 14px; }
+        .tracking-box { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 2px solid #4caf50; border-radius: 12px; padding: 25px; text-align: center; margin: 20px 0; }
+        .awb-code { font-size: 28px; font-weight: bold; color: #1b5e20; letter-spacing: 3px; font-family: 'Courier New', monospace; margin: 15px 0; }
+        .button { display: inline-block; background: ${headerBg}; color: white !important; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; margin: 20px 0; }
+        .footer { text-align: center; padding: 20px; font-size: 14px; color: #666; background-color: #f8f8f8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            ${store.storeLogo ? `<img src="${store.storeLogo}" alt="${store.storeName}" class="logo" />` : ''}
+            <h1>${headerTitle}</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${data.userName || "Customer"},</p>
+            <p>${data.message || `Your order <strong>#${data.orderNumber}</strong> status has been updated to <strong>${data.status}</strong>.`}</p>
+
+            ${data.awbCode ? `
+            <div class="tracking-box">
+                <h2 style="color:#2e7d32;margin:0 0 10px 0">Track Your Shipment</h2>
+                <div class="awb-code">${data.awbCode}</div>
+                <p style="font-size:14px;color:#555;margin:5px 0">${data.courierName || "Shiprocket"}</p>
+                <a href="https://shiprocket.co/tracking/${data.awbCode}" class="button" style="background:#4caf50">Track Live</a>
+            </div>` : ""}
+
+            <div class="order-details">
+                <div class="detail-row">
+                    <span class="detail-label">Order Number</span>
+                    <span class="detail-value">#${data.orderNumber}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value" style="color:${headerBg}">${data.status}</span>
+                </div>
+                ${data.estimatedDelivery ? `
+                <div class="detail-row">
+                    <span class="detail-label">Estimated Delivery</span>
+                    <span class="detail-value">${data.estimatedDelivery}</span>
+                </div>` : ""}
+            </div>
+
+            ${data.items && data.items.length > 0 ? `
+            <h3 style="color:#333;margin-top:20px">Order Items:</h3>
+            <table style="width:100%;border-collapse:collapse;margin:10px 0">
+                <thead><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Product</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:right">Price</th></tr></thead>
+                <tbody>
+                    ${data.items.map(item => `<tr><td style="padding:8px;border-bottom:1px solid #eee">${item.name}${item.variant ? `<br><small style="color:#999">${item.variant}</small>` : ""}</td><td style="padding:8px;text-align:center;border-bottom:1px solid #eee">${item.quantity}</td><td style="padding:8px;text-align:right;border-bottom:1px solid #eee">₹${parseFloat(item.price).toFixed(2)}</td></tr>`).join("")}
+                </tbody>
+            </table>` : ""}
+
+            <p style="margin-top:20px"><a href="${process.env.FRONTEND_URL}/account/orders" style="color:${headerBg};font-weight:bold">View Order Details →</a></p>
+        </div>
+        <div class="footer">
+            © ${new Date().getFullYear()} ${store.storeName} | ${store.storeTagline}<br>
+            This is an automated message. Please do not reply.
         </div>
     </div>
 </body>
