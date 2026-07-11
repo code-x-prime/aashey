@@ -13,6 +13,9 @@ export const getStoreConfig = () => {
     storeAddress:
       process.env.STORE_ADDRESS ||
       "Village — Takali, Shiv Shakti Nagar, Chalisgaon, Dist — Jalgaon, Maharashtra — 424102",
+    storeLogo:
+      process.env.STORE_LOGO ||
+      "https://aashey.com/logo-2.png",
 
     // Store Description/Tagline
     storeTagline: process.env.STORE_TAGLINE || "Pure A2 Bilona Ghee",

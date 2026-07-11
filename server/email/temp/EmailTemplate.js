@@ -199,6 +199,7 @@ export const getShippingNotificationTemplate = (data, storeConfig = null) => {
         body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
         .header { background: linear-gradient(135deg, #3F1F00 0%, #C9933A 100%); color: white; padding: 30px; text-align: center; border-radius: 0; }
+        .logo { max-width: 160px; height: auto; margin-bottom: 15px; }
         .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
         .content { padding: 30px; }
         .tracking-box { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 2px solid #4caf50; border-radius: 12px; padding: 25px; text-align: center; margin: 20px 0; }
@@ -221,6 +222,7 @@ export const getShippingNotificationTemplate = (data, storeConfig = null) => {
 <body>
     <div class="container">
         <div class="header">
+            ${store.storeLogo ? `<img src="${store.storeLogo}" alt="${store.storeName}" class="logo" />` : ''}
             <h1>📦 Your Order Has Been Shipped!</h1>
         </div>
         <div class="content">
@@ -1333,6 +1335,11 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
             text-align: center;
             padding: 30px;
         }
+        .logo {
+            max-width: 160px;
+            height: auto;
+            margin-bottom: 15px;
+        }
         .content {
             padding: 30px;
         }
@@ -1485,6 +1492,7 @@ export const getOrderConfirmationTemplate = (data, storeConfig = null) => {
 <body>
     <div class="container">
         <div class="header">
+            ${store.storeLogo ? `<img src="${store.storeLogo}" alt="${store.storeName}" class="logo" />` : ''}
             <h1>🛒 Order Confirmation</h1>
         </div>
         <div class="content">

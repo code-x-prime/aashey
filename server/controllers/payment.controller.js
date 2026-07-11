@@ -39,6 +39,7 @@ async function notifyAdminNewOrder(orderId) {
 
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+        ${storeConfig.storeLogo ? `<img src="${storeConfig.storeLogo}" alt="${storeConfig.storeName}" style="max-width:120px;height:auto;margin-bottom:16px" />` : ''}
         <h2 style="color:#3F1F00">🛒 New Order — #${order.orderNumber}</h2>
         <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
           <tr><td style="padding:4px 8px;color:#666">Customer</td><td style="padding:4px 8px"><strong>${customerName}</strong> (${customerEmail})</td></tr>
