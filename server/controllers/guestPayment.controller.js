@@ -689,7 +689,6 @@ export const createGuestCashOrder = asyncHandler(async (req, res) => {
   } else {
     console.log(`Shiprocket booking skipped for guest COD order ${result.order.orderNumber} (MANUAL mode)`);
   }
-  });
 
   res.status(200).json(
     new ApiResponsive(
