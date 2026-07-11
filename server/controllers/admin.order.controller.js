@@ -1599,3 +1599,175 @@ export const cleanupInvalidPartnerEarnings = asyncHandler(async (req, res) => {
     res.status(500).json(new ApiResponsive(500, null, "Error during cleanup"));
   }
 });
+
+// Update order item quantity (fix incorrect quantities from guest checkout bug)
+export const updateOrderItemQuantity = asyncHandler(async (req, res, next) => {
+  const { orderId } = req.params;
+  const { orderItemId, newQuantity } = req.body;
+
+  if (!orderItemId || newQuantity === undefined || newQuantity < 1) {
+    throw new ApiError(400, "orderItemId and newQuantity (>= 1) are required");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      user: { select: { name: true, email: true } },
+    },
+  });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  if (order.status === "CANCELLED" || order.status === "REFUNDED") {
+    throw new ApiError(400, "Cannot update items of a cancelled/refunded order");
+  }
+
+  const orderItem = order.items.find((i) => i.id === orderItemId);
+  if (!orderItem) {
+    throw new ApiError(404, "Order item not found in this order");
+  }
+
+  const oldQuantity = orderItem.quantity;
+  const quantityDiff = newQuantity - oldQuantity;
+
+  if (quantityDiff === 0) {
+    throw new ApiError(400, "New quantity is the same as current quantity");
+  }
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update order item quantity and subtotal
+      const newSubtotal = parseFloat(orderItem.price) * newQuantity;
+      await tx.orderItem.update({
+        where: { id: orderItemId },
+        data: {
+          quantity: newQuantity,
+          subtotal: newSubtotal,
+        },
+      });
+
+      // 2. Recalculate order totals
+      const allItems = await tx.orderItem.findMany({
+        where: { orderId },
+      });
+
+      // Recalculate this item's new subtotal in the total
+      let newSubTotal = 0;
+      for (const item of allItems) {
+        if (item.id === orderItemId) {
+          newSubTotal += newSubtotal;
+        } else {
+          newSubTotal += parseFloat(item.subtotal);
+        }
+      }
+
+      const shipping = parseFloat(order.shippingCost) || 0;
+      const discount = parseFloat(order.discount) || 0;
+      const codCharge = parseFloat(order.codCharge) || 0;
+      const newTotal = newSubTotal + shipping + codCharge - discount;
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          subTotal: newSubTotal.toFixed(2),
+          total: newTotal.toFixed(2),
+        },
+      });
+
+      // 3. Fix inventory
+      if (quantityDiff > 0) {
+        // Quantity increased → decrement more inventory
+        await tx.productVariant.update({
+          where: { id: orderItem.variantId },
+          data: {
+            quantity: { decrement: quantityDiff },
+          },
+        });
+      } else {
+        // Quantity decreased → return inventory
+        await tx.productVariant.update({
+          where: { id: orderItem.variantId },
+          data: {
+            quantity: { increment: Math.abs(quantityDiff) },
+          },
+        });
+      }
+
+      // 4. Cancel Shiprocket shipment if exists (needs rebooking with correct qty)
+      let shiprocketCancelled = false;
+      let shiprocketCancelError = null;
+      if (order.shiprocketOrderId) {
+        try {
+          const settings = await getShiprocketSettings();
+          if (settings.isEnabled) {
+            await cancelShiprocketOrder(order.shiprocketOrderId);
+            await tx.order.update({
+              where: { id: orderId },
+              data: {
+                shiprocketStatus: "CANCELLED",
+                awbCode: null,
+                courierName: null,
+                shiprocketOrderId: null,
+                shiprocketShipmentId: null,
+              },
+            });
+            shiprocketCancelled = true;
+          }
+        } catch (err) {
+          shiprocketCancelError = err.message;
+        }
+      }
+
+      return {
+        oldQuantity,
+        newQuantity,
+        quantityDiff,
+        oldSubtotal: parseFloat(orderItem.subtotal),
+        newSubtotal,
+        oldTotal: parseFloat(order.total),
+        newTotal,
+        shiprocketCancelled,
+        shiprocketCancelError,
+      };
+    });
+
+    res.status(200).json(
+      new ApiResponsive(
+        200,
+        {
+          order: {
+            id: order.id,
+            orderNumber: order.orderNumber,
+          },
+          item: {
+            id: orderItemId,
+            oldQuantity: result.oldQuantity,
+            newQuantity: result.newQuantity,
+            oldSubtotal: result.oldSubtotal,
+            newSubtotal: result.newSubtotal,
+          },
+          totals: {
+            oldTotal: result.oldTotal,
+            newTotal: result.newTotal,
+          },
+          shiprocket: {
+            cancelled: result.shiprocketCancelled,
+            error: result.shiprocketCancelError,
+            message: result.shiprocketCancelled
+              ? "Shipment cancelled. Re-book from order details page."
+              : result.shiprocketCancelError
+              ? "Shiprocket cancel failed: " + result.shiprocketCancelError
+              : "No Shiprocket shipment to cancel",
+          },
+        },
+        "Order item quantity updated successfully"
+      )
+    );
+  } catch (error) {
+    console.error("Error updating order item:", error);
+    throw new ApiError(500, "Failed to update order item: " + error.message);
+  }
+});

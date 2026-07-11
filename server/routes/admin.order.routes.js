@@ -8,6 +8,7 @@ import {
   processPayment,
   getOrderStats,
   cleanupInvalidPartnerEarnings,
+  updateOrderItemQuantity,
 } from "../controllers/admin.order.controller.js";
 import {
   verifyAdminJWT,
@@ -36,6 +37,13 @@ router.patch(
   verifyAdminJWT,
   hasPermission("orders", "update"),
   updateOrderStatus
+);
+
+router.patch(
+  "/orders/:orderId/fix-item",
+  verifyAdminJWT,
+  hasPermission("orders", "update"),
+  updateOrderItemQuantity
 );
 
 router.patch(

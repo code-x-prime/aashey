@@ -525,6 +525,9 @@ export const orders = {
   cancelShipment: (orderId: string) => {
     return api.post(`/api/admin/shiprocket/orders/${orderId}/cancel`);
   },
+  fixOrderItemQuantity: (orderId: string, data: { orderItemId: string; newQuantity: number }) => {
+    return api.patch(`/api/admin/orders/${orderId}/fix-item`, data);
+  },
   resyncOrder: (orderId: string) => {
     return api.post(`/api/admin/shiprocket/orders/${orderId}/resync`);
   },

@@ -79,6 +79,8 @@ export default function OrderDetailsPage() {
   const [loadingCouriers, setLoadingCouriers] = useState(false);
   const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
   const [bookingShipment, setBookingShipment] = useState(false);
+  const [fixingItemId, setFixingItemId] = useState<string | null>(null);
+  const [fixQuantity, setFixQuantity] = useState<number>(1);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!id) return;
@@ -244,6 +246,31 @@ export default function OrderDetailsPage() {
         fetchOrderDetails();
       } else { toast.error(response.data?.message || "Update failed"); }
     } catch { toast.error("Update failed"); }
+  };
+
+  const handleFixQuantity = async (orderItemId: string, newQuantity: number) => {
+    if (!id) return;
+    try {
+      setFixingItemId(orderItemId);
+      const response = await orders.fixOrderItemQuantity(id, { orderItemId, newQuantity });
+      if (response?.data?.success) {
+        const data = response.data.data;
+        const msgs: string[] = [`Quantity updated: ${data.item.oldQuantity} → ${data.item.newQuantity}`];
+        if (data.shiprocket?.cancelled) {
+          msgs.push("Shiprocket shipment cancelled. Re-book from shipment section.");
+        } else if (data.shiprocket?.error) {
+          msgs.push("Shiprocket cancel failed: " + data.shiprocket.error);
+        }
+        toast.success(msgs.join(" | "), { duration: 6000 });
+        await fetchOrderDetails();
+      } else {
+        toast.error(response.data?.message || "Failed to update quantity");
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update quantity");
+    } finally {
+      setFixingItemId(null);
+    }
   };
 
   const formatDate = (s: string) => {
@@ -456,7 +483,49 @@ export default function OrderDetailsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center py-4">
-                        <span className="text-xs font-bold text-slate-700 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200/45">{item.quantity}</span>
+                        {fixingItemId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-amber-600 mx-auto" />
+                        ) : fixingItemId === `edit-${item.id}` ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <input
+                              type="number"
+                              min="1"
+                              defaultValue={item.quantity}
+                              className="w-14 h-7 text-xs text-center border border-amber-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  const val = parseInt((e.target as HTMLInputElement).value);
+                                  if (val >= 1 && val !== item.quantity) {
+                                    handleFixQuantity(item.id, val);
+                                  }
+                                  setFixingItemId(null);
+                                } else if (e.key === "Escape") {
+                                  setFixingItemId(null);
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <button onClick={() => setFixingItemId(null)} className="text-slate-400 hover:text-slate-600">
+                              <XCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="text-xs font-bold text-slate-700 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-200/45">{item.quantity}</span>
+                            {item.quantity > 1 && (
+                              <button
+                                onClick={() => {
+                                  setFixQuantity(1);
+                                  setFixingItemId(`edit-${item.id}`);
+                                }}
+                                className="text-amber-500 hover:text-amber-700 transition-colors"
+                                title="Fix quantity (reduce to 1)"
+                              >
+                                <RefreshCw className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="text-right py-4">
                         {item.originalPrice && item.originalPrice > item.price && (
