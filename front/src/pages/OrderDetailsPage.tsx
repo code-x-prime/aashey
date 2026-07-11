@@ -80,7 +80,6 @@ export default function OrderDetailsPage() {
   const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
   const [bookingShipment, setBookingShipment] = useState(false);
   const [fixingItemId, setFixingItemId] = useState<string | null>(null);
-  const [fixQuantity, setFixQuantity] = useState<number>(1);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!id) return;
@@ -515,7 +514,6 @@ export default function OrderDetailsPage() {
                             {item.quantity > 1 && (
                               <button
                                 onClick={() => {
-                                  setFixQuantity(1);
                                   setFixingItemId(`edit-${item.id}`);
                                 }}
                                 className="text-amber-500 hover:text-amber-700 transition-colors"

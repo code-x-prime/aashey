@@ -101,6 +101,7 @@ export const getVerificationTemplate = (
 <body>
     <div class="container">
         <div class="header">
+            ${store.storeLogo ? `<img src="${store.storeLogo}" alt="${store.storeName}" class="logo" />` : ''}
             <h1>Welcome to ${store.storeName}</h1>
         </div>
         <div class="content">
@@ -157,11 +158,13 @@ export const getEmailOtpTemplate = (
         .otp { font-size: 32px; letter-spacing: 8px; font-weight: 700; color: #3F1F00; background: #FDF6E3; padding: 12px 16px; border-radius: 8px; text-align:center; display:inline-block; }
         .note { font-size: 14px; color: #666; }
         .footer { text-align:center; padding: 16px; font-size: 13px; color:#666; background:#f8f8f8; }
+        .logo { max-width: 160px; height: auto; margin-bottom: 15px; }
     </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
+                ${store.storeLogo ? `<img src="${store.storeLogo}" alt="${store.storeName}" class="logo" />` : ''}
                 <h1>Email Verification OTP</h1>
             </div>
             <div class="content">
@@ -513,6 +516,7 @@ export const getResetTemplate = (resetLink, storeConfig = null) => {
 <body>
     <div class="container">
         <div class="header">
+            ${store.storeLogo ? `<img src="${store.storeLogo}" alt="${store.storeName}" class="logo" />` : ''}
             <h1>Reset Your Password</h1>
         </div>
         <div class="content">
@@ -924,10 +928,15 @@ export const getPaymentFailureTemplate = (data) => {
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
         .header {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: #ffffff;
+            background: linear-gradient(135deg, #3F1F00, #5C2E00);
+            color: #FDF6E3;
             text-align: center;
             padding: 40px;
+        }
+        .logo {
+            max-width: 160px;
+            height: auto;
+            margin-bottom: 15px;
         }
         .failed-icon {
             font-size: 48px;
