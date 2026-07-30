@@ -1,19 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { fetchApi } from "@/lib/utils";
 import { getCategoryImageUrl } from "@/lib/imageUrl";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function CategoriesCarousel() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
-  const trackRef = useRef(null);
-  const posRef = useRef(0);
-  const rafRef = useRef(null);
 
   // ──── API ────
   useEffect(() => {
@@ -28,34 +23,6 @@ export default function CategoriesCarousel() {
       }
     };
     fetchCategories();
-  }, []);
-
-  // ──── Auto-scroll (requestAnimationFrame infinite loop) ────
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track || categories.length === 0) return;
-
-    const SPEED = 0.6; // px per frame
-
-    const animate = () => {
-      if (!isPaused) {
-        posRef.current += SPEED;
-        const halfWidth = track.scrollWidth / 2;
-        if (posRef.current >= halfWidth) posRef.current = 0;
-        track.style.transform = `translateX(-${posRef.current}px)`;
-      }
-      rafRef.current = requestAnimationFrame(animate);
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [categories, isPaused]);
-
-  // ──── Manual arrow scroll ────
-  const scrollManual = useCallback((dir) => {
-    const itemWidth = 196; // circle width + gap
-    posRef.current += dir === "left" ? -itemWidth : itemWidth;
-    if (posRef.current < 0) posRef.current = 0;
   }, []);
 
   // ──── LOADING skeleton ────
@@ -80,8 +47,8 @@ export default function CategoriesCarousel() {
 
   if (!categories.length) return null;
 
-  // Duplicate items for infinite loop
-  const loopCats = [...categories, ...categories, ...categories];
+  // Duplicate items for seamless infinite loop
+  const loopCats = [...categories, ...categories];
 
   return (
     <section className="py-10 md:py-14 bg-[#FDF6E3] overflow-hidden">
@@ -106,34 +73,10 @@ export default function CategoriesCarousel() {
           style={{ background: "linear-gradient(to left, #FDF6E3 0%, transparent 100%)" }}
         />
 
-        {/* Left arrow */}
-        <button
-          onClick={() => scrollManual("left")}
-          aria-label="Scroll left"
-          className="absolute left-4 top-[40%] -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-[#3F1F00] text-[#FDF6E3] flex items-center justify-center shadow-xl hover:bg-[#C9933A] hover:text-[#3F1F00] transition-all duration-200 hover:scale-110"
-        >
-          <ChevronLeft size={20} />
-        </button>
-
-        {/* Right arrow */}
-        <button
-          onClick={() => scrollManual("right")}
-          aria-label="Scroll right"
-          className="absolute right-4 top-[40%] -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-[#3F1F00] text-[#FDF6E3] flex items-center justify-center shadow-xl hover:bg-[#C9933A] hover:text-[#3F1F00] transition-all duration-200 hover:scale-110"
-        >
-          <ChevronRight size={20} />
-        </button>
-
-        {/* Scrollable track */}
-        <div
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          className="overflow-hidden cursor-grab active:cursor-grabbing"
-        >
+        <div className="overflow-hidden">
           <div
-            ref={trackRef}
-            className="flex items-start gap-6 md:gap-8 py-4 px-8"
-            style={{ width: "max-content", willChange: "transform" }}
+            className="flex items-start gap-6 md:gap-8 py-4 px-8 animate-categories-marquee hover:[animation-play-state:paused]"
+            style={{ width: "max-content" }}
           >
             {loopCats.map((category, idx) => (
               <Link
@@ -178,11 +121,10 @@ export default function CategoriesCarousel() {
           className="inline-flex items-center gap-2 font-sans font-semibold text-sm text-[#C9933A] hover:text-[#3F1F00] transition-colors duration-200 group"
         >
           View All Categories
-          <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform duration-200" />
+          <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
         </Link>
       </div>
 
     </section>
   );
 }
-

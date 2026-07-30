@@ -411,6 +411,20 @@
   animation-play-state: paused;
 }
 
+/* ── CATEGORIES MARQUEE ── */
+@keyframes categories-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-categories-marquee {
+  animation: categories-marquee 40s linear infinite;
+  will-change: transform;
+}
+.animate-categories-marquee:hover,
+.animate-categories-marquee.paused {
+  animation-play-state: paused;
+}
+
 /* ── BRAND INPUT ── */
 .brand-input {
   width: 100%;
