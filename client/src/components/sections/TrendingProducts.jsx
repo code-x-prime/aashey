@@ -134,7 +134,7 @@ export const TrendingProducts = () => {
 
         {/* ──── Carousel Track ──────────────────────────────────────────── */}
         <div className="relative">
-          <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="overflow-x-auto md:overflow-hidden snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
               className="flex md:transition-transform md:duration-500 md:ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
               style={{

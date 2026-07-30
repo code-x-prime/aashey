@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { RiStarFill } from "react-icons/ri";
 
 const TESTIMONIALS = [
@@ -188,33 +188,8 @@ function GoogleReviewCard({ item }) {
 
 /* ── Main Component ──────────────────────────────────────────── */
 export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
-  const [isPaused, setIsPaused] = useState(false);
-  const trackRef = useRef(null);
-  const posRef = useRef(0);
-  const rafRef = useRef(null);
-
   const bgClass = bg === "white" ? "bg-white" : "bg-[#FDF6E3]";
   const fadeColor = bg === "white" ? "#ffffff" : "#FDF6E3";
-
-  /* ── Infinite auto-scroll ─────────────────────────────────── */
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const SPEED = 0.45;
-
-    const animate = () => {
-      if (!isPaused) {
-        posRef.current += SPEED;
-        const halfWidth = track.scrollWidth / 2;
-        if (posRef.current >= halfWidth) posRef.current = 0;
-        track.style.transform = `translateX(-${posRef.current}px)`;
-      }
-      rafRef.current = requestAnimationFrame(animate);
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [isPaused]);
 
   const loopItems = [...TESTIMONIALS, ...TESTIMONIALS];
 
@@ -258,15 +233,10 @@ export function TestimonialsCarousel({ bg = "cream", showStats = false }) {
         <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
           style={{ background: `linear-gradient(to left, ${fadeColor} 0%, transparent 100%)` }} />
 
-        <div
-          className="overflow-hidden"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
+        <div className="overflow-hidden">
           <div
-            ref={trackRef}
-            className="flex gap-4 py-3 px-6"
-            style={{ width: "max-content", willChange: "transform" }}
+            className="flex gap-4 py-3 px-6 animate-testimonials-marquee hover:[animation-play-state:paused]"
+            style={{ width: "max-content" }}
           >
             {loopItems.map((item, idx) => (
               <GoogleReviewCard key={`${item.id}-${idx}`} item={item} />

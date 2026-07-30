@@ -397,6 +397,20 @@
 }
 .gold-shimmer { animation: goldShimmer 3s ease infinite; }
 
+/* ── TESTIMONIALS MARQUEE ── */
+@keyframes testimonials-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-testimonials-marquee {
+  animation: testimonials-marquee 55s linear infinite;
+  will-change: transform;
+}
+.animate-testimonials-marquee:hover,
+.animate-testimonials-marquee.paused {
+  animation-play-state: paused;
+}
+
 /* ── BRAND INPUT ── */
 .brand-input {
   width: 100%;
