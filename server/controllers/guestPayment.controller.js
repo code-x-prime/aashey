@@ -7,7 +7,7 @@ import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getOrderConfirmationTemplate } from "../email/temp/EmailTemplate.js";
-import { processOrderForShipping } from "../utils/shiprocket.js";
+import { processOrderForShipping, checkServiceability, getShiprocketSettings } from "../utils/shiprocket.js";
 import { decrypt } from "../utils/encryption.js";
 import { getStoreConfig } from "../utils/storeConfig.js";
 
@@ -162,13 +162,84 @@ async function fetchAndValidateCartItems(cartItems) {
   return { processedItems, subTotal };
 }
 
-async function calculateShipping(subTotal) {
-  const shiprocketSettings = await prisma.shiprocketSettings.findFirst();
-  if (!shiprocketSettings) return 0;
+// Sum the shippable weight (kg) of the cart, using per-variant shipping weight
+// and falling back to the Shiprocket default weight for anything missing.
+function calcCartWeight(processedItems, defaultWeight) {
+  const fallback = parseFloat(defaultWeight) || 0.5;
+  let weight = 0;
+  for (const { variant, quantity } of processedItems) {
+    const perUnit = parseFloat(variant?.shippingWeight) || fallback;
+    weight += perUnit * quantity;
+  }
+  return Math.max(weight, fallback);
+}
 
-  const threshold = parseFloat(shiprocketSettings.freeShippingThreshold || 0);
-  const charge = parseFloat(shiprocketSettings.shippingCharge || 0);
-  return threshold > 0 && subTotal >= threshold ? 0 : charge;
+/**
+ * Work out the shipping charge the guest customer pays.
+ *
+ * 1. If the cart qualifies for free shipping (subTotal >= freeShippingThreshold),
+ *    it is always ₹0 — this is the "zero delivery above ₹999" rule.
+ * 2. Otherwise try to get the real cheapest courier rate from Shiprocket
+ *    serviceability for the delivery pincode + cart weight, so whatever
+ *    Shiprocket will bill us is passed straight on to the customer.
+ * 3. If Shiprocket is disabled / not configured / the pincode is not
+ *    serviceable / the API fails, fall back to the admin's flat shippingCharge.
+ *
+ * @param {number} subTotal        cart subtotal (before shipping/discount)
+ * @param {Array}  processedItems  output of fetchAndValidateCartItems
+ * @param {object} guestAddress    { postalCode, ... } for the delivery pincode
+ * @param {boolean} cod            whether this is a Cash-on-Delivery order
+ */
+async function calculateShipping(subTotal, processedItems = [], guestAddress = null, cod = false) {
+  const settings = await getShiprocketSettings().catch(() => null);
+  if (!settings) return 0;
+
+  const threshold = parseFloat(settings.freeShippingThreshold || 0);
+  const flatCharge = parseFloat(settings.shippingCharge || 0);
+
+  // Rule 1 — free shipping above the threshold
+  if (threshold > 0 && subTotal >= threshold) return 0;
+
+  // Rule 2 — live Shiprocket courier rate
+  const deliveryPincode = guestAddress?.postalCode
+    ? String(guestAddress.postalCode).replace(/\D/g, "")
+    : null;
+
+  if (settings.isEnabled && deliveryPincode && processedItems.length > 0) {
+    try {
+      const pickup = await prisma.shiprocketPickupAddress.findFirst({
+        where: { isDefault: true },
+      });
+      const pickupPincode = pickup?.pincode
+        ? String(pickup.pincode).replace(/\D/g, "")
+        : null;
+
+      if (pickupPincode) {
+        const weight = calcCartWeight(processedItems, settings.defaultWeight);
+        const result = await checkServiceability({
+          pickupPincode,
+          deliveryPincode,
+          weight,
+          cod,
+        });
+
+        const couriers = result?.data?.available_courier_companies || [];
+        const rates = couriers
+          .map((c) => parseFloat(c.rate))
+          .filter((r) => !isNaN(r) && r > 0);
+
+        if (rates.length > 0) {
+          // cheapest serviceable courier — round up to the nearest rupee
+          return Math.ceil(Math.min(...rates));
+        }
+      }
+    } catch (err) {
+      console.error("Guest live shipping rate lookup failed, using flat charge:", err.message);
+    }
+  }
+
+  // Rule 3 — flat fallback
+  return flatCharge;
 }
 
 // Creates a new user from guest address data.
@@ -406,7 +477,7 @@ export const createGuestRazorpayOrder = asyncHandler(async (req, res) => {
   }
 
   const { processedItems, subTotal } = await fetchAndValidateCartItems(cartItems);
-  const shippingCost = await calculateShipping(subTotal);
+  const shippingCost = await calculateShipping(subTotal, processedItems, guestAddress, false);
   const discount = Math.max(parseFloat(discountAmount) || 0, 0);
   const totalAmount = Math.max(subTotal + shippingCost - discount, 1);
   const amountInPaise = Math.round(parseFloat(totalAmount.toFixed(2)) * 100);
@@ -420,6 +491,8 @@ export const createGuestRazorpayOrder = asyncHandler(async (req, res) => {
   if (couponCode) notes.couponCode = couponCode;
   if (couponId) notes.couponId = couponId;
   if (discount > 0) notes.discountAmount = discount;
+  // Lock the shipping charge that was quoted so verify() bills the same amount
+  notes.shippingCost = shippingCost;
 
   const razorpayOrder = await paymentConfig.razorpayInstance.orders.create({
     amount: amountInPaise,
@@ -478,8 +551,21 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
   if (existingPayment) throw new ApiError(400, "Payment already processed");
 
   const { processedItems, subTotal } = await fetchAndValidateCartItems(cartItems);
-  const shippingCost = await calculateShipping(subTotal);
   const discount = Math.max(parseFloat(discountAmount) || 0, 0);
+
+  // Reuse the exact shipping charge quoted when the Razorpay order was created,
+  // so the amount we settle matches what the customer approved. Fall back to a
+  // fresh calculation only if the note is missing (older pending orders).
+  let shippingCost;
+  try {
+    const rpOrder = await paymentConfig.razorpayInstance.orders.fetch(razorpay_order_id);
+    const quoted = rpOrder?.notes?.shippingCost;
+    shippingCost = quoted !== undefined && quoted !== null && quoted !== ""
+      ? parseFloat(quoted) || 0
+      : await calculateShipping(subTotal, processedItems, guestAddress, false);
+  } catch {
+    shippingCost = await calculateShipping(subTotal, processedItems, guestAddress, false);
+  }
 
   // Fetch Razorpay payment details for method mapping
   const razorpayPaymentDetails =
@@ -606,7 +692,7 @@ export const createGuestCashOrder = asyncHandler(async (req, res) => {
   }
 
   const { processedItems, subTotal } = await fetchAndValidateCartItems(cartItems);
-  const shippingCost = await calculateShipping(subTotal);
+  const shippingCost = await calculateShipping(subTotal, processedItems, guestAddress, true);
   const codCharge = parseFloat(paymentSettingsRow.codCharge) || 0;
   const discount = Math.max(parseFloat(discountAmount) || 0, 0);
 

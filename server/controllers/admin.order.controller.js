@@ -524,7 +524,8 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
       const refundData = await initiateRefund(
         order.razorpayPayment.razorpayPaymentId,
         order.total,
-        notes
+        notes,
+        order.paymentOwnerId
       );
 
       if (refundData) {
@@ -1497,17 +1498,38 @@ async function handleInventoryReturn(tx, orderId, adminId) {
   }
 }
 
-// Helper function to initiate Razorpay refund
-async function initiateRefund(paymentId, amount, notes) {
+// Helper function to initiate Razorpay refund.
+// Uses the ENV instance when available, otherwise builds one from the active
+// DB gateway settings (the same keys checkout uses) so refunds work either way.
+async function initiateRefund(paymentId, amount, notes, ownerUserId = null) {
   try {
-    // Check if Razorpay is initialized
-    if (!razorpay) {
-      console.error("Razorpay not initialized");
-      return null;
+    let instance = razorpay;
+
+    if (!instance) {
+      const settings =
+        (ownerUserId &&
+          (await prisma.paymentGatewaySetting.findUnique({
+            where: { userId_gateway: { userId: ownerUserId, gateway: "RAZORPAY" } },
+          }))) ||
+        (await prisma.paymentGatewaySetting.findFirst({
+          where: { gateway: "RAZORPAY", isActive: true },
+        }));
+
+      if (!settings?.razorpayKeyId || !settings?.razorpayKeySecret) {
+        console.error("Razorpay not configured — cannot refund");
+        return null;
+      }
+
+      const { decrypt } = await import("../utils/encryption.js");
+      const Razorpay = (await import("razorpay")).default;
+      instance = new Razorpay({
+        key_id: settings.razorpayKeyId,
+        key_secret: decrypt(settings.razorpayKeySecret),
+      });
     }
 
-    const refund = await razorpay.payments.refund(paymentId, {
-      amount: amount * 100, // Convert to paisa
+    const refund = await instance.payments.refund(paymentId, {
+      amount: Math.round(parseFloat(amount) * 100), // paise
       notes: { reason: notes || "Admin initiated refund" },
     });
 

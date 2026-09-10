@@ -11,6 +11,39 @@ import {
   formatVariantsWithAttributes,
 } from "../utils/variant-attributes.js";
 
+// Hard fallbacks used only if the admin never configured Shiprocket defaults.
+const SHIPPING_HARD_DEFAULTS = { weight: 0.5, length: 10, breadth: 10, height: 10 };
+
+/**
+ * Resolve the shipping dimensions for a variant so Shiprocket always has real
+ * numbers to work with. Any value the admin leaves blank falls back to the
+ * Shiprocket default (defaultWeight / defaultLength / ...), then to a hard
+ * default. Returns numbers ready to write to productVariant.
+ *
+ * @param {object} src  the variant payload (or req.body for simple products)
+ * @returns {{ shippingWeight:number, shippingLength:number, shippingBreadth:number, shippingHeight:number }}
+ */
+async function resolveShippingDims(src = {}) {
+  const settings = await prisma.shiprocketSettings.findFirst().catch(() => null);
+
+  const num = (v, fallback) => {
+    const n = parseFloat(v);
+    return !isNaN(n) && n > 0 ? n : fallback;
+  };
+
+  const dWeight = num(settings?.defaultWeight, SHIPPING_HARD_DEFAULTS.weight);
+  const dLength = num(settings?.defaultLength, SHIPPING_HARD_DEFAULTS.length);
+  const dBreadth = num(settings?.defaultBreadth, SHIPPING_HARD_DEFAULTS.breadth);
+  const dHeight = num(settings?.defaultHeight, SHIPPING_HARD_DEFAULTS.height);
+
+  return {
+    shippingWeight: num(src.shippingWeight, dWeight),
+    shippingLength: num(src.shippingLength, dLength),
+    shippingBreadth: num(src.shippingBreadth, dBreadth),
+    shippingHeight: num(src.shippingHeight, dHeight),
+  };
+}
+
 // Get products by type (featured, bestseller, trending, new, etc.)
 export const getProductsByType = asyncHandler(async (req, res, next) => {
   const { productType } = req.params;
@@ -700,6 +733,9 @@ export const createProduct = asyncHandler(async (req, res, next) => {
           );
         }
 
+        // Shipping dims: use what admin entered, else fall back to Shiprocket defaults
+        const variantShipping = await resolveShippingDims(variant);
+
         const createdVariant = await prisma.productVariant.create({
           data: {
             productId: newProduct.id,
@@ -716,11 +752,8 @@ export const createProduct = asyncHandler(async (req, res, next) => {
                   })),
                 }
                 : undefined,
-            // Add shipping dimensions
-            shippingLength: variant.shippingLength ? parseFloat(variant.shippingLength) : null,
-            shippingBreadth: variant.shippingBreadth ? parseFloat(variant.shippingBreadth) : null,
-            shippingHeight: variant.shippingHeight ? parseFloat(variant.shippingHeight) : null,
-            shippingWeight: variant.shippingWeight ? parseFloat(variant.shippingWeight) : null,
+            // Shipping dimensions (always populated so Shiprocket has real numbers)
+            ...variantShipping,
           },
         });
 
@@ -795,6 +828,9 @@ export const createProduct = asyncHandler(async (req, res, next) => {
             : null;
         const quantity = req.body.quantity ? parseInt(req.body.quantity) : 0;
 
+        // Shipping dims for the simple product's default variant
+        const simpleShipping = await resolveShippingDims(req.body);
+
         // Create the default variant with properly parsed values
         await prisma.productVariant.create({
           data: {
@@ -804,11 +840,8 @@ export const createProduct = asyncHandler(async (req, res, next) => {
             salePrice: salePrice,
             quantity: quantity,
             isActive: true,
-            // Add shipping dimensions for simple product (default variant)
-            shippingLength: req.body.shippingLength ? parseFloat(req.body.shippingLength) : null,
-            shippingBreadth: req.body.shippingBreadth ? parseFloat(req.body.shippingBreadth) : null,
-            shippingHeight: req.body.shippingHeight ? parseFloat(req.body.shippingHeight) : null,
-            shippingWeight: req.body.shippingWeight ? parseFloat(req.body.shippingWeight) : null,
+            // Shipping dimensions (always populated so Shiprocket has real numbers)
+            ...simpleShipping,
           },
         });
 
@@ -1735,11 +1768,21 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
               };
             }
 
-            // Update shipping dimensions
-            if (variant.shippingLength !== undefined) updateData.shippingLength = variant.shippingLength ? parseFloat(variant.shippingLength) : null;
-            if (variant.shippingBreadth !== undefined) updateData.shippingBreadth = variant.shippingBreadth ? parseFloat(variant.shippingBreadth) : null;
-            if (variant.shippingHeight !== undefined) updateData.shippingHeight = variant.shippingHeight ? parseFloat(variant.shippingHeight) : null;
-            if (variant.shippingWeight !== undefined) updateData.shippingWeight = variant.shippingWeight ? parseFloat(variant.shippingWeight) : null;
+            // Update shipping dimensions — if any dim field is touched, resolve the
+            // whole set (blanks fall back to Shiprocket defaults) so no variant is
+            // ever left with a null/zero dimension.
+            if (
+              variant.shippingLength !== undefined ||
+              variant.shippingBreadth !== undefined ||
+              variant.shippingHeight !== undefined ||
+              variant.shippingWeight !== undefined
+            ) {
+              const dims = await resolveShippingDims(variant);
+              updateData.shippingLength = dims.shippingLength;
+              updateData.shippingBreadth = dims.shippingBreadth;
+              updateData.shippingHeight = dims.shippingHeight;
+              updateData.shippingWeight = dims.shippingWeight;
+            }
 
             await prisma.productVariant.update({
               where: { id: variant.id },
@@ -1922,11 +1965,9 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
               };
             }
 
-            // Add Shipping data for new variant
-            if (variant.shippingLength) createData.shippingLength = parseFloat(variant.shippingLength);
-            if (variant.shippingBreadth) createData.shippingBreadth = parseFloat(variant.shippingBreadth);
-            if (variant.shippingHeight) createData.shippingHeight = parseFloat(variant.shippingHeight);
-            if (variant.shippingWeight) createData.shippingWeight = parseFloat(variant.shippingWeight);
+            // Shipping data for the new variant — always populated (blanks fall
+            // back to the Shiprocket default dimensions).
+            Object.assign(createData, await resolveShippingDims(variant));
 
             const newVariantDb = await prisma.productVariant.create({
               data: createData,
@@ -2043,11 +2084,8 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
               salePrice: parsedSalePrice,
               quantity: parsedQuantity,
               isActive: true,
-              // Add shipping dimensions for simple product (default variant)
-              shippingLength: req.body.shippingLength ? parseFloat(req.body.shippingLength) : null,
-              shippingBreadth: req.body.shippingBreadth ? parseFloat(req.body.shippingBreadth) : null,
-              shippingHeight: req.body.shippingHeight ? parseFloat(req.body.shippingHeight) : null,
-              shippingWeight: req.body.shippingWeight ? parseFloat(req.body.shippingWeight) : null,
+              // Shipping dimensions (always populated so Shiprocket has real numbers)
+              ...(await resolveShippingDims(req.body)),
             },
           });
 
@@ -2234,11 +2272,16 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
             // Don't update quantity on error
           }
 
-          // Update shipping dimensions if provided
-          if (req.body.shippingLength !== undefined) updateData.shippingLength = req.body.shippingLength ? parseFloat(req.body.shippingLength) : null;
-          if (req.body.shippingBreadth !== undefined) updateData.shippingBreadth = req.body.shippingBreadth ? parseFloat(req.body.shippingBreadth) : null;
-          if (req.body.shippingHeight !== undefined) updateData.shippingHeight = req.body.shippingHeight ? parseFloat(req.body.shippingHeight) : null;
-          if (req.body.shippingWeight !== undefined) updateData.shippingWeight = req.body.shippingWeight ? parseFloat(req.body.shippingWeight) : null;
+          // Update shipping dimensions — if any dim field is touched, resolve the
+          // whole set so blanks fall back to the Shiprocket defaults.
+          if (
+            req.body.shippingLength !== undefined ||
+            req.body.shippingBreadth !== undefined ||
+            req.body.shippingHeight !== undefined ||
+            req.body.shippingWeight !== undefined
+          ) {
+            Object.assign(updateData, await resolveShippingDims(req.body));
+          }
 
           // Check if we need to update any product level settings that might be passed
           // Handle Simple Product MOQ (Linked to Product ID)

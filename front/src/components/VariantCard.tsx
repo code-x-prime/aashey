@@ -1188,8 +1188,8 @@ export default function VariantCard({
             <div className="space-y-3 border-t pt-4">
               <div className="flex items-center gap-2">
                 <Label className="text-sm font-medium">{t("variant_card.shipping.title")}</Label>
-                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                  {t("variant_card.shipping.optional")}
+                <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700">
+                  {t("variant_card.shipping.autofill_badge") || "Auto-filled if blank"}
                 </Badge>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -1255,7 +1255,9 @@ export default function VariantCard({
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                {t("variant_card.shipping.hint")}
+                {t("variant_card.shipping.hint")}{" "}
+                {t("variant_card.shipping.autofill_hint") ||
+                  "Any field left blank uses the default size/weight from Shiprocket Settings."}
               </p>
             </div>
           )}

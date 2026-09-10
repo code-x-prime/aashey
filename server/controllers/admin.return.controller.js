@@ -3,6 +3,16 @@ import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../config/db.js";
 import { getShiprocketSettings, processShiprocketReturn } from "../utils/shiprocket.js";
+import { issueRefund } from "../utils/refund.js";
+
+// Amount to refund for a single returned order item (item value only — shipping
+// is not refunded on a partial item return).
+function itemRefundAmount(orderItem) {
+  if (!orderItem) return 0;
+  const sub = parseFloat(orderItem.subtotal);
+  if (!isNaN(sub) && sub > 0) return sub;
+  return (parseFloat(orderItem.price) || 0) * (orderItem.quantity || 1);
+}
 
 // Get return settings
 export const getReturnSettings = asyncHandler(async (req, res) => {
@@ -190,6 +200,9 @@ export const getReturnRequestById = asyncHandler(async (req, res) => {
       order: {
         include: {
           shippingAddress: true,
+          razorpayPayment: {
+            include: { refunds: true },
+          },
           items: {
             include: {
               product: {
@@ -286,15 +299,19 @@ export const updateReturnRequestStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Return request not found");
   }
 
+  const newStatus = status.toUpperCase();
   const updateData = {
-    status: status.toUpperCase(),
+    status: newStatus,
     processedBy: adminId,
     processedAt: new Date(),
     ...(adminNotes && { adminNotes }),
   };
 
-  // If approved, update inventory and handle Shiprocket
-  if (status.toUpperCase() === "APPROVED") {
+  // Refund result surfaced to the admin UI
+  let refundResult = null;
+
+  // If approved, update inventory, handle Shiprocket, and refund the item amount
+  if (newStatus === "APPROVED") {
     const orderItem = await prisma.orderItem.findUnique({
       where: { id: returnRequest.orderItemId },
       include: { variant: true },
@@ -346,6 +363,54 @@ export const updateReturnRequestStatus = asyncHandler(async (req, res) => {
     } catch (err) {
       console.log("Return processing error:", err.message);
     }
+
+    // Refund the customer for this item (partial refund of the order payment)
+    try {
+      refundResult = await issueRefund({
+        orderId: returnRequest.orderId,
+        amount: itemRefundAmount(orderItem),
+        reason: `Return approved: ${returnRequest.reason}`,
+        referenceId: returnId,
+      });
+      if (refundResult?.refundId) {
+        updateData.adminNotes =
+          `${updateData.adminNotes ? updateData.adminNotes + "\n" : ""}` +
+          `Refund ₹${refundResult.amount.toFixed(2)} processed (${refundResult.refundId}).`;
+      } else if (refundResult?.skipped === "COD") {
+        updateData.adminNotes =
+          `${updateData.adminNotes ? updateData.adminNotes + "\n" : ""}` +
+          `COD order — no online refund. Settle ₹${itemRefundAmount(orderItem).toFixed(2)} manually.`;
+      }
+    } catch (refundErr) {
+      console.error("Return refund failed:", refundErr.message);
+      refundResult = { error: refundErr.message, status: "FAILED" };
+      updateData.adminNotes =
+        `${updateData.adminNotes ? updateData.adminNotes + "\n" : ""}` +
+        `Auto-refund failed: ${refundErr.message}. Refund manually from Razorpay.`;
+    }
+  }
+
+  // On completion, close out the order and ensure the refund went through
+  if (newStatus === "COMPLETED") {
+    try {
+      const orderItem = await prisma.orderItem.findUnique({
+        where: { id: returnRequest.orderItemId },
+      });
+      refundResult = await issueRefund({
+        orderId: returnRequest.orderId,
+        amount: itemRefundAmount(orderItem),
+        reason: `Return completed: ${returnRequest.reason}`,
+        referenceId: returnId,
+      });
+    } catch (refundErr) {
+      // Likely already refunded at APPROVED — not fatal
+      console.log("Return completion refund note:", refundErr.message);
+    }
+
+    await prisma.order.update({
+      where: { id: returnRequest.orderId },
+      data: { status: "RETURN_COMPLETED" },
+    });
   }
 
   const updatedReturn = await prisma.returnRequest.update({
@@ -383,7 +448,7 @@ export const updateReturnRequestStatus = asyncHandler(async (req, res) => {
     .json(
       new ApiResponsive(
         200,
-        { returnRequest: updatedReturn },
+        { returnRequest: updatedReturn, refund: refundResult },
         "Return request updated successfully"
       )
     );

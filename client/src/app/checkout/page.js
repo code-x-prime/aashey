@@ -46,12 +46,16 @@ export default function CheckoutPage() {
     const [showAddressForm, setShowAddressForm] = useState(false);
 
     const [selectedShippingOption, setSelectedShippingOption] = useState(null);
+    // Live Shiprocket rate for the delivery pincode (null until fetched)
+    const [liveShipping, setLiveShipping] = useState(null); // { rate, name, id, etd } | { free: true } | { error }
+    const [loadingLiveShipping, setLoadingLiveShipping] = useState(false);
 
     // Payment state
     const [paymentSettings, setPaymentSettings] = useState({
         cashEnabled: true,
         razorpayEnabled: false,
         codCharge: 0,
+        shipping: { enabled: false, flatCharge: 0, freeShippingThreshold: 0 },
     });
     const [paymentMethod, setPaymentMethod] = useState("CASH");
     const [processing, setProcessing] = useState(false);
@@ -82,7 +86,16 @@ export default function CheckoutPage() {
     const [guestAddressErrors, setGuestAddressErrors] = useState({});
 
     const totals = getCartTotals();
-    const selectedShippingRate = selectedShippingOption ? parseFloat(selectedShippingOption.rate) : totals.shipping;
+    // Effective shipping rate, in priority order:
+    //   1. an option the customer explicitly picked / that was locked in
+    //   2. the live Shiprocket rate (or ₹0 when the free-shipping threshold is met)
+    //   3. the flat rate from cart context as a last-resort fallback
+    const effectiveShippingRate = selectedShippingOption
+        ? parseFloat(selectedShippingOption.rate)
+        : liveShipping && typeof liveShipping.rate === "number"
+            ? liveShipping.rate
+            : totals.shipping;
+    const selectedShippingRate = effectiveShippingRate;
     const checkoutTotal = Math.max(
         totals.subtotal - totals.discount + selectedShippingRate + (paymentMethod === "CASH" ? (paymentSettings.codCharge || 0) : 0),
         0
@@ -107,6 +120,7 @@ export default function CheckoutPage() {
                         cashEnabled: response.data.cashEnabled ?? true,
                         razorpayEnabled: response.data.razorpayEnabled ?? false,
                         codCharge: response.data.codCharge ?? 0,
+                        shipping: response.data.shipping ?? { enabled: false, flatCharge: 0, freeShippingThreshold: 0 },
                     });
                     if (response.data.cashEnabled) {
                         setPaymentMethod("CASH");
@@ -158,6 +172,90 @@ export default function CheckoutPage() {
         fetchAddresses();
     }, [fetchAddresses]);
 
+    // ── Live shipping charge ──────────────────────────────────────────────
+    // Resolve the delivery pincode from the selected saved address (logged-in)
+    // or the guest address form.
+    const deliveryPincode = isAuthenticated
+        ? addresses.find((a) => a.id === selectedAddressId)?.postalCode || ""
+        : guestAddress.postalCode || "";
+
+    // Free-shipping threshold configured by the admin. Prefer the value from
+    // /payment/settings (available to guests too), fall back to cart context.
+    const freeShippingThreshold = parseFloat(
+        paymentSettings.shipping?.freeShippingThreshold || cart.freeShippingThreshold || 0
+    );
+    const qualifiesFreeShipping =
+        freeShippingThreshold > 0 && totals.subtotal >= freeShippingThreshold;
+
+    useEffect(() => {
+        const pin = String(deliveryPincode || "").replace(/\D/g, "");
+
+        // Free shipping wins — no need to call Shiprocket
+        if (qualifiesFreeShipping) {
+            setLiveShipping({ free: true, rate: 0, name: "Free Shipping", id: null, etd: "3-5 business days" });
+            return;
+        }
+
+        if (pin.length !== 6) {
+            setLiveShipping(null);
+            return;
+        }
+
+        let cancelled = false;
+        const controller = new AbortController();
+
+        const run = async () => {
+            setLoadingLiveShipping(true);
+            try {
+                const guestCartItems = (cart.items || []).map((it) => ({
+                    productVariantId: it.productVariantId || it.variant?.id || it.variantId,
+                    quantity: it.quantity,
+                }));
+
+                const res = await fetchApi("/cart/shipping-options", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        deliveryPincode: pin,
+                        cartItems: guestCartItems,
+                    }),
+                    signal: controller.signal,
+                });
+
+                if (cancelled) return;
+
+                const options = res?.data?.shippingOptions || [];
+                if (res?.success && options.length > 0) {
+                    // Endpoint already sorts cheapest-first
+                    const cheapest = options[0];
+                    setLiveShipping({
+                        rate: parseFloat(cheapest.rate),
+                        name: cheapest.name || "Standard Shipping",
+                        id: cheapest.id ?? null,
+                        etd: cheapest.etd || "3-5 business days",
+                    });
+                } else {
+                    setLiveShipping({ error: true });
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    console.error("Live shipping fetch failed:", err);
+                    setLiveShipping({ error: true });
+                }
+            } finally {
+                if (!cancelled) setLoadingLiveShipping(false);
+            }
+        };
+
+        run();
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [deliveryPincode, qualifiesFreeShipping, cart.items]);
+
     // Fetch Razorpay key for authenticated users
     useEffect(() => {
         const fetchRazorpayKey = async () => {
@@ -199,13 +297,23 @@ export default function CheckoutPage() {
                     return;
                 }
             }
-            // Use flat rate from cart context (respects admin-configured rate + free shipping threshold)
-            setSelectedShippingOption({
-                id: null,
-                name: "Standard Shipping",
-                rate: totals.shipping,
-                etd: "3-5 business days",
-            });
+            // Lock in the shipping option: prefer the live Shiprocket rate (or the
+            // free-shipping ₹0), otherwise fall back to the flat rate from cart context.
+            if (liveShipping && typeof liveShipping.rate === "number") {
+                setSelectedShippingOption({
+                    id: liveShipping.id ?? null,
+                    name: liveShipping.name || "Standard Shipping",
+                    rate: liveShipping.rate,
+                    etd: liveShipping.etd || "3-5 business days",
+                });
+            } else {
+                setSelectedShippingOption({
+                    id: null,
+                    name: "Standard Shipping",
+                    rate: totals.shipping,
+                    etd: "3-5 business days",
+                });
+            }
             setCurrentStep(3);
         }
     };
@@ -1524,7 +1632,11 @@ export default function CheckoutPage() {
 
                                 <div className="flex justify-between">
                                     <span className="text-[#5C3A1E]">Shipping{selectedShippingOption ? ` (${selectedShippingOption.name})` : ""}</span>
-                                    {selectedShippingRate > 0 ? (
+                                    {loadingLiveShipping && !selectedShippingOption ? (
+                                        <span className="text-[#5C3A1E] text-sm flex items-center gap-1">
+                                            <Loader2 className="h-3 w-3 animate-spin" /> Calculating…
+                                        </span>
+                                    ) : selectedShippingRate > 0 ? (
                                         <span className="font-medium">{formatCurrency(selectedShippingRate)}</span>
                                     ) : (
                                         <span className="text-green-600 font-medium">FREE</span>
@@ -1538,9 +1650,9 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
-                                {selectedShippingRate > 0 && cart.freeShippingThreshold > 0 && (
+                                {selectedShippingRate > 0 && freeShippingThreshold > 0 && totals.subtotal < freeShippingThreshold && (
                                     <div className="mt-3 text-xs text-amber-700 bg-amber-50 p-2 rounded text-center font-medium border border-amber-200">
-                                        Add <strong>{formatCurrency(cart.freeShippingThreshold - totals.subtotal)}</strong> more for <span className="text-green-600 font-bold">FREE shipping!</span>
+                                        Add <strong>{formatCurrency(freeShippingThreshold - totals.subtotal)}</strong> more for <span className="text-green-600 font-bold">FREE shipping!</span>
                                     </div>
                                 )}
 

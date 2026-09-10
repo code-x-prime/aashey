@@ -182,7 +182,16 @@ export default function ReturnRequestsPage() {
         }
       );
       if (response.data.success) {
-        toast.success(t('return_requests.actions.update_success') || "Return request updated successfully");
+        const refund = response.data.data?.refund;
+        if (refund?.refundId) {
+          toast.success(`Return updated. Refund ₹${Number(refund.amount).toFixed(2)} processed to the customer.`, { duration: 6000 });
+        } else if (refund?.skipped === "COD") {
+          toast.warning("Return updated. COD order — refund the customer manually.", { duration: 6000 });
+        } else if (refund?.status === "FAILED") {
+          toast.warning(`Return updated, but auto-refund failed: ${refund.error}. Refund manually from Razorpay.`, { duration: 8000 });
+        } else {
+          toast.success(t('return_requests.actions.update_success') || "Return request updated successfully");
+        }
         setShowStatusDialog(false);
         setStatusForm({ status: "", adminNotes: "" });
         fetchReturnRequests();
@@ -519,7 +528,7 @@ export default function ReturnRequestsPage() {
                       <Eye className="h-4 w-4 mr-2" />
                       {t('return_requests.actions.view_details')}
                     </Button>
-                    {returnReq.status === "PENDING" && (
+                    {returnReq.status !== "COMPLETED" && returnReq.status !== "REJECTED" && (
                       <Button
                         size="sm"
                         className=""
@@ -692,6 +701,13 @@ export default function ReturnRequestsPage() {
                   <option value="PROCESSING">{t('return_requests.status.processing')}</option>
                   <option value="COMPLETED">{t('return_requests.status.completed') || "Completed"}</option>
                 </select>
+                {(statusForm.status === "APPROVED" || statusForm.status === "COMPLETED") && (
+                  <p className="text-xs text-[#F59E0B] bg-[#FFFBEB] border border-[#FEF3C7] rounded-md px-3 py-2">
+                    Approving this return will restock the item, trigger a Shiprocket reverse pickup (if enabled),
+                    and automatically refund the item amount to the customer for online (Razorpay) payments.
+                    COD orders must be refunded manually.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-[#4B5563]">
@@ -831,7 +847,7 @@ export default function ReturnRequestsPage() {
             >
               {t('return_requests.actions.close')}
             </Button>
-            {selectedReturn?.status === "PENDING" && (
+            {selectedReturn && selectedReturn.status !== "COMPLETED" && selectedReturn.status !== "REJECTED" && (
               <Button
                 className=""
                 onClick={() => {
@@ -841,7 +857,6 @@ export default function ReturnRequestsPage() {
                     adminNotes: selectedReturn.adminNotes || "",
                   });
                   setShowStatusDialog(true);
-                  // Fixed: Added parentheses to function call
                 }}
               >
                 {t('return_requests.actions.update_status')}

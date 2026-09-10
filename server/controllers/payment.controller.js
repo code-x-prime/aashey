@@ -193,6 +193,9 @@ export const getPaymentSettings = asyncHandler(async (req, res) => {
     },
   });
 
+  // Shipping config so the checkout page can show the correct charge / free-shipping rule
+  const shiprocketSettings = await prisma.shiprocketSettings.findFirst();
+
   res.status(200).json(
     new ApiResponsive(
       200,
@@ -201,6 +204,11 @@ export const getPaymentSettings = asyncHandler(async (req, res) => {
         razorpayEnabled: paymentSettings.razorpayEnabled && !!razorpaySettings,
         phonepeEnabled: !!phonepeSettings,
         codCharge: parseFloat(paymentSettings.codCharge) || 0,
+        shipping: {
+          enabled: !!shiprocketSettings?.isEnabled,
+          flatCharge: parseFloat(shiprocketSettings?.shippingCharge || 0),
+          freeShippingThreshold: parseFloat(shiprocketSettings?.freeShippingThreshold || 0),
+        },
       },
       "Payment settings fetched successfully"
     )
