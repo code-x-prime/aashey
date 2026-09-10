@@ -1830,7 +1830,9 @@
       },
       "shipping": {
         "title": "Shipping Settings",
-        "description": "Configure shipping dimensions for Shiprocket integration",
+        "description": "Configure the packed size and weight for this product so Shiprocket can calculate delivery rates and book shipments.",
+        "autofill_badge": "Auto-filled if left blank",
+        "autofill_hint": "Leave any field empty and it will use the default shipping size/weight from Shiprocket Settings, so Shiprocket always has real numbers to book with.",
         "length_label": "Length (cm)",
         "breadth_label": "Breadth (cm)",
         "height_label": "Height (cm)",
@@ -2108,6 +2110,8 @@
     "shipping": {
       "title": "Shipping Dimensions (for Shiprocket)",
       "optional": "Optional",
+      "autofill_badge": "Auto-filled if blank",
+      "autofill_hint": "Any field left blank uses the default size/weight from Shiprocket Settings.",
       "length": "Length (cm)",
       "breadth": "Breadth (cm)",
       "height": "Height (cm)",

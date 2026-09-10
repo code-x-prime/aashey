@@ -2572,13 +2572,14 @@ export function ProductForm({
                   {t("products.form.shipping.title")}
                 </h2>
                 <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700">
-                  {t("products.form.shipping.autofill_badge") || "Auto-filled if left blank"}
+                  {t("products.form.shipping.autofill_badge")}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                {t("products.form.shipping.description")}{" "}
-                {t("products.form.shipping.autofill_hint") ||
-                  "Leave any field empty and it will use the default shipping size/weight from Shiprocket Settings, so Shiprocket always has real numbers to book with."}
+                {t("products.form.shipping.description")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("products.form.shipping.autofill_hint")}
               </p>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div className="space-y-2">
