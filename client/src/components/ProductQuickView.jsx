@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-context";
@@ -15,6 +16,7 @@ import { getImageUrl } from "@/lib/imageUrl";
 
 export default function ProductQuickView({ product, open, onOpenChange }) {
   const { addToCart, loading } = useCart();
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
 
@@ -34,6 +36,7 @@ export default function ProductQuickView({ product, open, onOpenChange }) {
       await addToCart(variantId, quantity);
       toast.success(`${product.name} added to cart`);
       onOpenChange(false);
+      router.push("/cart");
     } catch (error) {
       toast.error(error.message || "Failed to add to cart");
     }
@@ -134,7 +137,7 @@ export default function ProductQuickView({ product, open, onOpenChange }) {
             <div className="space-y-3">
               <Button onClick={handleAddToCart} className="w-full" size="lg" disabled={loading}>
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
+                Buy Now
               </Button>
               <Link href={`/products/${product.slug}`} className="block">
                 <Button variant="outline" className="w-full" size="lg" onClick={() => onOpenChange(false)}>

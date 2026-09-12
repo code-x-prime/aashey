@@ -30,6 +30,7 @@ import Link from "next/link";
 import AddressForm from "@/components/AddressForm";
 import Image from "next/image";
 import { getImageUrl } from "@/lib/imageUrl";
+import CartSuggestions from "@/components/CartSuggestions";
 
 export default function CheckoutPage() {
     const { isAuthenticated, user, autoLogin } = useAuth();
@@ -1690,6 +1691,9 @@ export default function CheckoutPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Suggested products */}
+            <CartSuggestions cartItems={cart.items} title="Add more to your order" />
         </div>
     );
 }

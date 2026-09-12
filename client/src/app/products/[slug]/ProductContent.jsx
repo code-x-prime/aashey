@@ -209,24 +209,17 @@ export default function ProductContent({ slug }) {
     if (selectedVariant) setEffectivePriceInfo(getEffectivePrice(selectedVariant, next));
   };
 
-  /* ── Add to Cart / Buy Now ───────────────────── */
+  /* ── Buy Now (adds to cart, then opens the cart page) ───────────────── */
   const handleAddToCart = async () => {
     const variant = selectedVariant || product?.variants?.[0];
     if (!variant) return;
     setIsAddingToCart(true); setCartSuccess(false);
     try {
       const r = await addVariantToCart(variant, quantity, product.name);
-      if (r.success) { setCartSuccess(true); setTimeout(() => setCartSuccess(false), 3000); }
-    } catch (e) { console.error(e); } finally { setIsAddingToCart(false); }
-  };
-
-  const handleBuyNow = async () => {
-    const variant = selectedVariant || product?.variants?.[0];
-    if (!variant) return;
-    setIsAddingToCart(true);
-    try {
-      const r = await addVariantToCart(variant, quantity, product.name);
-      if (r.success) router.push("/checkout");
+      if (r.success) {
+        setCartSuccess(true);
+        router.push("/cart");
+      }
     } catch (e) { console.error(e); } finally { setIsAddingToCart(false); }
   };
 
@@ -656,13 +649,13 @@ export default function ProductContent({ slug }) {
 
               {/* CTA row */}
               <div className="flex gap-2.5 mt-1">
-                {/* Add to Cart */}
+                {/* Buy Now — adds to cart and opens the cart page */}
                 <button onClick={handleAddToCart}
                   disabled={isAddingToCart || !inStock}
                   className="flex-1 h-13 py-3.5 rounded-xl bg-[#3F1F00] text-[#FDF6E3] font-sans font-bold text-[13px] tracking-widest uppercase flex items-center justify-center gap-2 hover:bg-[#5C2E00] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                   {isAddingToCart
                     ? <><RiLoader4Line className="w-4 h-4 animate-spin" /> Adding...</>
-                    : <><RiShoppingCartLine className="w-4 h-4" /> Add to Cart</>
+                    : <><RiShoppingCartLine className="w-4 h-4" /> Buy Now</>
                   }
                 </button>
 

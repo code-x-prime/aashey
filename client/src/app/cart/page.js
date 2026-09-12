@@ -18,6 +18,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/imageUrl";
+import CartSuggestions from "@/components/CartSuggestions";
 
 
 
@@ -404,6 +405,9 @@ export default function CartPage() {
                         </Button>
                     </Link>
                 </div>
+
+                {/* Suggested products */}
+                <CartSuggestions cartItems={[]} />
             </div>
         );
     }
@@ -705,6 +709,9 @@ export default function CartPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Suggested products */}
+            <CartSuggestions cartItems={cart.items} />
         </div>
     );
 }
