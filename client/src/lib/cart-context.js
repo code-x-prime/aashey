@@ -33,6 +33,11 @@ export function CartProvider({ children }) {
     const [mounted, setMounted] = useState(false);
     const [mergeProgress, setMergeProgress] = useState(null); // Track merge progress
     const [hidePricesForGuests, setHidePricesForGuests] = useState(false); // New state for price visibility
+    // Shipping config (flat charge + free-shipping threshold) — the server cart
+    // response already includes this for authenticated users, but the guest
+    // cart (localStorage) has no way to know it, so we fetch it once here and
+    // use it to compute shipping for guests in getCartTotals().
+    const [shippingConfig, setShippingConfig] = useState({ flatCharge: 0, freeShippingThreshold: 0 });
     const mergeCompletedRef = useRef(false);
 
     // Set mounted state to prevent hydration issues
@@ -53,6 +58,25 @@ export function CartProvider({ children }) {
             }
         };
         fetchSettings();
+    }, []);
+
+    // Fetch shipping config (flat charge + free-shipping threshold) so guest
+    // cart totals (which have no server-computed shippingTotal) are correct.
+    useEffect(() => {
+        const fetchShippingConfig = async () => {
+            try {
+                const response = await fetchApi("/payment/settings");
+                if (response.success && response.data?.shipping) {
+                    setShippingConfig({
+                        flatCharge: parseFloat(response.data.shipping.flatCharge) || 0,
+                        freeShippingThreshold: parseFloat(response.data.shipping.freeShippingThreshold) || 0,
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to fetch shipping config:", error);
+            }
+        };
+        fetchShippingConfig();
     }, []);
 
     // Initialize cart based on authentication status
@@ -487,8 +511,26 @@ export function CartProvider({ children }) {
     const getCartTotals = () => {
         const subtotal = parseFloat(cart.subtotal || 0);
         const discount = coupon ? parseFloat(coupon.discountAmount || 0) : 0;
-        const shipping = parseFloat(cart.shippingTotal || 0);
         const tax = 0; // No tax
+
+        let shipping;
+        if (isAuthenticated) {
+            // Server already computed this correctly (see cart.controller.js)
+            shipping = parseFloat(cart.shippingTotal || 0);
+        } else {
+            // Guest cart has no server-computed shippingTotal — derive it from
+            // the fetched shipping config using the same rule as the backend:
+            // no flat charge configured => always free; otherwise free only
+            // once the subtotal reaches the threshold.
+            const { flatCharge, freeShippingThreshold } = shippingConfig;
+            if (flatCharge <= 0) {
+                shipping = 0;
+            } else if (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) {
+                shipping = 0;
+            } else {
+                shipping = flatCharge;
+            }
+        }
 
         return {
             subtotal,
@@ -510,6 +552,13 @@ export function CartProvider({ children }) {
         }
     };
 
+    // The free-shipping threshold to show in "Add ₹X more for FREE shipping"
+    // messaging — server-provided for authenticated users, fetched config for guests.
+    const getFreeShippingThreshold = () => {
+        if (isAuthenticated) return parseFloat(cart.freeShippingThreshold || 0);
+        return shippingConfig.flatCharge > 0 ? shippingConfig.freeShippingThreshold : 0;
+    };
+
     const value = {
         cart,
         loading,
@@ -528,6 +577,7 @@ export function CartProvider({ children }) {
         removeCoupon,
         getCartTotals,
         getCartItemCount,
+        getFreeShippingThreshold,
         hidePricesForGuests,
     };
 
