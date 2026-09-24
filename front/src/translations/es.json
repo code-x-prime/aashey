@@ -609,14 +609,16 @@
             "code_required": "El código del cupón es obligatorio",
             "code_invalid": "El código del cupón solo puede contener letras, números, guiones bajos y guiones medio",
             "discount_positive": "El valor del descuento debe ser un número positivo",
-            "discount_percentage_limit": "El descuento porcentual no puede ser mayor al 100%",
+            "discount_percentage_limit": "El descuento porcentual debe ser menor al 100%",
             "min_order_positive": "El monto mínimo del pedido debe ser un número positivo",
             "max_uses_integer": "Los usos máximos deben ser un entero positivo",
-            "end_date_invalid": "La fecha de finalización debe ser posterior a la fecha de inicio",
+            "end_date_invalid": "La fecha de finalización no debe ser anterior a la fecha de inicio",
             "partner_required": "Por favor seleccione un socio o elimine las entradas de socios vacías",
             "partner_duplicate": "Cada socio solo puede ser asignado una vez por cupón. Por favor elimine los socios duplicados.",
             "commission_limit": "La comisión de {name} debe estar entre 0 y 100",
-            "code_exists": "Este código de cupón ya está en uso. Por favor elija un código diferente."
+            "code_exists": "Este código de cupón ya está en uso. Por favor elija un código diferente.",
+            "create_exception": "Ocurrió un error al crear el cupón",
+            "update_exception": "Ocurrió un error al actualizar el cupón"
         }
     },
     "pricing_slabs": {

@@ -609,14 +609,16 @@
             "code_required": "Le code promo est requis",
             "code_invalid": "Le code promo ne peut contenir que des lettres, des chiffres, des traits de soulignement et des tirets",
             "discount_positive": "La valeur de la réduction doit être un nombre positif",
-            "discount_percentage_limit": "La réduction en pourcentage ne peut pas être supérieure à 100%",
+            "discount_percentage_limit": "La réduction en pourcentage doit être inférieure à 100%",
             "min_order_positive": "Le montant minimum de la commande doit être un nombre positif",
             "max_uses_integer": "Les utilisations maximales doivent être un entier positif",
-            "end_date_invalid": "La date de fin doit être postérieure à la date de début",
+            "end_date_invalid": "La date de fin ne doit pas être antérieure à la date de début",
             "partner_required": "Veuillez sélectionner un partenaire ou supprimer les entrées de partenaires vides",
             "partner_duplicate": "Chaque partenaire ne peut être assigné qu'une seule fois par coupon. Veuillez supprimer les partenaires en double.",
             "commission_limit": "La commission de {name} doit être comprise entre 0 et 100",
-            "code_exists": "Ce code promo est déjà utilisé. Veuillez choisir un autre code."
+            "code_exists": "Ce code promo est déjà utilisé. Veuillez choisir un autre code.",
+            "create_exception": "Une erreur s'est produite lors de la création du coupon",
+            "update_exception": "Une erreur s'est produite lors de la mise à jour du coupon"
         }
     },
     "pricing_slabs": {

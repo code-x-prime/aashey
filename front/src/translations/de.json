@@ -594,14 +594,16 @@
             "code_required": "Gutscheincode ist erforderlich",
             "code_invalid": "Gutscheincode darf nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten",
             "discount_positive": "Rabattwert muss eine positive Zahl sein",
-            "discount_percentage_limit": "Prozentualer Rabatt darf nicht größer als 100% sein",
+            "discount_percentage_limit": "Prozentualer Rabatt muss kleiner als 100% sein",
             "min_order_positive": "Mindestbestellwert muss eine positive Zahl sein",
             "max_uses_integer": "Maximale Nutzungen müssen eine positive ganze Zahl sein",
-            "end_date_invalid": "Enddatum muss nach dem Startdatum liegen",
+            "end_date_invalid": "Enddatum darf nicht vor dem Startdatum liegen",
             "partner_required": "Bitte wählen Sie einen Partner aus oder entfernen Sie leere Partnereinträge",
             "partner_duplicate": "Jeder Partner kann nur einmal pro Gutschein zugewiesen werden. Bitte entfernen Sie doppelte Partner.",
             "commission_limit": "{name}s Provision muss zwischen 0 und 100 liegen",
-            "code_exists": "Dieser Gutscheincode wird bereits verwendet. Bitte wählen Sie einen anderen Code."
+            "code_exists": "Dieser Gutscheincode wird bereits verwendet. Bitte wählen Sie einen anderen Code.",
+            "create_exception": "Ein Fehler ist beim Erstellen des Gutscheins aufgetreten",
+            "update_exception": "Ein Fehler ist beim Aktualisieren des Gutscheins aufgetreten"
         }
     },
     "pricing_slabs": {

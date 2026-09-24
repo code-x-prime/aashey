@@ -622,14 +622,16 @@
       "code_required": "Coupon code is required",
       "code_invalid": "Coupon code can only contain letters, numbers, underscores, and hyphens",
       "discount_positive": "Discount value must be a positive number",
-      "discount_percentage_limit": "Percentage discount cannot be greater than 100%",
+      "discount_percentage_limit": "Percentage discount must be less than 100%",
       "min_order_positive": "Minimum order amount must be a positive number",
       "max_uses_integer": "Maximum uses must be a positive integer",
-      "end_date_invalid": "End date must be after start date",
+      "end_date_invalid": "End date must not be before start date",
       "partner_required": "Please select a partner or remove empty partner entries",
       "partner_duplicate": "Each partner can only be assigned once per coupon. Please remove duplicate partners.",
       "commission_limit": "{name}'s commission must be between 0 and 100",
-      "code_exists": "This coupon code is already in use. Please choose a different code."
+      "code_exists": "This coupon code is already in use. Please choose a different code.",
+      "create_exception": "An error occurred while creating the coupon",
+      "update_exception": "An error occurred while updating the coupon"
     }
   },
   "reviews": {

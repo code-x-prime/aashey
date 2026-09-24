@@ -621,14 +621,16 @@
             "code_required": "クーポンコードは必須です",
             "code_invalid": "クーポンコードには文字、数字、アンダースコア、ハイフンのみを含めることができます",
             "discount_positive": "割引値は正の数である必要があります",
-            "discount_percentage_limit": "割引率は100%を超えることはできません",
+            "discount_percentage_limit": "割引率は100%未満である必要があります",
             "min_order_positive": "最小注文額は正の数である必要があります",
             "max_uses_integer": "最大使用回数は正の整数である必要があります",
-            "end_date_invalid": "終了日は開始日より後である必要があります",
+            "end_date_invalid": "終了日は開始日より前であってはなりません",
             "partner_required": "パートナーを選択するか、空のパートナーエントリを削除してください",
             "partner_duplicate": "パートナーはクーポンごとに1回しか割り当てることができません。重複するパートナーを削除してください。",
             "commission_limit": "{name}の手数料は0から100の間である必要があります",
-            "code_exists": "このクーポンコードは既に使用されています。別のコードを選択してください。"
+            "code_exists": "このクーポンコードは既に使用されています。別のコードを選択してください。",
+            "create_exception": "クーポンの作成中にエラーが発生しました",
+            "update_exception": "クーポンの更新中にエラーが発生しました"
         }
     },
     "pricing_slabs": {

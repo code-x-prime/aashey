@@ -594,14 +594,16 @@
             "code_required": "优惠券代码是必填项",
             "code_invalid": "优惠券代码只能包含字母、数字、下划线和连字符",
             "discount_positive": "折扣价值必须是正数",
-            "discount_percentage_limit": "百分比折扣不能大于 100%",
+            "discount_percentage_limit": "百分比折扣必须小于 100%",
             "min_order_positive": "最低订单金额必须是正数",
             "max_uses_integer": "最大使用次数必须是正整数",
-            "end_date_invalid": "结束日期必须在开始日期之后",
+            "end_date_invalid": "结束日期不能早于开始日期",
             "partner_required": "请选择合作伙伴或删除空的合作伙伴条目",
             "partner_duplicate": "每个合作伙伴每张优惠券只能分配一次。请删除重复的合作伙伴。",
             "commission_limit": "{name} 的佣金必须在 0 到 100 之间",
-            "code_exists": "此优惠券代码已在使用中。请选择不同的代码。"
+            "code_exists": "此优惠券代码已在使用中。请选择不同的代码。",
+            "create_exception": "创建优惠券时发生错误",
+            "update_exception": "更新优惠券时发生错误"
         }
     },
     "pricing_slabs": {

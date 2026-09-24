@@ -127,6 +127,22 @@ router.post("/coupons", isAdmin, async (req, res) => {
       });
     }
 
+    // Block 100% (and above) percentage discounts
+    if (discountType === "PERCENTAGE" && discountValueNum >= 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Percentage discount must be less than 100%",
+      });
+    }
+
+    const normalizedCode = String(code).trim().toUpperCase();
+    if (!normalizedCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Coupon code is required",
+      });
+    }
+
     // Validate min order amount if provided
     let minOrderAmountNum = null;
     if (minOrderAmount) {
@@ -151,24 +167,27 @@ router.post("/coupons", isAdmin, async (req, res) => {
       }
     }
 
-    // Validate dates
+    // Validate dates (same calendar day allowed; treat as full day)
     const startDateObj = new Date(startDate);
     let endDateObj = null;
 
     if (endDate) {
       endDateObj = new Date(endDate);
-      if (endDateObj <= startDateObj) {
+      if (endDateObj < startDateObj) {
         return res.status(400).json({
           success: false,
           message: "End date must be after start date",
         });
+      }
+      if (endDateObj.getTime() === startDateObj.getTime()) {
+        endDateObj = new Date(startDateObj.getTime() + 24 * 60 * 60 * 1000 - 1);
       }
     }
 
     // Check if coupon code already exists
     const existingCoupon = await prisma.coupon.findFirst({
       where: {
-        code: { equals: code, mode: "insensitive" },
+        code: { equals: normalizedCode, mode: "insensitive" },
       },
     });
 
@@ -236,7 +255,7 @@ router.post("/coupons", isAdmin, async (req, res) => {
       // Create coupon
       const newCoupon = await tx.coupon.create({
         data: {
-          code,
+          code: normalizedCode,
           description,
           discountType,
           discountValue: discountValueNum,
@@ -318,8 +337,8 @@ router.post("/coupons", isAdmin, async (req, res) => {
   }
 });
 
-// Update coupon
-router.patch("/coupons/:id", isAdmin, async (req, res) => {
+// Update coupon (PATCH + PUT)
+const handleUpdateCoupon = async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -356,12 +375,40 @@ router.patch("/coupons/:id", isAdmin, async (req, res) => {
     // Targets: optional arrays of IDs
     const { categoryIds, productIds, brandIds } = req.body;
 
+    // Block 100%+ percentage discounts when discount fields are changing
+    if (discountType !== undefined || discountValue !== undefined) {
+      const effectiveType =
+        discountType !== undefined ? discountType : existingCoupon.discountType;
+      const effectiveValue =
+        discountValue !== undefined
+          ? parseFloat(discountValue)
+          : parseFloat(String(existingCoupon.discountValue));
+      if (
+        effectiveType === "PERCENTAGE" &&
+        !isNaN(effectiveValue) &&
+        effectiveValue >= 100
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Percentage discount must be less than 100%",
+        });
+      }
+    }
+
     // Update code if provided
     if (code !== undefined) {
+      const normalizedCode = String(code).trim().toUpperCase();
+      if (!normalizedCode) {
+        return res.status(400).json({
+          success: false,
+          message: "Coupon code is required",
+        });
+      }
+
       // Check if another coupon with the same code exists
       const duplicateCoupon = await prisma.coupon.findFirst({
         where: {
-          code: { equals: code, mode: "insensitive" },
+          code: { equals: normalizedCode, mode: "insensitive" },
           id: { not: id },
         },
       });
@@ -373,7 +420,7 @@ router.patch("/coupons/:id", isAdmin, async (req, res) => {
         });
       }
 
-      updateData.code = code;
+      updateData.code = normalizedCode;
     }
 
     // Update other fields
@@ -430,14 +477,18 @@ router.patch("/coupons/:id", isAdmin, async (req, res) => {
       const startDateObj = new Date(startDate);
       updateData.startDate = startDateObj;
 
-      if (existingCoupon.endDate) {
-        const existingEndDate = new Date(existingCoupon.endDate);
-        if (startDateObj >= existingEndDate) {
-          return res.status(400).json({
-            success: false,
-            message: "Start date must be before end date",
-          });
-        }
+      const endToCheck =
+        endDate !== undefined && endDate !== null && endDate !== ""
+          ? new Date(endDate)
+          : existingCoupon.endDate
+            ? new Date(existingCoupon.endDate)
+            : null;
+
+      if (endToCheck && startDateObj > endToCheck) {
+        return res.status(400).json({
+          success: false,
+          message: "Start date must be before end date",
+        });
       }
     }
 
@@ -445,17 +496,22 @@ router.patch("/coupons/:id", isAdmin, async (req, res) => {
       if (endDate === null || endDate === "") {
         updateData.endDate = null;
       } else {
-        const endDateObj = new Date(endDate);
+        let endDateObj = new Date(endDate);
         const startDateToCompare =
           startDate !== undefined
             ? new Date(startDate)
             : existingCoupon.startDate;
 
-        if (endDateObj <= startDateToCompare) {
+        if (endDateObj < startDateToCompare) {
           return res.status(400).json({
             success: false,
             message: "End date must be after start date",
           });
+        }
+        if (endDateObj.getTime() === new Date(startDateToCompare).getTime()) {
+          endDateObj = new Date(
+            new Date(startDateToCompare).getTime() + 24 * 60 * 60 * 1000 - 1
+          );
         }
         updateData.endDate = endDateObj;
       }
@@ -612,7 +668,10 @@ router.patch("/coupons/:id", isAdmin, async (req, res) => {
       error: error.message,
     });
   }
-});
+};
+
+router.patch("/coupons/:id", isAdmin, handleUpdateCoupon);
+router.put("/coupons/:id", isAdmin, handleUpdateCoupon);
 
 // Delete coupon
 router.delete("/coupons/:id", isAdmin, async (req, res) => {

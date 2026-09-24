@@ -842,8 +842,8 @@ function CouponForm({
       return false;
     }
 
-    // Validate discount value based on discount type
-    if (formData.discountType === "PERCENTAGE" && discountValue > 100) {
+    // Validate discount value based on discount type (block 100%+)
+    if (formData.discountType === "PERCENTAGE" && discountValue >= 100) {
       setError(t('coupons.messages.discount_percentage_limit'));
       return false;
     }
@@ -867,10 +867,10 @@ function CouponForm({
       return false;
     }
 
-    // Make sure end date is after start date if provided
+    // End date must not be before start date (same day allowed)
     if (
       formData.endDate &&
-      new Date(formData.endDate) <= new Date(formData.startDate)
+      new Date(formData.endDate) < new Date(formData.startDate)
     ) {
       setError(t('coupons.messages.end_date_invalid'));
       return false;
@@ -929,8 +929,8 @@ function CouponForm({
 
       const data = {
         ...formData,
-        // Make sure code is uppercase when submitting to backend
-        code: formData.code.toUpperCase(),
+        // Make sure code is trimmed + uppercase when submitting to backend
+        code: formData.code.trim().toUpperCase(),
         discountType: formData.discountType as "PERCENTAGE" | "FIXED_AMOUNT",
         discountValue: parseFloat(formData.discountValue),
         minOrderAmount: formData.minOrderAmount
@@ -1177,6 +1177,7 @@ function CouponForm({
                     name="discountValue"
                     type="number"
                     min="0"
+                    max={formData.discountType === "PERCENTAGE" ? "99" : undefined}
                     step={formData.discountType === "PERCENTAGE" ? "1" : "0.01"}
                     placeholder={
                       formData.discountType === "PERCENTAGE" ? "10" : "100"
