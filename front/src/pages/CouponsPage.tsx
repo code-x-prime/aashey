@@ -1490,7 +1490,7 @@ function CouponForm({
         </Card>
 
         {/* Footer Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E7EB]">
+        <div className="sticky bottom-0 z-10 flex justify-end gap-3 border-t border-[#E5E7EB] bg-[#F3F7F6] py-4">
           <Button
             type="button"
             variant="outline"

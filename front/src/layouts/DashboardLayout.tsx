@@ -323,7 +323,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex h-dvh w-full overflow-hidden bg-background">
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex fixed left-0 top-0 h-full w-[240px] flex-col bg-[#0A3B3F]    z-30 flex-shrink-0">
         <div className="flex h-16 items-center   px-4">
@@ -1090,7 +1090,7 @@ export default function DashboardLayout() {
         </div>
 
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto bg-[#F3F7F6] p-4 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-[#F3F7F6] p-4 pb-24 lg:p-8">
           <Outlet />
         </main>
       </div>
