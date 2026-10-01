@@ -10,6 +10,7 @@ import {
   Wallet,
   AlertCircle,
   CheckCircle2,
+  Percent,
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/api/api";
@@ -22,6 +23,7 @@ export default function PaymentSettingsPage() {
   const [cashEnabled, setCashEnabled] = useState(true);
   const [razorpayEnabled, setRazorpayEnabled] = useState(false);
   const [codCharge, setCodCharge] = useState<number>(0);
+  const [onlinePaymentDiscountPercent, setOnlinePaymentDiscountPercent] = useState<number>(0);
   const [hasRazorpayKeys, setHasRazorpayKeys] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +52,7 @@ export default function PaymentSettingsPage() {
         setCashEnabled(response.data.data.cashEnabled ?? true);
         setRazorpayEnabled(response.data.data.razorpayEnabled ?? false);
         setCodCharge(response.data.data.codCharge ?? 0);
+        setOnlinePaymentDiscountPercent(response.data.data.onlinePaymentDiscountPercent ?? 0);
       }
     } catch (error: any) {
       console.error("Error fetching payment settings:", error);
@@ -97,6 +100,7 @@ export default function PaymentSettingsPage() {
         cashEnabled,
         razorpayEnabled,
         codCharge: parseFloat(codCharge.toString()) || 0,
+        onlinePaymentDiscountPercent: parseFloat(onlinePaymentDiscountPercent.toString()) || 0,
       });
 
       if (response.data.success) {
@@ -282,6 +286,48 @@ export default function PaymentSettingsPage() {
                 onCheckedChange={handleRazorpayToggle}
                 disabled={isSaving || !hasRazorpayKeys}
               />
+            </div>
+
+            {/* Online Payment Discount */}
+            <div className="p-5 border border-[#E5E7EB] rounded-xl hover:border-[#4CAF50] transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#FFF7ED] border border-[#FED7AA] flex-shrink-0">
+                  <Percent className="h-6 w-6 text-[#F97316]" />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-base font-semibold text-[#1F2937]">
+                    Online Payment Discount
+                  </Label>
+                  <p className="text-sm text-[#9CA3AF] mt-0.5">
+                    Give customers an extra % off when they pay online instead of Cash on Delivery — an
+                    incentive to prefer prepaid orders. Set to 0 to disable.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 ml-16 flex items-center gap-3">
+                <Input
+                  id="onlinePaymentDiscountPercent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={onlinePaymentDiscountPercent}
+                  onChange={(e) =>
+                    setOnlinePaymentDiscountPercent(
+                      Math.max(0, Math.min(100, parseFloat(e.target.value) || 0))
+                    )
+                  }
+                  className="w-32"
+                  disabled={isSaving || !razorpayEnabled}
+                  placeholder="0"
+                />
+                <span className="text-sm text-[#6B7280]">% off order subtotal, applied at checkout</span>
+              </div>
+              {!razorpayEnabled && (
+                <p className="ml-16 mt-2 text-xs text-[#F59E0B]">
+                  Enable Razorpay above to offer an online payment discount.
+                </p>
+              )}
             </div>
 
           </div>

@@ -24,6 +24,7 @@ import {
     MessageSquare,
     User,
     LogIn,
+    X,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -58,6 +59,7 @@ export default function CheckoutPage() {
         cashEnabled: true,
         razorpayEnabled: false,
         codCharge: 0,
+        onlinePaymentDiscountPercent: 0,
         shipping: { enabled: false, flatCharge: 0, freeShippingThreshold: 0 },
     });
     const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -99,8 +101,16 @@ export default function CheckoutPage() {
             ? liveShipping.rate
             : totals.shipping;
     const selectedShippingRate = effectiveShippingRate;
+    // Extra % off the subtotal for paying online (Razorpay) instead of COD —
+    // admin-configured in Payment Settings. Only applies when Razorpay is
+    // the selected payment method; never for Cash on Delivery.
+    const onlinePaymentDiscountPercent = parseFloat(paymentSettings.onlinePaymentDiscountPercent || 0);
+    const onlinePaymentDiscount = paymentMethod === "RAZORPAY" && onlinePaymentDiscountPercent > 0
+        ? Math.round((totals.subtotal * onlinePaymentDiscountPercent) / 100 * 100) / 100
+        : 0;
+    const totalDiscount = Math.min(totals.discount + onlinePaymentDiscount, totals.subtotal);
     const checkoutTotal = Math.max(
-        totals.subtotal - totals.discount + selectedShippingRate + (paymentMethod === "CASH" ? (paymentSettings.codCharge || 0) : 0),
+        totals.subtotal - totalDiscount + selectedShippingRate + (paymentMethod === "CASH" ? (paymentSettings.codCharge || 0) : 0),
         0
     );
 
@@ -123,6 +133,7 @@ export default function CheckoutPage() {
                         cashEnabled: response.data.cashEnabled ?? true,
                         razorpayEnabled: response.data.razorpayEnabled ?? false,
                         codCharge: response.data.codCharge ?? 0,
+                        onlinePaymentDiscountPercent: response.data.onlinePaymentDiscountPercent ?? 0,
                         shipping: response.data.shipping ?? { enabled: false, flatCharge: 0, freeShippingThreshold: 0 },
                     });
                     if (response.data.cashEnabled) {
@@ -299,6 +310,10 @@ export default function CheckoutPage() {
                 if (!validateGuestAddress()) {
                     return;
                 }
+                // No email-existence check here any more: if this email already
+                // belongs to an account, Place Order simply logs straight into
+                // that account and completes the order — no error, no login
+                // prompt, nothing blocking the flow.
             }
             // Lock in the shipping option: prefer the live Shiprocket rate (or the
             // free-shipping ₹0), otherwise fall back to the flat rate from cart context.
@@ -335,10 +350,10 @@ export default function CheckoutPage() {
             setGuestAddressErrors((prev) => ({ ...prev, [name]: "" }));
         }
         // Clear any stale top-level error banner (e.g. "account already
-        // exists" for a previously-typed email) once the customer starts
-        // editing the form again — otherwise it stays stuck on screen even
-        // after they've fixed the problem (changed the email, etc.).
-        if (name === "email" && error) {
+        // exists") as soon as the customer starts editing the form again —
+        // otherwise it stays stuck on screen, which reads as "I'm blocked"
+        // even when they could perfectly well place the order.
+        if (error) {
             setError("");
         }
     };
@@ -486,9 +501,15 @@ export default function CheckoutPage() {
             setError("");
 
             try {
-                // Calculate total with selected shipping
+                // Calculate total with selected shipping. COD never gets the
+                // online-payment discount; Razorpay does (totalDiscount already
+                // includes it only when paymentMethod === "RAZORPAY").
                 const shippingCost = parseFloat(selectedShippingOption.rate);
-                const calculatedAmount = totals.subtotal - totals.discount + shippingCost;
+                const codDiscount = totals.discount || 0;
+                const razorpayDiscount = totalDiscount || 0;
+                const calculatedAmount = paymentMethod === "RAZORPAY"
+                    ? totals.subtotal - razorpayDiscount + shippingCost
+                    : totals.subtotal - codDiscount + shippingCost;
                 const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
 
                 if (calculatedAmount < 1) {
@@ -509,7 +530,7 @@ export default function CheckoutPage() {
                             billingAddressSameAsShipping: true,
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
-                            discountAmount: totals.discount || 0,
+                            discountAmount: codDiscount,
                             shippingCost: shippingCost,
                             selectedCourierId: selectedShippingOption.id,
                             selectedCourierName: selectedShippingOption.name,
@@ -566,7 +587,7 @@ export default function CheckoutPage() {
                             paymentGateway: "RAZORPAY",
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
-                            discountAmount: totals.discount || 0,
+                            discountAmount: razorpayDiscount,
                             shippingCost: shippingCost,
                             selectedCourierId: selectedShippingOption.id,
                             selectedCourierName: selectedShippingOption.name,
@@ -720,19 +741,11 @@ export default function CheckoutPage() {
 
                 toast.dismiss("guest-register");
 
-                if (registerRes.data.accountExists) {
-                    // Account exists — ask user to log in
-                    setError(`An account with email "${guestAddress.email}" already exists. Please log in to continue.`);
-                    toast.error("Account already exists. Please log in.", {
-                        duration: 8000,
-                        action: {
-                            label: "Log In",
-                            onClick: () => router.push(`/auth?redirect=checkout&email=${encodeURIComponent(guestAddress.email || "")}&existing=1`),
-                        },
-                    });
-                    setProcessing(false);
-                    return;
-                }
+                // If this email already belongs to an account, guest-register
+                // just logged straight into it (no password/OTP/error) — the
+                // order proceeds on their existing account exactly like a new
+                // signup would, just without the "account created" toast.
+                const loggedIntoExisting = !!registerRes.data.loggedIntoExisting;
 
                 // Snapshot cart items NOW before autoLogin triggers cart-context refetch
                 const cartSnapshot = cart.items.map(item => ({
@@ -753,12 +766,20 @@ export default function CheckoutPage() {
 
                 // Step 3: auto-login in React (backend already set httpOnly cookies)
                 autoLogin(registerRes.data.user);
-                setWasAutoCreated(true);
-                toast.success(`Account created! Welcome, ${registerRes.data.user.name}.`, { duration: 3000 });
+                setWasAutoCreated(!loggedIntoExisting);
+                toast.success(
+                    loggedIntoExisting
+                        ? `Welcome back, ${registerRes.data.user.name}!`
+                        : `Account created! Welcome, ${registerRes.data.user.name}.`,
+                    { duration: 3000 }
+                );
 
                 // Step 4: create address for the new user (cookies now set → authenticated)
                 toast.loading("Saving your address...", { id: "create-address", duration: 10000 });
 
+                // Only make this the default address for a brand-new account —
+                // an existing customer may already have a default address on
+                // file that shouldn't be silently swapped out.
                 const addressRes = await fetchApi("/users/addresses", {
                     method: "POST",
                     credentials: "include",
@@ -770,7 +791,7 @@ export default function CheckoutPage() {
                         state: guestAddress.state,
                         postalCode: guestAddress.postalCode,
                         country: guestAddress.country || "India",
-                        isDefault: true,
+                        isDefault: !loggedIntoExisting,
                     }),
                 });
 
@@ -799,8 +820,14 @@ export default function CheckoutPage() {
 
                 toast.dismiss("cart-merge");
 
-                // Step 6: checkout using normal authenticated endpoints
-                const calculatedAmount = totals.total;
+                // Step 6: checkout using normal authenticated endpoints. COD
+                // never gets the online-payment discount; Razorpay does.
+                const guestShippingCost = selectedShippingOption ? parseFloat(selectedShippingOption.rate) : 0;
+                const guestCodDiscount = totals.discount || 0;
+                const guestRazorpayDiscount = totalDiscount || 0;
+                const calculatedAmount = paymentMethod === "RAZORPAY"
+                    ? totals.subtotal - guestRazorpayDiscount + guestShippingCost
+                    : totals.subtotal - guestCodDiscount + guestShippingCost;
                 const amount = Math.max(parseFloat(calculatedAmount.toFixed(2)), 1);
 
                 if (paymentMethod === "CASH") {
@@ -814,8 +841,8 @@ export default function CheckoutPage() {
                             billingAddressSameAsShipping: true,
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
-                            discountAmount: totals.discount || 0,
-                            shippingCost: selectedShippingOption ? parseFloat(selectedShippingOption.rate) : 0,
+                            discountAmount: guestCodDiscount,
+                            shippingCost: guestShippingCost,
                             selectedCourierId: selectedShippingOption?.id || null,
                             selectedCourierName: selectedShippingOption?.name || null,
                             selectedCourierRate: selectedShippingOption?.rate || null,
@@ -865,8 +892,8 @@ export default function CheckoutPage() {
                             paymentGateway: "RAZORPAY",
                             couponCode: coupon?.code || null,
                             couponId: coupon?.id || null,
-                            discountAmount: totals.discount || 0,
-                            shippingCost: selectedShippingOption ? parseFloat(selectedShippingOption.rate) : 0,
+                            discountAmount: guestRazorpayDiscount,
+                            shippingCost: guestShippingCost,
                             selectedCourierId: selectedShippingOption?.id || null,
                             selectedCourierName: selectedShippingOption?.name || null,
                             selectedCourierRate: selectedShippingOption?.rate || null,
@@ -1198,17 +1225,19 @@ export default function CheckoutPage() {
             {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
                     <AlertCircle className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
-                    <div>
+                    <div className="flex-1">
                         <p className="text-red-700 font-semibold">Error</p>
                         <p className="text-red-600">{error}</p>
-                        {(error.includes("already exists") || error.includes("Please log in")) && (
-                            <Link href={`/auth?redirect=checkout&email=${encodeURIComponent(guestAddress.email || "")}&existing=1`}>
-                                <button className="mt-2 text-red-700 underline text-sm font-medium hover:text-red-900">
-                                    Log in to your account →
-                                </button>
-                            </Link>
-                        )}
+                        <p className="text-xs text-red-500 mt-1">You can fix the issue above and click Place Order again.</p>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => setError("")}
+                        className="text-red-400 hover:text-red-700 flex-shrink-0 ml-2"
+                        aria-label="Dismiss error"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
                 </div>
             )}
 
@@ -1583,11 +1612,21 @@ export default function CheckoutPage() {
                                                             Selected
                                                         </span>
                                                     )}
+                                                    {onlinePaymentDiscountPercent > 0 && (
+                                                        <span className="ml-2 text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded font-semibold">
+                                                            Save {onlinePaymentDiscountPercent}%
+                                                        </span>
+                                                    )}
                                                 </label>
                                                 <IndianRupee className="h-4 w-4 text-primary" />
                                             </div>
                                             <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
                                                 Pay securely with Credit/Debit Card, UPI, NetBanking, etc.
+                                                {onlinePaymentDiscountPercent > 0 && (
+                                                    <span className="block text-green-700 font-medium mt-0.5">
+                                                        Get an extra {onlinePaymentDiscountPercent}% off your order total for paying online!
+                                                    </span>
+                                                )}
                                             </p>
                                         </div>
                                     )}
@@ -1680,6 +1719,13 @@ export default function CheckoutPage() {
                                     <div className="flex justify-between text-green-600">
                                         <span>Discount ({coupon.code})</span>
                                         <span>-{formatCurrency(totals.discount)}</span>
+                                    </div>
+                                )}
+
+                                {onlinePaymentDiscount > 0 && (
+                                    <div className="flex justify-between text-green-600">
+                                        <span>Online Payment Discount ({onlinePaymentDiscountPercent}%)</span>
+                                        <span>-{formatCurrency(onlinePaymentDiscount)}</span>
                                     </div>
                                 )}
 

@@ -958,6 +958,7 @@ export const getPaymentSettings = asyncHandler(async (req, res) => {
         cashEnabled: paymentSettings.cashEnabled,
         razorpayEnabled: paymentSettings.razorpayEnabled,
         codCharge: parseFloat(paymentSettings.codCharge) || 0,
+        onlinePaymentDiscountPercent: parseFloat(paymentSettings.onlinePaymentDiscountPercent) || 0,
       },
       "Payment settings fetched successfully"
     )
@@ -966,7 +967,7 @@ export const getPaymentSettings = asyncHandler(async (req, res) => {
 
 // Update payment settings
 export const updatePaymentSettings = asyncHandler(async (req, res) => {
-  const { cashEnabled, razorpayEnabled, codCharge } = req.body;
+  const { cashEnabled, razorpayEnabled, codCharge, onlinePaymentDiscountPercent } = req.body;
 
   // Validate that at least one payment method is enabled
   if (cashEnabled === false && razorpayEnabled === false) {
@@ -981,6 +982,14 @@ export const updatePaymentSettings = asyncHandler(async (req, res) => {
     throw new ApiError(400, "COD charge cannot be negative");
   }
 
+  // Validate online payment discount is a sane percentage (0-100)
+  if (
+    onlinePaymentDiscountPercent !== undefined &&
+    (onlinePaymentDiscountPercent < 0 || onlinePaymentDiscountPercent > 100)
+  ) {
+    throw new ApiError(400, "Online payment discount must be between 0 and 100%");
+  }
+
   // Get or create payment settings
   let paymentSettings = await prisma.paymentSettings.findFirst();
 
@@ -990,6 +999,8 @@ export const updatePaymentSettings = asyncHandler(async (req, res) => {
         cashEnabled: cashEnabled !== undefined ? cashEnabled : true,
         razorpayEnabled: razorpayEnabled !== undefined ? razorpayEnabled : false,
         codCharge: codCharge !== undefined ? codCharge : 0,
+        onlinePaymentDiscountPercent:
+          onlinePaymentDiscountPercent !== undefined ? onlinePaymentDiscountPercent : 0,
         updatedBy: req.admin?.id,
       },
     });
@@ -1000,6 +1011,7 @@ export const updatePaymentSettings = asyncHandler(async (req, res) => {
         ...(cashEnabled !== undefined && { cashEnabled }),
         ...(razorpayEnabled !== undefined && { razorpayEnabled }),
         ...(codCharge !== undefined && { codCharge }),
+        ...(onlinePaymentDiscountPercent !== undefined && { onlinePaymentDiscountPercent }),
         updatedBy: req.admin?.id,
       },
     });
@@ -1012,6 +1024,7 @@ export const updatePaymentSettings = asyncHandler(async (req, res) => {
         cashEnabled: paymentSettings.cashEnabled,
         razorpayEnabled: paymentSettings.razorpayEnabled,
         codCharge: parseFloat(paymentSettings.codCharge) || 0,
+        onlinePaymentDiscountPercent: parseFloat(paymentSettings.onlinePaymentDiscountPercent) || 0,
       },
       "Payment settings updated successfully"
     )

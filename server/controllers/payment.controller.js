@@ -205,6 +205,7 @@ export const getPaymentSettings = asyncHandler(async (req, res) => {
         razorpayEnabled: paymentSettings.razorpayEnabled && !!razorpaySettings,
         phonepeEnabled: !!phonepeSettings,
         codCharge: parseFloat(paymentSettings.codCharge) || 0,
+        onlinePaymentDiscountPercent: parseFloat(paymentSettings.onlinePaymentDiscountPercent) || 0,
         shipping: {
           enabled: !!shiprocketSettings?.isEnabled,
           flatCharge: parseFloat(shiprocketSettings?.shippingCharge || 0),
@@ -705,6 +706,20 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       }
     }
 
+    // Online Payment Discount — extra % off the subtotal for paying via
+    // Razorpay instead of COD (admin-configured in Payment Settings). This
+    // is separate from, and stacks with, any coupon discount above. COD
+    // orders (createCashOrder) never apply this.
+    const paymentSettingsForDiscount = await prisma.paymentSettings.findFirst();
+    const onlineDiscountPercent = parseFloat(paymentSettingsForDiscount?.onlinePaymentDiscountPercent || 0);
+    let onlinePaymentDiscount = 0;
+    if (onlineDiscountPercent > 0) {
+      onlinePaymentDiscount = Math.round((subTotal * onlineDiscountPercent) / 100 * 100) / 100;
+      discount += onlinePaymentDiscount;
+    }
+    // Never let combined discounts exceed the subtotal
+    discount = Math.min(discount, subTotal);
+
     // Tax is 0% now
     tax = 0;
 
@@ -1114,6 +1129,8 @@ export const getOrderHistory = asyncHandler(async (req, res) => {
       orderNumber: order.orderNumber,
       date: order.createdAt,
       status: order.status,
+      isPreOrder: order.isPreOrder,
+      preOrderReleasedAt: order.preOrderReleasedAt,
       // Use the original stored total
       total: originalTotal,
       subTotal: parseFloat(order.subTotal),
@@ -1167,6 +1184,7 @@ export const getOrderHistory = asyncHandler(async (req, res) => {
         price: parseFloat(item.price),
         quantity: item.quantity,
         subtotal: parseFloat(item.subtotal),
+        isPreOrder: item.isPreOrder,
         // Flash sale info
         flashSale: item.flashSaleId ? {
           id: item.flashSaleId,
@@ -1418,8 +1436,10 @@ export const cancelOrder = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Order not found");
   }
 
-  // Only allow cancellation for certain statuses (allow PAID if not yet shipped)
-  const allowedStatuses = ["PENDING", "PROCESSING", "PAID"];
+  // Only allow cancellation for certain statuses (allow PAID if not yet shipped;
+  // PRE_ORDERED too — the customer already paid and is just waiting on stock,
+  // they should be able to back out and get refunded like any other paid order)
+  const allowedStatuses = ["PENDING", "PROCESSING", "PAID", "PRE_ORDERED"];
   if (!allowedStatuses.includes(order.status)) {
     throw new ApiError(400, "This order cannot be cancelled");
   }

@@ -36,8 +36,13 @@ export default function OrdersPage() {
     }, [isAuthenticated, page]);
 
     const getStatusColor = (status) => {
-        const statusColors = { PENDING: "bg-yellow-100 text-yellow-800", PROCESSING: "bg-blue-100 text-blue-800", SHIPPED: "bg-indigo-100 text-indigo-800", DELIVERED: "bg-green-100 text-green-800", CANCELLED: "bg-red-100 text-red-800", REFUNDED: "bg-purple-100 text-purple-800" };
+        const statusColors = { PENDING: "bg-yellow-100 text-yellow-800", PAID: "bg-emerald-100 text-emerald-800", PROCESSING: "bg-blue-100 text-blue-800", PRE_ORDERED: "bg-amber-100 text-amber-800", SHIPPED: "bg-indigo-100 text-indigo-800", DELIVERED: "bg-green-100 text-green-800", CANCELLED: "bg-red-100 text-red-800", REFUNDED: "bg-purple-100 text-purple-800" };
         return statusColors[status] || "bg-gray-100 text-[#3F1F00]";
+    };
+
+    const getStatusLabel = (status) => {
+        const labels = { PENDING: "Pending", PAID: "Paid", PROCESSING: "Processing", PRE_ORDERED: "Pre-Ordered", SHIPPED: "Shipped", DELIVERED: "Delivered", CANCELLED: "Cancelled", REFUNDED: "Refunded" };
+        return labels[status] || status?.replace(/_/g, " ") || status;
     };
 
     const getPaymentIcon = (method) => {
@@ -61,7 +66,7 @@ export default function OrdersPage() {
                         <div>
                             <div className="text-lg font-medium text-blue-800 mb-1">Recent Order: #{orders[0].orderNumber}</div>
                             <p className="text-sm text-[#5C3A1E] mb-3">Placed on {formatDate(orders[0].date)} • {orders[0].items.length} {orders[0].items.length === 1 ? "item" : "items"} • {formatCurrency(orders[0].total)}</p>
-                            <span className={`px-2.5 py-1 ${getStatusColor(orders[0].status)} text-xs font-medium rounded-full inline-block`}>{orders[0].status}</span>
+                            <span className={`px-2.5 py-1 ${getStatusColor(orders[0].status)} text-xs font-medium rounded-full inline-block`}>{getStatusLabel(orders[0].status)}</span>
                         </div>
                         <Button className="mt-4 md:mt-0" onClick={() => router.push(`/account/orders/${orders[0].id}`)}><DynamicIcon name="Eye" className="mr-2 h-4 w-4" />View Order Details</Button>
                     </div>
@@ -96,7 +101,12 @@ export default function OrdersPage() {
                                     <tr key={order.id} className="hover:bg-gray-50 cursor-pointer transition-all" onClick={() => router.push(`/account/orders/${order.id}`)}>
                                         <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-[#1A0A00]">#{order.orderNumber}</div><div className="text-sm text-[#6B4423]">{order.items.length} {order.items.length === 1 ? "item" : "items"}</div></td>
                                         <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-[#1A0A00]">{formatDate(order.date)}</div></td>
-                                        <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>{order.status}</span></td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                                                {order.status === "PRE_ORDERED" && <DynamicIcon name="Clock" className="h-3 w-3" />}
+                                                {getStatusLabel(order.status)}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-[#1A0A00] font-medium">{formatCurrency(order.total)}</div>{order.discount > 0 && <div className="text-xs text-green-600">Saved {formatCurrency(order.discount)}</div>}</td>
                                         <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center text-sm text-[#1A0A00]"><DynamicIcon name={getPaymentIcon(order.paymentMethod)} className="h-4 w-4 mr-1 text-[#6B4423]" />{order.paymentMethod}</div></td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><Link href={`/account/orders/${order.id}`} className="text-primary hover:text-primary/80" onClick={(e) => e.stopPropagation()}>View Details</Link></td>

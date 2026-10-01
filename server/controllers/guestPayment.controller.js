@@ -503,7 +503,17 @@ export const createGuestRazorpayOrder = asyncHandler(async (req, res) => {
 
   const { processedItems, subTotal } = await fetchAndValidateCartItems(cartItems);
   const shippingCost = await calculateShipping(subTotal, processedItems, guestAddress, false);
-  const discount = Math.max(parseFloat(discountAmount) || 0, 0);
+
+  // Online Payment Discount — extra % off for paying via Razorpay instead of
+  // COD (admin-configured). Stacks with any coupon discount. Never applied
+  // for guest COD orders.
+  const onlineDiscountPercent = parseFloat(paymentSettingsRow?.onlinePaymentDiscountPercent || 0);
+  const onlinePaymentDiscount = onlineDiscountPercent > 0
+    ? Math.round((subTotal * onlineDiscountPercent) / 100 * 100) / 100
+    : 0;
+
+  const couponDiscount = Math.max(parseFloat(discountAmount) || 0, 0);
+  const discount = Math.min(couponDiscount + onlinePaymentDiscount, subTotal);
   const totalAmount = Math.max(subTotal + shippingCost - discount, 1);
   const amountInPaise = Math.round(parseFloat(totalAmount.toFixed(2)) * 100);
 
@@ -516,7 +526,9 @@ export const createGuestRazorpayOrder = asyncHandler(async (req, res) => {
   if (couponCode) notes.couponCode = couponCode;
   if (couponId) notes.couponId = couponId;
   if (discount > 0) notes.discountAmount = discount;
-  // Lock the shipping charge that was quoted so verify() bills the same amount
+  // Lock the shipping charge and total discount that were quoted so verify()
+  // bills the exact same amount, even if the admin changes settings between
+  // Razorpay-order-create and verify.
   notes.shippingCost = shippingCost;
 
   const razorpayOrder = await paymentConfig.razorpayInstance.orders.create({
@@ -576,18 +588,26 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
   if (existingPayment) throw new ApiError(400, "Payment already processed");
 
   const { processedItems, subTotal } = await fetchAndValidateCartItems(cartItems);
-  const discount = Math.max(parseFloat(discountAmount) || 0, 0);
 
-  // Reuse the exact shipping charge quoted when the Razorpay order was created,
-  // so the amount we settle matches what the customer approved. Fall back to a
-  // fresh calculation only if the note is missing (older pending orders).
+  // Reuse the exact shipping charge AND total discount (coupon + online-
+  // payment discount) quoted when the Razorpay order was created, so the
+  // amount we settle matches what the customer actually approved/paid —
+  // this is what makes the "pay online, get X% off" discount land on guest
+  // orders too. Fall back to a fresh calculation only if the notes are
+  // missing (older pending orders created before this lock existed).
   let shippingCost;
+  let discount = Math.max(parseFloat(discountAmount) || 0, 0);
   try {
     const rpOrder = await paymentConfig.razorpayInstance.orders.fetch(razorpay_order_id);
-    const quoted = rpOrder?.notes?.shippingCost;
-    shippingCost = quoted !== undefined && quoted !== null && quoted !== ""
-      ? parseFloat(quoted) || 0
+    const quotedShipping = rpOrder?.notes?.shippingCost;
+    shippingCost = quotedShipping !== undefined && quotedShipping !== null && quotedShipping !== ""
+      ? parseFloat(quotedShipping) || 0
       : await calculateShipping(subTotal, processedItems, guestAddress, false);
+
+    const quotedDiscount = rpOrder?.notes?.discountAmount;
+    if (quotedDiscount !== undefined && quotedDiscount !== null && quotedDiscount !== "") {
+      discount = parseFloat(quotedDiscount) || 0;
+    }
   } catch {
     shippingCost = await calculateShipping(subTotal, processedItems, guestAddress, false);
   }

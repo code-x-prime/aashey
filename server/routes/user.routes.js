@@ -31,10 +31,11 @@ import {
   resendVerificationEmail,
   verifyOtp,
   guestRegister,
+  checkEmailExists,
 } from "../controllers/user.controller.js";
 import { verifyJWTToken } from "../middlewares/auth.middleware.js";
 import { uploadFiles } from "../middlewares/multer.middlerware.js";
-import otpRateLimiter from "../middlewares/rateLimiter.js";
+import otpRateLimiter, { generalRateLimiter } from "../middlewares/rateLimiter.js";
 
 const router = express.Router();
 
@@ -42,6 +43,7 @@ const router = express.Router();
 // Apply otpRateLimiter to endpoints that generate or resend OTPs / reset links
 router.post("/register", otpRateLimiter, registerUser);
 router.post("/guest-register", guestRegister); // Public: check email → create user + auto-login
+router.post("/check-email", generalRateLimiter, checkEmailExists); // Public: boolean-only existence check for guest checkout
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh-token", refreshAccessToken);

@@ -1853,7 +1853,38 @@ export const resendVerificationEmail = asyncHandler(async (req, res, next) => {
     );
 });
 
-// Guest auto-register: check email → if exists return accountExists; if new → create user + set auth cookies
+// Lightweight public check: does an account already exist for this email?
+// Used by guest checkout to warn the customer BEFORE they fill in payment
+// details, instead of only finding out at "Place Order" time (deep in the
+// checkout flow, which reads as the page being stuck). Returns only a
+// boolean — no account details are exposed.
+export const checkEmailExists = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.includes("@")) {
+    throw new ApiError(400, "A valid email is required");
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true },
+  });
+
+  res.status(200).json(
+    new ApiResponsive(200, { exists: !!existingUser }, "Email checked")
+  );
+});
+
+// Guest auto-register/login: check email →
+//   - if it already belongs to an account, log straight into THAT account
+//     (no password, no OTP, no error shown — the order just goes through
+//     on their existing account, the same way Amazon-style guest checkout
+//     works) and update their name/phone from the form if left blank
+//   - if new → create the account + auto-login
+// Either way the caller always ends up authenticated and the checkout flow
+// continues uninterrupted; the frontend never needs to show a "log in"
+// prompt for this case any more.
 export const guestRegister = asyncHandler(async (req, res) => {
   const { name, email, phone } = req.body;
 
@@ -1863,14 +1894,41 @@ export const guestRegister = asyncHandler(async (req, res) => {
 
   const normalizedEmail = email.toLowerCase().trim();
 
-  // Email already exists → tell frontend to show login
+  // Email already belongs to an account → log into it directly, no prompt.
   const existingUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
   });
 
   if (existingUser) {
+    // Fill in anything missing on the existing profile from this checkout's
+    // form (never overwrite data the customer already has on file).
+    const profileUpdates = {};
+    if (!existingUser.phone && phone) profileUpdates.phone = phone;
+    if (!existingUser.name && name) profileUpdates.name = name.trim();
+
+    const user = Object.keys(profileUpdates).length
+      ? await prisma.user.update({ where: { id: existingUser.id }, data: profileUpdates })
+      : existingUser;
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user.id);
+    setCookies(res, accessToken, refreshToken);
+
     return res.status(200).json(
-      new ApiResponsive(200, { accountExists: true, email: normalizedEmail }, "Account already exists")
+      new ApiResponsive(
+        200,
+        {
+          userCreated: false,
+          loggedIntoExisting: true,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+          },
+        },
+        "Logged in to existing account"
+      )
     );
   }
 

@@ -139,13 +139,29 @@ export default function OrderDetailPage() {
     const getStatusColor = (status) => {
         const statusColors = {
             PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
+            PAID: "bg-emerald-100 text-emerald-800 border-emerald-200",
             PROCESSING: "bg-blue-100 text-blue-800 border-blue-200",
+            PRE_ORDERED: "bg-amber-100 text-amber-800 border-amber-200",
             SHIPPED: "bg-indigo-100 text-indigo-800 border-indigo-200",
             DELIVERED: "bg-green-100 text-green-800 border-green-200",
             CANCELLED: "bg-red-100 text-red-800 border-red-200",
             REFUNDED: "bg-purple-100 text-purple-800 border-purple-200",
         };
         return statusColors[status] || "bg-gray-100 text-[#3F1F00] border-gray-200";
+    };
+
+    const getStatusLabel = (status) => {
+        const labels = {
+            PENDING: "Pending",
+            PAID: "Paid",
+            PROCESSING: "Processing",
+            PRE_ORDERED: "Pre-Ordered",
+            SHIPPED: "Shipped",
+            DELIVERED: "Delivered",
+            CANCELLED: "Cancelled",
+            REFUNDED: "Refunded",
+        };
+        return labels[status] || status?.replace(/_/g, " ") || status;
     };
 
     const getShiprocketStatusLabel = (status) => {
@@ -217,7 +233,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center gap-3 flex-wrap">
                     <span className={`px-4 py-2 text-sm font-semibold rounded-full border ${getStatusColor(order.status)}`}>
-                        {order.status}
+                        {getStatusLabel(order.status)}
                     </span>
                     {order.status !== "CANCELLED" && order.status !== "DELIVERED" && order.status !== "SHIPPED" && (
                         <Button variant="destructive" size="sm" onClick={handleCancelOrder} disabled={cancelling}>
@@ -234,6 +250,33 @@ export default function OrderDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* Pre-Order notice */}
+            {order.status === "PRE_ORDERED" && (
+                <div className="mb-6 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <DynamicIcon name="Clock" className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-amber-900">This is a Pre-Order</p>
+                        <p className="text-sm text-amber-700 mt-0.5">
+                            Your payment has been received in full. We&apos;re waiting on stock to become available
+                            before we ship — you&apos;ll get an email as soon as your order moves to processing and
+                            tracking details are added here.
+                        </p>
+                    </div>
+                </div>
+            )}
+            {order.isPreOrder && order.status !== "PRE_ORDERED" && order.preOrderReleasedAt && (
+                <div className="mb-6 flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <DynamicIcon name="CheckCircle2" className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-emerald-900">Pre-Order Released</p>
+                        <p className="text-sm text-emerald-700 mt-0.5">
+                            The item(s) you pre-ordered are now in stock and your order is being prepared
+                            for shipping, released on {formatDate(order.preOrderReleasedAt)}.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Order Items */}
@@ -279,6 +322,11 @@ export default function OrderDetailPage() {
                                                     <span className="text-xs text-[#7A4E2D]">-{item.flashSale.discountPercentage}% OFF</span>
                                                 </div>
                                             )}
+                                            {item.isPreOrder && (
+                                                <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium mt-1">
+                                                    <DynamicIcon name="Clock" className="h-3 w-3" /> Pre-Order
+                                                </span>
+                                            )}
                                             <div className="flex items-center justify-between mt-2">
                                                 <span className="text-sm text-[#6B4423]">Qty: {item.quantity}</span>
                                                 <div className="text-right">
@@ -305,8 +353,10 @@ export default function OrderDetailPage() {
                         </div>
                     </div>
 
-                    {/* Shiprocket Tracking Card */}
-                    {(order.awbCode || order.courierName || order.shiprocketStatus) && (
+                    {/* Shiprocket Tracking Card — always shown so the customer can
+                        always see where their shipment stands, even before it
+                        has been dispatched. */}
+                    {order.status !== "CANCELLED" && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                                 <h2 className="font-semibold text-lg flex items-center gap-2">
@@ -319,30 +369,42 @@ export default function OrderDetailPage() {
                                     </span>
                                 )}
                             </div>
-                            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {order.courierName && (
-                                    <div>
-                                        <p className="text-xs text-[#9CA3AF] uppercase tracking-wide mb-1">Courier Partner</p>
-                                        <p className="font-semibold text-[#1A0A00]">{order.courierName}</p>
-                                    </div>
-                                )}
-                                {order.awbCode && (
-                                    <div>
-                                        <p className="text-xs text-[#9CA3AF] uppercase tracking-wide mb-1">AWB / Tracking Number</p>
-                                        <p className="font-semibold text-[#1A0A00] font-mono">{order.awbCode}</p>
-                                        {order.trackingUrl && (
-                                            <a
-                                                href={order.trackingUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1 font-medium"
-                                            >
-                                                Track Shipment →
-                                            </a>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            {(order.awbCode || order.courierName || order.shiprocketStatus) ? (
+                                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {order.courierName && (
+                                        <div>
+                                            <p className="text-xs text-[#9CA3AF] uppercase tracking-wide mb-1">Courier Partner</p>
+                                            <p className="font-semibold text-[#1A0A00]">{order.courierName}</p>
+                                        </div>
+                                    )}
+                                    {order.awbCode && (
+                                        <div>
+                                            <p className="text-xs text-[#9CA3AF] uppercase tracking-wide mb-1">AWB / Tracking Number</p>
+                                            <p className="font-semibold text-[#1A0A00] font-mono">{order.awbCode}</p>
+                                            {order.trackingUrl && (
+                                                <a
+                                                    href={order.trackingUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1 font-medium"
+                                                >
+                                                    Track Shipment →
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="p-6 flex items-center gap-3 text-sm text-[#6B4423]">
+                                    <DynamicIcon
+                                        name={order.status === "PRE_ORDERED" ? "Clock" : "Package"}
+                                        className="h-5 w-5 text-[#9CA3AF] flex-shrink-0"
+                                    />
+                                    {order.status === "PRE_ORDERED"
+                                        ? "Shipment will be arranged once your pre-order is released."
+                                        : "Your order hasn't been dispatched yet — tracking details will appear here once it ships."}
+                                </div>
+                            )}
                         </div>
                     )}
 
