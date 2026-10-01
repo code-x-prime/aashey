@@ -561,6 +561,13 @@ export const orders = {
       throw error;
     }
   },
+  // Pre-Order management
+  getPreOrders: (params: { page?: number; limit?: number } = {}) => {
+    return api.get("/api/admin/orders/pre-orders", { params });
+  },
+  releasePreOrder: (orderId: string) => {
+    return api.post(`/api/admin/orders/${orderId}/release-pre-order`);
+  },
 };
 
 // Coupons Management

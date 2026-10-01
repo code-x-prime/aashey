@@ -123,6 +123,9 @@ export function ProductForm({
     quantity: 0,
     featured: false,
     ourProduct: false,
+    isPreOrderEnabled: false,
+    preOrderMessage: "",
+    preOrderEta: "",
     productType: [] as string[],
     isActive: true,
     // SEO fields
@@ -614,6 +617,11 @@ export function ProductForm({
                   : 0,
               featured: productData.featured || false,
               ourProduct: productData.ourProduct || false,
+              isPreOrderEnabled: productData.isPreOrderEnabled || false,
+              preOrderMessage: productData.preOrderMessage || "",
+              preOrderEta: productData.preOrderEta
+                ? String(productData.preOrderEta).slice(0, 10)
+                : "",
               productType: Array.isArray(productData.productType)
                 ? productData.productType
                 : typeof productData.productType === "string"
@@ -1025,6 +1033,9 @@ export function ProductForm({
       formData.append("description", finalDescription);
       formData.append("featured", String(product.featured));
       formData.append("ourProduct", String(product.ourProduct));
+      formData.append("isPreOrderEnabled", String(product.isPreOrderEnabled));
+      formData.append("preOrderMessage", product.preOrderMessage || "");
+      if (product.preOrderEta) formData.append("preOrderEta", product.preOrderEta);
       formData.append("productType", JSON.stringify(product.productType));
       formData.append("isActive", String(product.isActive));
       formData.append("hasVariants", String(hasVariants));
@@ -1953,7 +1964,59 @@ export function ProductForm({
                       {t("products.form.labels.our_product")}
                     </Label>
                   </div>
+
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="isPreOrderEnabled"
+                      name="isPreOrderEnabled"
+                      checked={product.isPreOrderEnabled}
+                      onCheckedChange={(checked) =>
+                        setProduct((prev) => ({
+                          ...prev,
+                          isPreOrderEnabled: !!checked,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="isPreOrderEnabled">
+                      Allow Pre-Order (sell out of stock — online payment only, no COD)
+                    </Label>
+                  </div>
                 </div>
+
+                {/* Pre-Order details — shown only when enabled */}
+                {product.isPreOrderEnabled && (
+                  <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-xs text-amber-800 font-medium">
+                      While this is on, customers can buy this product even if stock is 0 — but only by paying
+                      online (Razorpay). Cash on Delivery is automatically blocked for it. The order will show
+                      status &quot;Pre-Ordered&quot; until you release it from Orders → Pre-Orders once stock is ready.
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="preOrderEta">Expected availability date (optional)</Label>
+                        <Input
+                          id="preOrderEta"
+                          type="date"
+                          value={product.preOrderEta ? String(product.preOrderEta).slice(0, 10) : ""}
+                          onChange={(e) =>
+                            setProduct((prev) => ({ ...prev, preOrderEta: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="preOrderMessage">Customer-facing note (optional)</Label>
+                        <Input
+                          id="preOrderMessage"
+                          placeholder='e.g. "Ships within 2 weeks of order"'
+                          value={product.preOrderMessage || ""}
+                          onChange={(e) =>
+                            setProduct((prev) => ({ ...prev, preOrderMessage: e.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Product Type Selection */}
                 <div className="space-y-2">
@@ -3444,6 +3507,11 @@ function ProductsList() {
                             {product.ourProduct && (
                               <Badge className="bg-[#EFF6FF] text-[#3B82F6] border-[#DBEAFE] text-xs">
                                 {t("products.list.status.our_product")}
+                              </Badge>
+                            )}
+                            {product.isPreOrderEnabled && (
+                              <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
+                                Pre-Order
                               </Badge>
                             )}
                           </div>

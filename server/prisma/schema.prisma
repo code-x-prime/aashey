@@ -259,6 +259,14 @@ model Product {
   newBrandIds       String[]             @default([])
   hotBrandIds       String[]             @default([])
   ourProduct        Boolean              @default(false)
+  // Pre-Order: when enabled, this product can be ordered (online payment
+  // only — never COD) even while out of stock or ahead of launch. Orders
+  // placed while this is on are marked isPreOrder on the order and start
+  // in PRE_ORDERED status until the admin releases them once stock/launch
+  // is ready.
+  isPreOrderEnabled Boolean              @default(false)
+  preOrderMessage   String? // optional customer-facing note, e.g. "Ships from 15 Oct"
+  preOrderEta       DateTime? // optional expected ship/availability date
   brandId           String?
   brand             Brand?               @relation(fields: [brandId], references: [id])
   orderItems        OrderItem[]
@@ -385,6 +393,13 @@ model Order {
   shippingCost                 Decimal              @db.Decimal(10, 2)
   discount                     Decimal              @default(0) @db.Decimal(10, 2)
   codCharge                    Decimal              @default(0) @db.Decimal(10, 2)
+  // Pre-Order tracking: set when any item in the order was a pre-order
+  // product (online payment only — this is enforced at checkout, never
+  // allowed for COD). preOrderReleasedAt is stamped when the admin releases
+  // the order out of PRE_ORDERED into the normal PROCESSING/SHIPPED flow.
+  isPreOrder                   Boolean              @default(false)
+  preOrderReleasedAt           DateTime?
+  preOrderReleasedBy           String?
   couponCode                   String?
   couponId                     String?
   total                        Decimal              @db.Decimal(10, 2)
@@ -432,6 +447,7 @@ model OrderItem {
   price             Decimal         @db.Decimal(10, 2)
   quantity          Int
   subtotal          Decimal         @db.Decimal(10, 2)
+  isPreOrder        Boolean         @default(false)
   // Flash sale info at time of purchase
   flashSaleId       String?
   flashSaleName     String?
@@ -800,6 +816,10 @@ enum OrderStatus {
   PENDING
   PROCESSING
   PAID
+  // Full payment already captured, but the order is held here — because it
+  // contains a pre-order item — until the admin releases it (stock arrived /
+  // launch date reached). Shiprocket booking is skipped while in this state.
+  PRE_ORDERED
   SHIPPED
   DELIVERED
   CANCELLED

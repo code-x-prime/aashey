@@ -3,7 +3,7 @@ import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../config/db.js";
 import { razorpay } from "../app.js";
-import { cancelShiprocketOrder, getShiprocketSettings } from "../utils/shiprocket.js";
+import { cancelShiprocketOrder, getShiprocketSettings, processOrderForShipping } from "../utils/shiprocket.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getStoreConfig } from "../utils/storeConfig.js";
 import { getOrderCancellationTemplate, getOrderStatusUpdateTemplate } from "../email/temp/EmailTemplate.js";
@@ -1445,6 +1445,10 @@ function isValidStatusTransition(currentStatus, newStatus) {
     PENDING: ["PROCESSING", "PAID", "CANCELLED"],
     PROCESSING: ["PAID", "CANCELLED", "SHIPPED"],
     PAID: ["PROCESSING", "SHIPPED", "CANCELLED", "REFUNDED"],
+    // PRE_ORDERED is exited via the dedicated "release pre-order" action
+    // (see releasePreOrder below), which also handles stock + Shiprocket.
+    // It can still be cancelled/refunded like any other order.
+    PRE_ORDERED: ["CANCELLED", "REFUNDED"],
     SHIPPED: ["DELIVERED", "CANCELLED", "PROCESSING"],
     DELIVERED: ["REFUNDED"],
     CANCELLED: ["REFUNDED"],
@@ -1802,4 +1806,156 @@ export const updateOrderItemQuantity = asyncHandler(async (req, res, next) => {
     console.error("Error updating order item:", error);
     throw new ApiError(500, "Failed to update order item: " + error.message);
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Pre-Order management
+// ─────────────────────────────────────────────────────────────────────────
+
+// List all orders currently sitting in PRE_ORDERED, waiting on stock/launch
+export const getPreOrders = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where: { status: "PRE_ORDERED" },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        items: {
+          where: { isPreOrder: true },
+          include: {
+            product: { select: { id: true, name: true, slug: true } },
+            variant: { select: { id: true, sku: true, quantity: true } },
+          },
+        },
+        shippingAddress: true,
+      },
+      orderBy: { createdAt: "asc" }, // oldest pre-orders first — first paid, first shipped
+      skip,
+      take: parseInt(limit),
+    }),
+    prisma.order.count({ where: { status: "PRE_ORDERED" } }),
+  ]);
+
+  res.status(200).json(
+    new ApiResponsive(
+      200,
+      {
+        orders,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      },
+      "Pre-orders fetched successfully"
+    )
+  );
+});
+
+// Release one pre-order out of PRE_ORDERED into the normal fulfillment flow.
+// Call this once the admin has confirmed stock is actually available (or the
+// launch date has arrived) for every pre-order item on the order. This does
+// NOT re-check inventory automatically — the admin is expected to have
+// restocked (or to explicitly override) before releasing, since the
+// inventory was already decremented (potentially negative) at order time.
+export const releasePreOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const adminId = req.admin.id;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: { include: { variant: true, product: { select: { name: true, isPreOrderEnabled: true } } } },
+      user: { select: { name: true, email: true } },
+    },
+  });
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  if (order.status !== "PRE_ORDERED") {
+    throw new ApiError(400, `Order is not awaiting pre-order release (current status: ${order.status})`);
+  }
+
+  // Warn (but do not block) if stock still looks short for any pre-order item —
+  // the admin can see this in the response and decide whether to proceed.
+  const stillShort = order.items
+    .filter((i) => i.isPreOrder)
+    .filter((i) => (i.variant?.quantity ?? 0) < 0)
+    .map((i) => `${i.product?.name || "Item"} (${i.variant?.quantity} in stock)`);
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: "PROCESSING",
+      preOrderReleasedAt: new Date(),
+      preOrderReleasedBy: adminId,
+    },
+  });
+
+  await prisma.activityLog.create({
+    data: {
+      entityType: "order",
+      entityId: orderId,
+      action: "update",
+      description: `Pre-order released for fulfillment: ${order.orderNumber}`,
+      performedBy: adminId,
+      performedByRole: "admin",
+    },
+  });
+
+  // Now that stock is ready, hand the order to Shiprocket like any other
+  // order (respects AUTO/MANUAL booking mode).
+  let shiprocketTriggered = false;
+  try {
+    const settings = await getShiprocketSettings();
+    if (settings.isEnabled && settings.bookingMode !== "MANUAL") {
+      processOrderForShipping(orderId).catch((err) => {
+        console.error("Shiprocket error releasing pre-order:", err.message);
+      });
+      shiprocketTriggered = true;
+    }
+  } catch (err) {
+    console.error("Error checking Shiprocket settings on pre-order release:", err.message);
+  }
+
+  // Notify the customer their pre-order is now being prepared for shipping
+  if (order.user?.email) {
+    try {
+      const storeConfig = getStoreConfig();
+      await sendEmail({
+        email: order.user.email,
+        subject: `Your Pre-Order is Ready — #${order.orderNumber}`,
+        html: getOrderStatusUpdateTemplate(
+          {
+            userName: order.user.name || "Customer",
+            orderNumber: order.orderNumber,
+            status: "PROCESSING",
+            message: "Great news — the item(s) you pre-ordered are now available and your order is being prepared for shipping.",
+          },
+          storeConfig
+        ),
+      });
+    } catch (emailErr) {
+      console.error("Pre-order release email error:", emailErr);
+    }
+  }
+
+  res.status(200).json(
+    new ApiResponsive(
+      200,
+      {
+        order: updatedOrder,
+        shiprocketTriggered,
+        stillShort, // non-empty means some pre-order items still show negative stock
+      },
+      stillShort.length > 0
+        ? "Pre-order released, but some items still show insufficient stock — please verify."
+        : "Pre-order released and moved to Processing"
+    )
+  );
 });

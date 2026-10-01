@@ -9,6 +9,8 @@ import {
   getOrderStats,
   cleanupInvalidPartnerEarnings,
   updateOrderItemQuantity,
+  getPreOrders,
+  releasePreOrder,
 } from "../controllers/admin.order.controller.js";
 import {
   verifyAdminJWT,
@@ -23,6 +25,22 @@ router.get(
   verifyAdminJWT,
   hasPermission("orders", "read"),
   getOrders
+);
+
+// Pre-Order routes — must be registered BEFORE the "/orders/:orderId" wildcard
+// below, otherwise Express would match "/orders/pre-orders" to it instead.
+router.get(
+  "/orders/pre-orders",
+  verifyAdminJWT,
+  hasPermission("orders", "read"),
+  getPreOrders
+);
+
+router.post(
+  "/orders/:orderId/release-pre-order",
+  verifyAdminJWT,
+  hasPermission("orders", "update"),
+  releasePreOrder
 );
 
 router.get(

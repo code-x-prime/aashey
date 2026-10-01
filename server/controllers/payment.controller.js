@@ -11,6 +11,7 @@ import { processReferralReward } from "./referral.controller.js";
 import { decrypt } from "../utils/encryption.js";
 import { processOrderForShipping } from "../utils/shiprocket.js";
 import { getStoreConfig } from "../utils/storeConfig.js";
+import { markPreOrderFlag } from "../utils/preOrder.js";
 
 // Send admin notification when a new order is placed (fire-and-forget)
 async function notifyAdminNewOrder(orderId) {
@@ -559,15 +560,21 @@ export const paymentVerification = asyncHandler(async (req, res) => {
     };
 
     // Check inventory and calculate totals
+    let orderHasPreOrderItem = false;
     for (const item of cartItems) {
       const variant = item.productVariant;
       const price = calculateSlabPrice(variant, item.quantity);
       const itemTotal = price * item.quantity;
       subTotal += itemTotal;
 
-      // Check stock availability
+      // Check stock availability — unless this product has Pre-Order
+      // enabled, in which case insufficient stock is allowed through
+      // (the item is flagged as a pre-order item below).
       if (variant.quantity < item.quantity) {
-        throw new ApiError(400, `Not enough stock for ${variant.product.name}`);
+        if (!variant.product.isPreOrderEnabled) {
+          throw new ApiError(400, `Not enough stock for ${variant.product.name}`);
+        }
+        orderHasPreOrderItem = true;
       }
     }
 
@@ -733,7 +740,11 @@ export const paymentVerification = asyncHandler(async (req, res) => {
             ? billingAddress
             : undefined,
           notes,
-          status: "PAID",
+          // A pre-order item holds the order in PRE_ORDERED (payment is
+          // still fully captured) until the admin releases it — no
+          // Shiprocket booking attempt happens while in this state.
+          status: orderHasPreOrderItem ? "PRE_ORDERED" : "PAID",
+          isPreOrder: orderHasPreOrderItem,
           paymentMethod: paymentGateway === "PHONEPE" ? "PHONEPE" : "RAZORPAY",
           couponCode,
           couponId: couponId,
@@ -835,6 +846,7 @@ export const paymentVerification = asyncHandler(async (req, res) => {
         }
 
         const subtotal = price * item.quantity;
+        const itemIsPreOrder = markPreOrderFlag(variant, variant.product, item.quantity);
 
         // Create order item
         const orderItem = await tx.orderItem.create({
@@ -846,12 +858,14 @@ export const paymentVerification = asyncHandler(async (req, res) => {
             originalPrice: variant.price,
             quantity: item.quantity,
             subtotal,
+            isPreOrder: itemIsPreOrder,
             ...(flashSaleInfo || {}),
           },
         });
         orderItems.push(orderItem);
 
-        // Update inventory
+        // Update inventory (allowed to go negative for a pre-order item —
+        // that's the signal to the admin of how much is oversold/needed)
         await tx.productVariant.update({
           where: { id: variant.id },
           data: {
@@ -890,15 +904,21 @@ export const paymentVerification = asyncHandler(async (req, res) => {
 
     // Process Shiprocket shipping (outside transaction, non-blocking)
     // This creates the order in Shiprocket and assigns AWB if enabled
-    // Skip if booking mode is MANUAL (admin will book manually)
-    const srSettings = await prisma.shiprocketSettings.findFirst();
-    if (srSettings?.bookingMode !== "MANUAL") {
-      processOrderForShipping(result.order.id).catch((err) => {
-        console.error("Shiprocket order processing error:", err);
-        // Non-critical - admin can manually sync later
-      });
+    // Skip if booking mode is MANUAL (admin will book manually), and
+    // always skip for pre-order items — there's no stock to ship yet; the
+    // admin releases the order (which books Shiprocket) once it's ready.
+    if (orderHasPreOrderItem) {
+      console.log(`Shiprocket booking skipped for order ${result.order.orderNumber} (contains pre-order item — awaiting admin release)`);
     } else {
-      console.log(`Shiprocket booking skipped for order ${result.order.orderNumber} (MANUAL mode)`);
+      const srSettings = await prisma.shiprocketSettings.findFirst();
+      if (srSettings?.bookingMode !== "MANUAL") {
+        processOrderForShipping(result.order.id).catch((err) => {
+          console.error("Shiprocket order processing error:", err);
+          // Non-critical - admin can manually sync later
+        });
+      } else {
+        console.log(`Shiprocket booking skipped for order ${result.order.orderNumber} (MANUAL mode)`);
+      }
     }
 
     // Send order confirmation email
@@ -1780,6 +1800,34 @@ export const createCashOrder = asyncHandler(async (req, res) => {
 
     if (!cartItems.length) {
       throw new ApiError(400, "No items in cart");
+    }
+
+    // Pre-Order is online-payment only — Cash on Delivery collects no money
+    // upfront, which defeats the point of securing payment ahead of stock.
+    // If any item needs pre-order handling (insufficient stock and the
+    // product allows pre-order), COD is rejected with a clear reason;
+    // plain out-of-stock items (no pre-order) block checkout as usual.
+    const preOrderBlockedItems = [];
+    const outOfStockItems = [];
+    for (const item of cartItems) {
+      const variant = item.productVariant;
+      if (variant.quantity < item.quantity) {
+        if (variant.product.isPreOrderEnabled) {
+          preOrderBlockedItems.push(variant.product.name);
+        } else {
+          outOfStockItems.push(variant.product.name);
+        }
+      }
+    }
+    if (preOrderBlockedItems.length > 0) {
+      throw new ApiError(
+        400,
+        `"${preOrderBlockedItems.join('", "')}" ${preOrderBlockedItems.length > 1 ? "are" : "is"} available for Pre-Order only. ` +
+        `Pre-Order requires online payment — please pay via Razorpay to continue.`
+      );
+    }
+    if (outOfStockItems.length > 0) {
+      throw new ApiError(400, `Not enough stock for ${outOfStockItems.join(", ")}`);
     }
 
     // Check if user has an active coupon

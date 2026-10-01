@@ -437,6 +437,9 @@ export const createProduct = asyncHandler(async (req, res, next) => {
     metaDescription,
     keywords,
     ourProduct,
+    isPreOrderEnabled,
+    preOrderMessage,
+    preOrderEta,
   } = req.body;
 
   // Validation checks with better error handling
@@ -582,6 +585,9 @@ export const createProduct = asyncHandler(async (req, res, next) => {
               : req.body.hotBrandIds
             : [],
           ourProduct: ourProduct === "true" || ourProduct === true,
+          isPreOrderEnabled: isPreOrderEnabled === "true" || isPreOrderEnabled === true,
+          preOrderMessage: preOrderMessage || null,
+          preOrderEta: preOrderEta ? new Date(preOrderEta) : null,
         },
       });
 
@@ -1148,6 +1154,9 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
     metaDescription,
     keywords,
     ourProduct,
+    isPreOrderEnabled,
+    preOrderMessage,
+    preOrderEta,
   } = req.body;
 
   // Check if product exists
@@ -1339,6 +1348,15 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
           }),
           ...(ourProduct !== undefined && {
             ourProduct: ourProduct === "true" || ourProduct === true,
+          }),
+          ...(isPreOrderEnabled !== undefined && {
+            isPreOrderEnabled: isPreOrderEnabled === "true" || isPreOrderEnabled === true,
+          }),
+          ...(preOrderMessage !== undefined && {
+            preOrderMessage: preOrderMessage || null,
+          }),
+          ...(preOrderEta !== undefined && {
+            preOrderEta: preOrderEta ? new Date(preOrderEta) : null,
           }),
           ...(req.body.brandId !== undefined && {
             brandId:

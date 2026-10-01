@@ -25,6 +25,7 @@ import {
   Layers,
   Eye,
   Truck,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SafeRender } from "@/components/SafeRender";
@@ -425,6 +426,16 @@ export default function DashboardLayout() {
                     ),
                   },
                   {
+                    href: "/pre-orders",
+                    title: "Pre-Orders",
+                    icon: <Clock className="h-3 w-3" />,
+                    hasPermission: hasPermissionFor(
+                      admin,
+                      Resource.ORDERS,
+                      Action.READ
+                    ),
+                  },
+                  {
                     href: "/return-requests",
                     title: t("nav.return_requests"),
                     icon: <RotateCcw className="h-3 w-3" />,
@@ -808,6 +819,16 @@ export default function DashboardLayout() {
                   {
                     href: "/orders",
                     title: t("nav.all_orders"),
+                    hasPermission: hasPermissionFor(
+                      admin,
+                      Resource.ORDERS,
+                      Action.READ
+                    ),
+                  },
+                  {
+                    href: "/pre-orders",
+                    title: "Pre-Orders",
+                    icon: <Clock className="h-3 w-3" />,
                     hasPermission: hasPermissionFor(
                       admin,
                       Resource.ORDERS,

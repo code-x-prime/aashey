@@ -9,6 +9,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
+import PreOrdersPage from "./pages/PreOrdersPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import AttributesPage from "./pages/AttributesPage";
 import AttributeValuesPage from "./pages/AttributeValuesPage";
@@ -198,6 +199,15 @@ const App = () => {
               element={
                 <ProtectedRoute resource={Resource.ORDERS} action={Action.READ}>
                   <OrdersPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="pre-orders"
+              element={
+                <ProtectedRoute resource={Resource.ORDERS} action={Action.READ}>
+                  <PreOrdersPage />
                 </ProtectedRoute>
               }
             />

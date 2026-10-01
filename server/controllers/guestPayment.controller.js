@@ -105,7 +105,11 @@ function calculateSlabPrice(variant, quantity) {
   return parseFloat(variant.salePrice || variant.price);
 }
 
-async function fetchAndValidateCartItems(cartItems) {
+// @param {string} paymentMethod - "CASH" or "RAZORPAY". Pre-Order items are
+//   online-payment only — Cash on Delivery collects no money upfront, which
+//   defeats the point of securing payment ahead of stock — so a CASH guest
+//   checkout is rejected outright if the cart has any pre-order item.
+async function fetchAndValidateCartItems(cartItems, paymentMethod = "RAZORPAY") {
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
     throw new ApiError(400, "Cart items are required");
   }
@@ -134,17 +138,29 @@ async function fetchAndValidateCartItems(cartItems) {
 
   const processedItems = [];
   let subTotal = 0;
+  let hasPreOrderItems = false;
+  const preOrderBlockedItems = [];
 
   for (const item of cartItems) {
     const variant = variantMap.get(item.productVariantId);
     if (!variant) {
       throw new ApiError(400, `Product not found: ${item.productVariantId}`);
     }
+
+    let itemIsPreOrder = false;
     if (variant.quantity < item.quantity) {
-      throw new ApiError(
-        400,
-        `Not enough stock for ${variant.product.name}`
-      );
+      if (variant.product.isPreOrderEnabled) {
+        itemIsPreOrder = true;
+        hasPreOrderItems = true;
+        if (paymentMethod === "CASH") {
+          preOrderBlockedItems.push(variant.product.name);
+        }
+      } else {
+        throw new ApiError(
+          400,
+          `Not enough stock for ${variant.product.name}`
+        );
+      }
     }
 
     const price = calculateSlabPrice(variant, item.quantity);
@@ -156,10 +172,19 @@ async function fetchAndValidateCartItems(cartItems) {
       price,
       quantity: item.quantity,
       subtotal: itemSubtotal,
+      isPreOrder: itemIsPreOrder,
     });
   }
 
-  return { processedItems, subTotal };
+  if (preOrderBlockedItems.length > 0) {
+    throw new ApiError(
+      400,
+      `"${preOrderBlockedItems.join('", "')}" ${preOrderBlockedItems.length > 1 ? "are" : "is"} available for Pre-Order only. ` +
+      `Pre-Order requires online payment — please pay via Razorpay to continue.`
+    );
+  }
+
+  return { processedItems, subTotal, hasPreOrderItems };
 }
 
 // Sum the shippable weight (kg) of the cart, using per-variant shipping weight
@@ -576,6 +601,7 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
   const address = await createUserAddress(newUser.id, guestAddress);
 
   const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const orderHasPreOrderItem = processedItems.some((i) => i.isPreOrder);
 
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.create({
@@ -593,7 +619,10 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
         paymentOwnerId: paymentConfig.paymentSettings.userId,
         shippingAddressId: address.id,
         billingAddressSameAsShipping: true,
-        status: "PAID",
+        // A pre-order item holds the order in PRE_ORDERED (payment is
+        // still fully captured) until the admin releases it.
+        status: orderHasPreOrderItem ? "PRE_ORDERED" : "PAID",
+        isPreOrder: orderHasPreOrderItem,
         couponCode: couponCode || null,
         couponId: couponId || null,
       },
@@ -612,7 +641,7 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
       },
     });
 
-    for (const { variant, price, quantity, subtotal } of processedItems) {
+    for (const { variant, price, quantity, subtotal, isPreOrder } of processedItems) {
       await tx.orderItem.create({
         data: {
           orderId: order.id,
@@ -622,9 +651,12 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
           originalPrice: variant.price,
           quantity,
           subtotal,
+          isPreOrder: !!isPreOrder,
         },
       });
 
+      // Update inventory (allowed to go negative for a pre-order item —
+      // that's the signal to the admin of how much is oversold/needed)
       await tx.productVariant.update({
         where: { id: variant.id },
         data: { quantity: { decrement: quantity } },
@@ -656,14 +688,20 @@ export const verifyGuestPayment = asyncHandler(async (req, res) => {
   );
   notifyAdminNewOrder(result.order.id).catch(console.error);
 
-  // Skip if booking mode is MANUAL
-  const srSettingsGuest = await prisma.shiprocketSettings.findFirst();
-  if (srSettingsGuest?.bookingMode !== "MANUAL") {
-    processOrderForShipping(result.order.id).catch((err) => {
-      console.error("Shiprocket error for guest Razorpay order:", err);
-    });
+  // Skip Shiprocket if booking mode is MANUAL, and always skip for
+  // pre-order items — there's no stock to ship yet; the admin releases the
+  // order (which books Shiprocket) once it's ready.
+  if (orderHasPreOrderItem) {
+    console.log(`Shiprocket booking skipped for guest order ${result.order.orderNumber} (contains pre-order item — awaiting admin release)`);
   } else {
-    console.log(`Shiprocket booking skipped for guest order ${result.order.orderNumber} (MANUAL mode)`);
+    const srSettingsGuest = await prisma.shiprocketSettings.findFirst();
+    if (srSettingsGuest?.bookingMode !== "MANUAL") {
+      processOrderForShipping(result.order.id).catch((err) => {
+        console.error("Shiprocket error for guest Razorpay order:", err);
+      });
+    } else {
+      console.log(`Shiprocket booking skipped for guest order ${result.order.orderNumber} (MANUAL mode)`);
+    }
   }
 
   res.status(200).json(
@@ -691,7 +729,7 @@ export const createGuestCashOrder = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Cash on Delivery is not enabled");
   }
 
-  const { processedItems, subTotal } = await fetchAndValidateCartItems(cartItems);
+  const { processedItems, subTotal } = await fetchAndValidateCartItems(cartItems, "CASH");
   const shippingCost = await calculateShipping(subTotal, processedItems, guestAddress, true);
   const codCharge = parseFloat(paymentSettingsRow.codCharge) || 0;
   const discount = Math.max(parseFloat(discountAmount) || 0, 0);

@@ -444,6 +444,12 @@ export default function ProductContent({ slug }) {
   ];
 
   const inStock = selectedVariant ? (selectedVariant.stock > 0 || selectedVariant.quantity > 0) : true;
+  // Pre-Order: when the product has it enabled, it can still be bought while
+  // out of stock — but only with online payment, never COD. The actual
+  // enforcement happens server-side (checkout blocks COD for pre-order
+  // items); this just drives the storefront UI so customers know up front.
+  const isPreOrder = !inStock && !!product?.isPreOrderEnabled;
+  const canPurchase = inStock || isPreOrder;
 
   /* ════════════════════════════════════════════
      RENDER
@@ -617,11 +623,26 @@ export default function ProductContent({ slug }) {
 
             {/* Stock status */}
             {selectedVariant && (
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${inStock ? "bg-green-500" : "bg-red-500"}`} />
-                <span className={`font-sans text-[13px] font-medium ${inStock ? "text-green-700" : "text-red-600"}`}>
-                  {inStock ? "In Stock" : "Out of Stock"}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className={`w-2 h-2 rounded-full ${inStock ? "bg-green-500" : isPreOrder ? "bg-amber-500" : "bg-red-500"}`} />
+                <span className={`font-sans text-[13px] font-medium ${inStock ? "text-green-700" : isPreOrder ? "text-amber-700" : "text-red-600"}`}>
+                  {inStock ? "In Stock" : isPreOrder ? "Available for Pre-Order" : "Out of Stock"}
                 </span>
+              </div>
+            )}
+
+            {/* Pre-Order notice */}
+            {isPreOrder && (
+              <div className="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+                <RiInformationLine className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-sans text-[13px] font-semibold text-amber-900">
+                    This item is on Pre-Order{product?.preOrderEta ? ` — expected ${new Date(product.preOrderEta).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}
+                  </p>
+                  <p className="font-sans text-[11.5px] text-amber-700 mt-0.5">
+                    {product?.preOrderMessage || "Your card/UPI payment is taken now to reserve stock; the order ships once it's ready."} Online payment only — Cash on Delivery isn&apos;t available for pre-orders.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -649,13 +670,17 @@ export default function ProductContent({ slug }) {
 
               {/* CTA row */}
               <div className="flex gap-2.5 mt-1">
-                {/* Buy Now — adds to cart and opens the cart page */}
+                {/* Buy Now — adds to cart and opens the cart page. Pre-order
+                    items are purchasable even while out of stock (checkout
+                    enforces online-payment-only for them). */}
                 <button onClick={handleAddToCart}
-                  disabled={isAddingToCart || !inStock}
-                  className="flex-1 h-13 py-3.5 rounded-xl bg-[#3F1F00] text-[#FDF6E3] font-sans font-bold text-[13px] tracking-widest uppercase flex items-center justify-center gap-2 hover:bg-[#5C2E00] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                  disabled={isAddingToCart || !canPurchase}
+                  className={`flex-1 h-13 py-3.5 rounded-xl font-sans font-bold text-[13px] tracking-widest uppercase flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${isPreOrder ? "bg-amber-600 text-white hover:bg-amber-700" : "bg-[#3F1F00] text-[#FDF6E3] hover:bg-[#5C2E00]"}`}>
                   {isAddingToCart
                     ? <><RiLoader4Line className="w-4 h-4 animate-spin" /> Adding...</>
-                    : <><RiShoppingCartLine className="w-4 h-4" /> Buy Now</>
+                    : isPreOrder
+                      ? <><RiShoppingCartLine className="w-4 h-4" /> Pre-Order Now</>
+                      : <><RiShoppingCartLine className="w-4 h-4" /> Buy Now</>
                   }
                 </button>
 

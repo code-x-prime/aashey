@@ -471,8 +471,10 @@ export const addToCart = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Product variant not found or inactive");
   }
 
-  // Check stock availability
-  if (productVariant.quantity < quantity) {
+  // Check stock availability — unless this product has Pre-Order enabled,
+  // in which case it can still be added to cart while out of stock. Pre-
+  // order fulfillment (online-payment-only) is enforced at checkout.
+  if (productVariant.quantity < quantity && !productVariant.product.isPreOrderEnabled) {
     throw new ApiError(400, "Not enough stock available");
   }
 
@@ -667,7 +669,7 @@ export const updateCartItem = asyncHandler(async (req, res) => {
       userId,
     },
     include: {
-      productVariant: true,
+      productVariant: { include: { product: true } },
     },
   });
 
@@ -675,8 +677,12 @@ export const updateCartItem = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Cart item not found");
   }
 
-  // Check stock availability
-  if (existingCartItem.productVariant.quantity < quantity) {
+  // Check stock availability — unless this product has Pre-Order enabled,
+  // in which case the quantity can still be increased past available stock.
+  if (
+    existingCartItem.productVariant.quantity < quantity &&
+    !existingCartItem.productVariant.product.isPreOrderEnabled
+  ) {
     throw new ApiError(400, "Not enough stock available");
   }
 
