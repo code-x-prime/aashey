@@ -31,6 +31,8 @@ import AddressForm from "@/components/AddressForm";
 import Image from "next/image";
 import { getImageUrl } from "@/lib/imageUrl";
 import CartSuggestions from "@/components/CartSuggestions";
+import { INDIAN_STATES } from "@/lib/indianStates";
+import { usePincodeLookup } from "@/lib/usePincodeLookup";
 
 export default function CheckoutPage() {
     const { isAuthenticated, user, autoLogin } = useAuth();
@@ -333,6 +335,37 @@ export default function CheckoutPage() {
             setGuestAddressErrors((prev) => ({ ...prev, [name]: "" }));
         }
     };
+
+    // ── Auto-fill City/State from the Postal Code ─────────────────────────
+    // Like Shopify-style checkouts: as soon as a valid 6-digit pincode is
+    // typed, look up and fill city + state automatically. If the lookup
+    // fails or the pincode isn't found, both fields simply stay editable —
+    // the flow never blocks on this.
+    const { lookupPincode } = usePincodeLookup();
+    const [pincodeLookupLoading, setPincodeLookupLoading] = useState(false);
+
+    useEffect(() => {
+        const pin = String(guestAddress.postalCode || "").replace(/\D/g, "");
+        if (pin.length !== 6) return;
+
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            setPincodeLookupLoading(true);
+            const result = await lookupPincode(pin);
+            if (!cancelled && result) {
+                setGuestAddress((prev) => ({
+                    ...prev,
+                    city: result.city || prev.city,
+                    state: result.state || prev.state,
+                }));
+                setGuestAddressErrors((prev) => ({ ...prev, city: "", state: "" }));
+            }
+            if (!cancelled) setPincodeLookupLoading(false);
+        }, 400); // small debounce while the user finishes typing
+
+        return () => { cancelled = true; clearTimeout(timer); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [guestAddress.postalCode]);
 
     // Validate guest address form
     const validateGuestAddress = () => {
@@ -687,7 +720,7 @@ export default function CheckoutPage() {
                         duration: 8000,
                         action: {
                             label: "Log In",
-                            onClick: () => router.push(`/auth?redirect=checkout`),
+                            onClick: () => router.push(`/auth?redirect=checkout&email=${encodeURIComponent(guestAddress.email || "")}&existing=1`),
                         },
                     });
                     setProcessing(false);
@@ -1162,7 +1195,7 @@ export default function CheckoutPage() {
                         <p className="text-red-700 font-semibold">Error</p>
                         <p className="text-red-600">{error}</p>
                         {(error.includes("already exists") || error.includes("Please log in")) && (
-                            <Link href={`/auth?redirect=checkout`}>
+                            <Link href={`/auth?redirect=checkout&email=${encodeURIComponent(guestAddress.email || "")}&existing=1`}>
                                 <button className="mt-2 text-red-700 underline text-sm font-medium hover:text-red-900">
                                     Log in to your account →
                                 </button>
@@ -1380,17 +1413,26 @@ export default function CheckoutPage() {
                                         <label className="block text-sm font-medium text-[#3F1F00] mb-1">
                                             Postal Code <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            name="postalCode"
-                                            value={guestAddress.postalCode}
-                                            onChange={handleGuestAddressChange}
-                                            placeholder="400001"
-                                            maxLength={6}
-                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.postalCode ? "border-red-400" : "border-gray-300"}`}
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                name="postalCode"
+                                                value={guestAddress.postalCode}
+                                                onChange={handleGuestAddressChange}
+                                                placeholder="400001"
+                                                maxLength={6}
+                                                inputMode="numeric"
+                                                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.postalCode ? "border-red-400" : "border-gray-300"}`}
+                                            />
+                                            {pincodeLookupLoading && (
+                                                <Loader2 className="h-4 w-4 animate-spin text-[#C9933A] absolute right-3 top-1/2 -translate-y-1/2" />
+                                            )}
+                                        </div>
                                         {guestAddressErrors.postalCode && (
                                             <p className="text-red-500 text-xs mt-1">{guestAddressErrors.postalCode}</p>
+                                        )}
+                                        {!guestAddressErrors.postalCode && (
+                                            <p className="text-[11px] text-[#8B6040] mt-1">City &amp; state fill in automatically</p>
                                         )}
                                     </div>
                                 </div>
@@ -1432,19 +1474,22 @@ export default function CheckoutPage() {
                                         )}
                                     </div>
 
-                                    {/* State */}
+                                    {/* State — dropdown to avoid typos that break delivery */}
                                     <div>
                                         <label className="block text-sm font-medium text-[#3F1F00] mb-1">
                                             State <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            type="text"
+                                        <select
                                             name="state"
                                             value={guestAddress.state}
                                             onChange={handleGuestAddressChange}
-                                            placeholder="Maharashtra"
-                                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.state ? "border-red-400" : "border-gray-300"}`}
-                                        />
+                                            className={`w-full px-3 py-2 border rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 ${guestAddressErrors.state ? "border-red-400" : "border-gray-300"}`}
+                                        >
+                                            <option value="">Select State</option>
+                                            {INDIAN_STATES.map((s) => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
                                         {guestAddressErrors.state && (
                                             <p className="text-red-500 text-xs mt-1">{guestAddressErrors.state}</p>
                                         )}

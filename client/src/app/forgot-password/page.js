@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,17 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { forgotPassword, loading } = useAuth();
-    const [email, setEmail] = useState("");
+    const prefillEmail = searchParams.get("email") || "";
+    const [email, setEmail] = useState(prefillEmail);
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (prefillEmail) setEmail(prefillEmail);
+    }, [prefillEmail]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -24,7 +30,7 @@ export default function ForgotPasswordPage() {
             toast.success(
                 "If your email is registered, you will receive a password reset link"
             );
-            router.push("/auth?tab=login");
+            router.push(`/auth?tab=login&email=${encodeURIComponent(email)}`);
         } catch (err) {
             toast.error(err.message || "Failed to request password reset");
         } finally {
@@ -87,3 +93,17 @@ export default function ForgotPasswordPage() {
     );
 }
 
+export default function ForgotPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#FDF6E3]">
+                <div className="text-center">
+                    <p className="font-sans italic text-3xl text-[#C9933A]">Aashey</p>
+                    <p className="font-sans text-xs text-[#8B6040] mt-2 tracking-widest uppercase">Loading...</p>
+                </div>
+            </div>
+        }>
+            <ForgotPasswordForm />
+        </Suspense>
+    );
+}

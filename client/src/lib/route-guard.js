@@ -5,8 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "./auth-context";
 
-// Define private routes that require authentication
-const privateRoutes = ["/account", "/checkout", "/wishlist", "/orders"];
+// Define private routes that require authentication.
+// NOTE: "/checkout" is intentionally NOT listed — guest checkout (no login
+// required, Shopify-style) is a supported flow; the checkout page itself
+// handles its own guest-address form and silently creates/logs in an
+// account behind the scenes once the order is placed. Gating this route
+// here would force every logged-out visitor straight to /auth before they
+// could even see the checkout form.
+const privateRoutes = ["/account", "/wishlist", "/orders"];
 
 // Define auth routes that should redirect to dashboard if already logged in
 const authRoutes = ["/auth", "/auth", "/forgot-password", "/reset-password"];

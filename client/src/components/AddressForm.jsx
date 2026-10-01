@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { fetchApi } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, XCircle } from "lucide-react";
+import { INDIAN_STATES } from "@/lib/indianStates";
+import { usePincodeLookup } from "@/lib/usePincodeLookup";
 
 export default function AddressForm({ onSuccess, onCancel, existingAddress = null, isInline = false }) {
     const [loading, setLoading] = useState(false);
@@ -21,6 +23,35 @@ export default function AddressForm({ onSuccess, onCancel, existingAddress = nul
         isDefault: existingAddress?.isDefault || false,
     });
     const [errors, setErrors] = useState({});
+
+    // Auto-fill City/State from the Postal Code — same lookup used at guest
+    // checkout, so a typed pincode fills these in instead of relying on the
+    // customer to type (and possibly mistype) a city/state name.
+    const { lookupPincode } = usePincodeLookup();
+    const [pincodeLookupLoading, setPincodeLookupLoading] = useState(false);
+
+    useEffect(() => {
+        const pin = String(formData.postalCode || "").replace(/\D/g, "");
+        if (pin.length !== 6) return;
+
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            setPincodeLookupLoading(true);
+            const result = await lookupPincode(pin);
+            if (!cancelled && result) {
+                setFormData((prev) => ({
+                    ...prev,
+                    city: result.city || prev.city,
+                    state: result.state || prev.state,
+                }));
+                setErrors((prev) => ({ ...prev, city: "", state: "" }));
+            }
+            if (!cancelled) setPincodeLookupLoading(false);
+        }, 400);
+
+        return () => { cancelled = true; clearTimeout(timer); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.postalCode]);
 
     const validations = {
         name: (value) => !value.trim() ? "Name is required" : value.length < 2 ? "Name must be at least 2 characters" : "",
@@ -88,9 +119,42 @@ export default function AddressForm({ onSuccess, onCancel, existingAddress = nul
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {renderField("name", "Full Name", "Enter your full name", { className: "sm:col-span-2 lg:col-span-3" })}
                     {renderField("street", "Street Address", "House number, Street, Apartment, etc.", { className: "sm:col-span-2 lg:col-span-3" })}
+
+                    {/* Postal Code first — drives the City/State auto-fill below */}
+                    <div>
+                        <Label htmlFor="postalCode">Postal Code*</Label>
+                        <div className="relative">
+                            <Input
+                                id="postalCode" name="postalCode" value={formData.postalCode} onChange={handleChange}
+                                className={errors.postalCode ? "border-red-500" : ""} placeholder="Enter 6-digit postal code"
+                                maxLength={6} inputMode="numeric"
+                            />
+                            {pincodeLookupLoading && (
+                                <Loader2 className="h-4 w-4 animate-spin text-primary absolute right-3 top-1/2 -translate-y-1/2" />
+                            )}
+                        </div>
+                        {errors.postalCode
+                            ? <p className="text-red-500 text-sm mt-1">{errors.postalCode}</p>
+                            : <p className="text-xs text-muted-foreground mt-1">City &amp; state fill in automatically</p>}
+                    </div>
+
                     {renderField("city", "City", "Enter city")}
-                    {renderField("state", "State", "Enter state")}
-                    {renderField("postalCode", "Postal Code", "Enter 6-digit postal code", { maxLength: 6 })}
+
+                    {/* State — dropdown to avoid typos that break delivery/courier booking */}
+                    <div>
+                        <Label htmlFor="state">State*</Label>
+                        <select
+                            id="state" name="state" value={formData.state} onChange={handleChange}
+                            className={`flex h-9 w-full rounded-md border bg-white px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${errors.state ? "border-red-500" : "border-input"}`}
+                        >
+                            <option value="">Select State</option>
+                            {INDIAN_STATES.map((s) => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                        </select>
+                        {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+                    </div>
+
                     {renderField("phone", "Phone Number", "Enter 10-digit phone number", { maxLength: 10 })}
                     {renderField("country", "Country", "Enter country", { className: "sm:col-span-2" })}
                     <div className="lg:col-span-3">
@@ -108,4 +172,3 @@ export default function AddressForm({ onSuccess, onCancel, existingAddress = nul
         </div>
     );
 }
-

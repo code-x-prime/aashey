@@ -159,10 +159,19 @@ function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const [email, setEmail] = useState("");
+    const prefillEmail = searchParams.get("email") || "";
+    const cameFromExistingAccountCheck = searchParams.get("existing") === "1";
+
+    const [email, setEmail] = useState(prefillEmail);
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Keep the field in sync if the query param changes after mount
+    useEffect(() => {
+        if (prefillEmail) setEmail(prefillEmail);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [prefillEmail]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -174,7 +183,17 @@ function LoginForm() {
             const returnUrl = searchParams.get("returnUrl") || searchParams.get("redirect");
             router.push(returnUrl ? decodeURIComponent(returnUrl) : "/");
         } catch (error) {
-            toast.error(error?.message || "Login failed. Please check your credentials.");
+            // A guest-checkout account was created with a random password the
+            // customer never set — flag that clearly instead of letting them
+            // keep guessing a password that never existed.
+            if (cameFromExistingAccountCheck) {
+                toast.error(
+                    "That password didn't work. If you checked out as a guest before, you likely never set a password — use \"Forgot Password?\" below to set one.",
+                    { duration: 8000 }
+                );
+            } else {
+                toast.error(error?.message || "Login failed. Please check your credentials.");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -190,6 +209,14 @@ function LoginForm() {
                     Sign in to your Aashey account
                 </p>
             </div>
+
+            {cameFromExistingAccountCheck && (
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-[12.5px] text-amber-900 leading-relaxed">
+                    An account with <strong>{prefillEmail}</strong> already exists — probably created automatically
+                    from an earlier order. If you don&apos;t remember setting a password, click{" "}
+                    <strong>&quot;Forgot Password?&quot;</strong> below to set one, then come back and sign in.
+                </div>
+            )}
 
             <AuthInput
                 icon={<RiMailLine className="w-[17px] h-[17px]" />}
@@ -229,7 +256,7 @@ function LoginForm() {
                     </button>
                 </div>
                 <div className="text-right">
-                    <Link href="/forgot-password" className="font-sans text-[12px] text-[#C9933A] hover:text-[#3F1F00] transition-colors font-medium">
+                    <Link href={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="font-sans text-[12px] text-[#C9933A] hover:text-[#3F1F00] transition-colors font-medium">
                         Forgot Password?
                     </Link>
                 </div>
