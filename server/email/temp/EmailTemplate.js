@@ -1743,16 +1743,22 @@ export const getOrderCancellationTemplate = (data, storeConfig = null) => {
 export const getOrderStatusUpdateTemplate = (data, storeConfig = null) => {
     const store = storeConfig || getStoreConfig();
     const statusColors = {
+        PAID: "#16a34a",
         PROCESSING: "#2563eb",
+        PRE_ORDERED: "#d97706",
         SHIPPED: "#7c3aed",
         DELIVERED: "#16a34a",
+        REFUNDED: "#6b7280",
         RETURN_APPROVED: "#ea580c",
         RETURN_COMPLETED: "#0891b2",
     };
     const statusLabels = {
+        PAID: "💳 Payment Received",
         PROCESSING: "📦 Order Processing",
+        PRE_ORDERED: "⏳ Pre-Order Confirmed",
         SHIPPED: "🚚 Order Shipped",
         DELIVERED: "✅ Order Delivered",
+        REFUNDED: "↩️ Order Refunded",
         RETURN_APPROVED: "↩️ Return Approved",
         RETURN_COMPLETED: "↩️ Return Completed",
     };
@@ -1797,8 +1803,8 @@ export const getOrderStatusUpdateTemplate = (data, storeConfig = null) => {
             <div class="tracking-box">
                 <h2 style="color:#2e7d32;margin:0 0 10px 0">Track Your Shipment</h2>
                 <div class="awb-code">${data.awbCode}</div>
-                <p style="font-size:14px;color:#555;margin:5px 0">${data.courierName || "Shiprocket"}</p>
-                <a href="https://shiprocket.co/tracking/${data.awbCode}" class="button" style="background:#4caf50">Track Live</a>
+                <p style="font-size:14px;color:#555;margin:5px 0">${data.courierName || "Courier"}</p>
+                ${data.trackingUrl !== false ? `<a href="${data.trackingUrl || `https://shiprocket.co/tracking/${data.awbCode}`}" class="button" style="background:#4caf50">Track Live</a>` : ""}
             </div>` : ""}
 
             <div class="order-details">

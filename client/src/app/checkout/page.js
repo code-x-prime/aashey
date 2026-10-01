@@ -334,6 +334,13 @@ export default function CheckoutPage() {
         if (guestAddressErrors[name]) {
             setGuestAddressErrors((prev) => ({ ...prev, [name]: "" }));
         }
+        // Clear any stale top-level error banner (e.g. "account already
+        // exists" for a previously-typed email) once the customer starts
+        // editing the form again — otherwise it stays stuck on screen even
+        // after they've fixed the problem (changed the email, etc.).
+        if (name === "email" && error) {
+            setError("");
+        }
     };
 
     // ── Auto-fill City/State from the Postal Code ─────────────────────────

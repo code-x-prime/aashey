@@ -639,7 +639,7 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
       const refundNote = order.razorpayPayment?.razorpayPaymentId
         ? "Your refund has been initiated and will reflect in 5-7 business days."
         : order.paymentMethod === "CASH" ? "No payment was collected for this order." : "";
-      
+
       const orderItems = await prisma.orderItem.findMany({
         where: { orderId: order.id },
         include: { product: { select: { name: true } } },
@@ -664,6 +664,33 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
       });
     } catch (emailErr) {
       console.error("Admin cancel email error:", emailErr);
+    }
+  }
+
+  // Send customer email for every other meaningful status change too — not
+  // just CANCELLED. Keeps the customer informed at each step (Processing,
+  // Shipped, Delivered, Paid, Refunded) the same way the cancellation email
+  // already does. Non-blocking — a failed email never fails the status update.
+  const emailableStatuses = ["PROCESSING", "SHIPPED", "DELIVERED", "PAID", "REFUNDED"];
+  if (emailableStatuses.includes(status) && order.user?.email) {
+    try {
+      const storeConfig = getStoreConfig();
+      await sendEmail({
+        email: order.user.email,
+        subject: `Order Update — #${order.orderNumber} is now ${status}`,
+        html: getOrderStatusUpdateTemplate(
+          {
+            userName: order.user.name || "Customer",
+            orderNumber: order.orderNumber,
+            status,
+            awbCode: updatedOrder.awbCode || null,
+            courierName: updatedOrder.courierName || null,
+          },
+          storeConfig
+        ),
+      });
+    } catch (emailErr) {
+      console.error(`Status-update (${status}) email error:`, emailErr);
     }
   }
 
@@ -706,10 +733,11 @@ export const updateTracking = asyncHandler(async (req, res, next) => {
     estimatedDelivery,
   } = req.body;
 
-  // Find the order and its tracking
+  // Find the order and its tracking (awbCode is a scalar field on Order and
+  // comes back automatically with `include`, no `select` needed for it)
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { tracking: true },
+    include: { tracking: true, user: { select: { name: true, email: true } } },
   });
 
   if (!order) {
@@ -793,6 +821,46 @@ export const updateTracking = asyncHandler(async (req, res, next) => {
       },
     },
   });
+
+  // Email the customer about this tracking update (non-blocking). Every
+  // manual tracking entry an admin adds — not just SHIPPED/DELIVERED status
+  // flips — lets the customer know the parcel moved.
+  if (order.user?.email) {
+    try {
+      const storeConfig = getStoreConfig();
+      const trackingStatus = status || updatedTracking.status;
+      // Only show the "Track Live" Shiprocket button when this tracking
+      // number is actually the order's Shiprocket AWB — a manually-entered
+      // tracking number for another carrier would otherwise get a dead link.
+      const isShiprocketAwb =
+        !!order.awbCode && order.awbCode === updatedTracking.trackingNumber;
+
+      await sendEmail({
+        email: order.user.email,
+        subject: `Tracking Update — #${order.orderNumber}`,
+        html: getOrderStatusUpdateTemplate(
+          {
+            userName: order.user.name || "Customer",
+            orderNumber: order.orderNumber,
+            status: trackingStatus,
+            message:
+              description ||
+              (getDefaultTrackingDescription(trackingStatus) +
+                (location ? ` — ${location}` : "")),
+            awbCode: updatedTracking.trackingNumber || null,
+            courierName: updatedTracking.carrier || null,
+            trackingUrl: isShiprocketAwb ? undefined : false,
+            estimatedDelivery: updatedTracking.estimatedDelivery
+              ? new Date(updatedTracking.estimatedDelivery).toLocaleDateString("en-IN")
+              : null,
+          },
+          storeConfig
+        ),
+      });
+    } catch (emailErr) {
+      console.error("Tracking update email error:", emailErr);
+    }
+  }
 
   res
     .status(200)
