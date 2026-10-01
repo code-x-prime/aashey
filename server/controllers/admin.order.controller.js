@@ -1433,7 +1433,9 @@ export const getOrderStats = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Get top selling products
+  // Get top selling products — all-time, same reasoning as the headline cards
+  // above: a "last 7 days" window is too narrow for this to be useful on a
+  // dashboard that's meant to show the store's best performers overall.
   const topProducts = await prisma.orderItem.groupBy({
     by: ["productId"],
     _sum: {
@@ -1442,12 +1444,8 @@ export const getOrderStats = asyncHandler(async (req, res, next) => {
     },
     where: {
       order: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
         status: {
-          in: ["PAID", "SHIPPED", "DELIVERED"],
+          in: ["PAID", "PROCESSING", "PRE_ORDERED", "SHIPPED", "DELIVERED"],
         },
       },
     },
@@ -1483,6 +1481,47 @@ export const getOrderStats = asyncHandler(async (req, res, next) => {
     })
   );
 
+  // ── All-time dashboard numbers ──────────────────────────────────────────
+  // The period-scoped figures above (default "week") are meant for the
+  // growth-% comparison; the headline dashboard cards (Total Revenue, Total
+  // Orders, Prepaid Orders, etc.) should always reflect the store's whole
+  // history, not just the last 7 days — otherwise they read as "0" or near-
+  // empty right after a quiet week even though the store has plenty of
+  // lifetime orders.
+  const [
+    allTimeOrderCount,
+    allTimeRevenue,
+    prepaidStats,
+    codPaidStats,
+    cancelledStats,
+  ] = await Promise.all([
+    prisma.order.count(),
+    prisma.order.aggregate({
+      _sum: { total: true },
+      where: { status: { in: ["PAID", "PROCESSING", "PRE_ORDERED", "SHIPPED", "DELIVERED"] } },
+    }),
+    // Prepaid = paid online via Razorpay, money already collected
+    prisma.order.aggregate({
+      _count: true,
+      _sum: { total: true },
+      where: {
+        paymentMethod: "RAZORPAY",
+        status: { in: ["PAID", "PROCESSING", "PRE_ORDERED", "SHIPPED", "DELIVERED"] },
+      },
+    }),
+    // COD orders that have actually been collected (delivered)
+    prisma.order.aggregate({
+      _sum: { total: true },
+      where: { paymentMethod: "CASH", status: "DELIVERED" },
+    }),
+    // Cancelled orders — count + the revenue that was lost
+    prisma.order.aggregate({
+      _count: true,
+      _sum: { total: true },
+      where: { status: "CANCELLED" },
+    }),
+  ]);
+
   res.status(200).json(
     new ApiResponsive(
       200,
@@ -1492,6 +1531,7 @@ export const getOrderStats = asyncHandler(async (req, res, next) => {
           start: startDate,
           end: endDate,
         },
+        // Period-scoped (used for the growth-% comparison only)
         totalOrders,
         totalSales: totalSales._sum.total || 0,
         averageOrderValue,
@@ -1500,6 +1540,16 @@ export const getOrderStats = asyncHandler(async (req, res, next) => {
         monthlySales,
         orderGrowth,
         revenueGrowth,
+        // All-time (used for the main dashboard cards)
+        allTime: {
+          totalOrders: allTimeOrderCount,
+          totalRevenue: allTimeRevenue._sum.total || 0,
+          prepaidOrders: prepaidStats._count || 0,
+          prepaidRevenue: prepaidStats._sum.total || 0,
+          codCollected: codPaidStats._sum.total || 0,
+          cancelledOrders: cancelledStats._count || 0,
+          cancelledRevenue: cancelledStats._sum.total || 0,
+        },
       },
       "Order statistics fetched successfully"
     )

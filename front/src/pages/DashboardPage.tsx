@@ -48,6 +48,16 @@ import { getImageUrl } from "@/utils/image";
 
 
 // Define types for API data
+interface AllTimeStats {
+  totalOrders?: number;
+  totalRevenue?: number;
+  prepaidOrders?: number;
+  prepaidRevenue?: number;
+  codCollected?: number;
+  cancelledOrders?: number;
+  cancelledRevenue?: number;
+}
+
 interface OrderStats {
   totalOrders?: number;
   totalSales?: number;
@@ -56,6 +66,7 @@ interface OrderStats {
   statusCounts?: Record<string, number>;
   topProducts?: Array<any>;
   monthlySales?: Array<{ month: string; revenue: number }>;
+  allTime?: AllTimeStats;
   [key: string]: any;
 }
 
@@ -124,6 +135,7 @@ export default function DashboardPage() {
           monthlySales: monthlySales,
           orderGrowth: actualData.orderGrowth || 0,
           revenueGrowth: actualData.revenueGrowth || 0,
+          allTime: actualData.allTime || {},
         };
         setOrderStats(processedData);
 
@@ -429,8 +441,8 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Premium Stats Cards Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Premium Stats Cards Grid — all-time totals, not just the last 7 days */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {/* Total Revenue */}
         <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl relative overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />
@@ -443,10 +455,8 @@ export default function DashboardPage() {
           <CardContent className="px-6 pb-6">
             <div className="text-3xl font-bold text-[#1F2937]">
               ₹
-              {orderStats?.totalSales
-                ? parseFloat(orderStats.totalSales.toString()).toLocaleString(
-                  "en-IN"
-                )
+              {(orderStats?.allTime?.totalRevenue ?? 0).toString()
+                ? parseFloat((orderStats?.allTime?.totalRevenue ?? 0).toString()).toLocaleString("en-IN")
                 : "0"}
             </div>
             <div className="flex items-center text-xs mt-3">
@@ -469,6 +479,13 @@ export default function DashboardPage() {
                 <span className="ml-1.5 text-[#9CA3AF]">{t("dashboard.stats.vs_last_month")}</span>
               )}
             </div>
+            {!!orderStats?.allTime && (
+              <div className="flex items-center gap-3 text-xs text-[#9CA3AF] mt-2 pt-2 border-t border-[#F3F4F6]">
+                <span>Prepaid: ₹{(orderStats.allTime.prepaidRevenue ?? 0).toLocaleString("en-IN")}</span>
+                <span>•</span>
+                <span>COD Paid: ₹{(orderStats.allTime.codCollected ?? 0).toLocaleString("en-IN")}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -483,7 +500,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-6 pb-6">
             <div className="text-3xl font-bold text-[#1F2937]">
-              {orderStats?.totalOrders || 0}
+              {orderStats?.allTime?.totalOrders ?? orderStats?.totalOrders ?? 0}
             </div>
             <div className="flex items-center text-xs mt-3">
               {(orderStats?.orderGrowth ?? 0) > 0 ? (
@@ -504,6 +521,31 @@ export default function DashboardPage() {
               {orderStats?.orderGrowth !== undefined && (
                 <span className="ml-1.5 text-[#9CA3AF]">{t("dashboard.stats.vs_last_month")}</span>
               )}
+            </div>
+            {!!orderStats?.allTime?.cancelledOrders && (
+              <div className="flex items-center gap-1 text-xs text-[#EF4444] mt-2 pt-2 border-t border-[#F3F4F6]">
+                <XCircle className="h-3 w-3" />
+                {orderStats.allTime.cancelledOrders} cancelled (₹{(orderStats.allTime.cancelledRevenue ?? 0).toLocaleString("en-IN")} lost)
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Prepaid Orders */}
+        <Card className="bg-[#FFFFFF] border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.04)] rounded-xl relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#3B82F6]" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-6 pt-6">
+            <CardTitle className="text-sm font-medium text-[#4B5563]">
+              Prepaid Orders
+            </CardTitle>
+            <IndianRupee className="h-5 w-5 text-[#3B82F6]" />
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            <div className="text-3xl font-bold text-[#1F2937]">
+              {orderStats?.allTime?.prepaidOrders ?? 0}
+            </div>
+            <div className="flex items-center text-xs mt-3 text-[#9CA3AF]">
+              ₹{(orderStats?.allTime?.prepaidRevenue ?? 0).toLocaleString("en-IN")} collected online
             </div>
           </CardContent>
         </Card>
