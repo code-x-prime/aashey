@@ -10,6 +10,7 @@ import {
   cancelOrder,
   createCashOrder,
   phonePeCallback,
+  razorpayWebhook,
 } from "../controllers/payment.controller.js";
 import {
   getGuestRazorpayKey,
@@ -25,6 +26,10 @@ router.get("/settings", getPaymentSettings);
 
 // PhonePe callback (public route - called by PhonePe)
 router.post("/phonepe-callback", phonePeCallback);
+
+// Razorpay webhook (public — authenticated by X-Razorpay-Signature, not a user
+// token). Safety net that creates the order if the browser never calls /verify.
+router.post("/razorpay-webhook", razorpayWebhook);
 
 // Guest checkout routes (public - no auth required)
 router.get("/guest/razorpay-key", getGuestRazorpayKey);

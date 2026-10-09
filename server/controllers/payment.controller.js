@@ -319,6 +319,13 @@ export const checkout = asyncHandler(async (req, res) => {
     if (selectedCourierEtd) {
       notes.selectedCourierEtd = selectedCourierEtd;
     }
+    // Who is paying and where it ships. This lets the Razorpay webhook rebuild
+    // the order from the payment alone if the browser never reaches
+    // /payment/verify (tab closed, network drop, timeout).
+    notes.userId = userId;
+    if (req.body.shippingAddressId) {
+      notes.shippingAddressId = req.body.shippingAddressId;
+    }
     // Store payment gateway info in notes
     notes.paymentGateway = paymentConfig.paymentSettings.gateway;
     notes.paymentMode = paymentConfig.paymentSettings.mode;
@@ -368,15 +375,51 @@ export const checkout = asyncHandler(async (req, res) => {
   }
 });
 
-// Verify payment and create order
+// Verify payment and create order (called by the browser right after Razorpay
+// checkout succeeds). The real work lives in processRazorpayOrder() so the
+// Razorpay webhook can run the exact same logic as a safety net when this
+// browser call never completes (tab closed, network drop, slow response).
 export const paymentVerification = asyncHandler(async (req, res) => {
+  const data = await processRazorpayOrder({
+    userId: req.user.id,
+    body: req.body,
+    verifySignature: true,
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponsive(
+        200,
+        data,
+        data.alreadyProcessed
+          ? "Payment already verified — order exists"
+          : "Payment verified and order created successfully"
+      )
+    );
+});
+
+/**
+ * Turns a captured Razorpay payment into an order. Idempotent: if an order
+ * already exists for this payment (e.g. the webhook got there first, or the
+ * customer retried), the existing order is returned instead of an error.
+ *
+ * @param {object}  opts
+ * @param {string}  opts.userId           customer the order belongs to
+ * @param {object}  opts.body             razorpay ids + checkout context
+ * @param {boolean} opts.verifySignature  true for the browser flow; false for
+ *                                        the webhook (which is verified by its
+ *                                        own header signature instead)
+ * @returns {Promise<{orderId, orderNumber, paymentId, alreadyProcessed?}>}
+ */
+export async function processRazorpayOrder({ userId, body: reqBody, verifySignature = true }) {
   // Extract parameters with fallbacks for both snake_case and camelCase formats
   const razorpay_order_id =
-    req.body.razorpay_order_id || req.body.razorpayOrderId;
+    reqBody.razorpay_order_id || reqBody.razorpayOrderId;
   const razorpay_payment_id =
-    req.body.razorpay_payment_id || req.body.razorpayPaymentId;
+    reqBody.razorpay_payment_id || reqBody.razorpayPaymentId;
   const razorpay_signature =
-    req.body.razorpay_signature || req.body.razorpaySignature;
+    reqBody.razorpay_signature || reqBody.razorpaySignature || null;
   const {
     shippingAddressId,
     billingAddressSameAsShipping = true,
@@ -385,10 +428,13 @@ export const paymentVerification = asyncHandler(async (req, res) => {
     couponId: requestCouponId,
     discountAmount: requestDiscount,
     notes,
-  } = req.body;
+  } = reqBody;
 
   // Validation
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+  if (!razorpay_order_id || !razorpay_payment_id) {
+    throw new ApiError(400, "Missing payment details");
+  }
+  if (verifySignature && !razorpay_signature) {
     throw new ApiError(400, "Missing payment details");
   }
 
@@ -396,8 +442,6 @@ export const paymentVerification = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Shipping address is required");
   }
 
-
-  const userId = req.user.id;
   let paymentConfig;
   let paymentGateway = "RAZORPAY";
   let paymentMode = "TEST";
@@ -405,7 +449,7 @@ export const paymentVerification = asyncHandler(async (req, res) => {
 
   try {
     // Try to get payment gateway from request body or default to RAZORPAY
-    paymentGateway = req.body.paymentGateway || "RAZORPAY";
+    paymentGateway = reqBody.paymentGateway || "RAZORPAY";
     paymentConfig = await getPaymentGatewayConfig(userId, paymentGateway);
     paymentMode = paymentConfig.paymentSettings.mode;
     paymentOwnerId = paymentConfig.paymentSettings.userId;
@@ -413,25 +457,36 @@ export const paymentVerification = asyncHandler(async (req, res) => {
     throw new ApiError(400, error.message || "Payment gateway not configured");
   }
 
-  // Verify signature using DB key
-  const body = razorpay_order_id + "|" + razorpay_payment_id;
-  const expectedSignature = crypto
-    .createHmac("sha256", paymentConfig.paymentSettings.razorpayKeySecret)
-    .update(body.toString())
-    .digest("hex");
+  // Verify signature using DB key (browser flow only — the webhook is
+  // authenticated by Razorpay's own X-Razorpay-Signature header)
+  if (verifySignature) {
+    const signedBody = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", paymentConfig.paymentSettings.razorpayKeySecret)
+      .update(signedBody.toString())
+      .digest("hex");
 
-  if (expectedSignature !== razorpay_signature) {
-    throw new ApiError(400, "Invalid payment signature");
+    if (expectedSignature !== razorpay_signature) {
+      throw new ApiError(400, "Invalid payment signature");
+    }
   }
 
   try {
-    // Check if payment already processed
+    // Idempotency: if this payment already produced an order (the webhook may
+    // have created it first, or the customer retried), return that order
+    // rather than failing with "already processed".
     const existingPayment = await prisma.razorpayPayment.findUnique({
       where: { razorpayPaymentId: razorpay_payment_id },
+      include: { order: { select: { id: true, orderNumber: true } } },
     });
 
     if (existingPayment) {
-      throw new ApiError(400, "Payment already processed");
+      return {
+        orderId: existingPayment.order.id,
+        orderNumber: existingPayment.order.orderNumber,
+        paymentId: existingPayment.id,
+        alreadyProcessed: true,
+      };
     }
 
     // Check for cancelled orders with this Razorpay order ID
@@ -457,12 +512,7 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       );
     }
 
-    if (!razorpay_signature) {
-      throw new ApiError(400, "Razorpay signature is missing");
-    }
-
     // Get user's cart items
-    const userId = req.user.id;
     const cartItems = await prisma.cartItem.findMany({
       where: { userId },
       include: {
@@ -734,6 +784,37 @@ export const paymentVerification = asyncHandler(async (req, res) => {
     );
     const paymentMethod = mapRazorpayMethod(razorpayPaymentDetails.method);
 
+    // Look up active flash sales for every cart item BEFORE opening the
+    // transaction. These were previously queried one-by-one inside it, which
+    // — with a remote database — could push the transaction past Prisma's
+    // default 5s limit. When that happened the customer's money was already
+    // captured by Razorpay but no order was created. Keeping the transaction
+    // to pure writes makes it fast and reliable.
+    const flashSaleNow = new Date();
+    const flashSaleByProduct = new Map();
+    for (const item of cartItems) {
+      const productId = item.productVariant.product.id;
+      if (flashSaleByProduct.has(productId)) continue;
+      flashSaleByProduct.set(
+        productId,
+        await prisma.flashSaleProduct.findFirst({
+          where: {
+            productId,
+            flashSale: {
+              isActive: true,
+              startTime: { lte: flashSaleNow },
+              endTime: { gte: flashSaleNow },
+            },
+          },
+          include: {
+            flashSale: {
+              select: { id: true, name: true, discountPercentage: true },
+            },
+          },
+        })
+      );
+    }
+
     // Create order and process payment in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create the order
@@ -819,27 +900,8 @@ export const paymentVerification = asyncHandler(async (req, res) => {
         let price = calculateSlabPrice(variant, item.quantity);
         let flashSaleInfo = null;
 
-        // Check for active flash sale for this product
-        const now = new Date();
-        const flashSaleProduct = await tx.flashSaleProduct.findFirst({
-          where: {
-            productId: variant.product.id,
-            flashSale: {
-              isActive: true,
-              startTime: { lte: now },
-              endTime: { gte: now },
-            },
-          },
-          include: {
-            flashSale: {
-              select: {
-                id: true,
-                name: true,
-                discountPercentage: true,
-              },
-            },
-          },
-        });
+        // Flash sale for this product (looked up before the transaction)
+        const flashSaleProduct = flashSaleByProduct.get(variant.product.id);
 
         // Apply flash sale discount if applicable
         if (flashSaleProduct) {
@@ -910,6 +972,11 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       });
 
       return { order, payment, orderItems };
+    }, {
+      // The customer has already paid by this point — never let a slow
+      // database turn a successful payment into a missing order.
+      maxWait: 10000,
+      timeout: 30000,
     });
 
     // Process referral reward (outside transaction to avoid blocking)
@@ -936,7 +1003,11 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       }
     }
 
-    // Send order confirmation email
+    // Send the confirmation email and admin notification in the background.
+    // They used to be awaited before responding, so a slow SMTP server made
+    // /payment/verify take many seconds (the delay the customer saw) even
+    // though the order itself was already saved.
+    (async () => {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -1003,28 +1074,38 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       }
     } catch (emailError) {
       console.error("Order confirmation email error:", emailError);
-      // Don't throw error, continue with response
+      // Never affects the order — it is already saved
     }
 
-    // Notify admin of new order (non-blocking)
-    notifyAdminNewOrder(result.order.id).catch(console.error);
+    // Notify admin of new order
+    await notifyAdminNewOrder(result.order.id).catch(console.error);
+    })().catch((err) => console.error("Post-order notification error:", err));
 
-    // Return success response
-    return res.status(200).json(
-      new ApiResponsive(
-        200,
-        {
-          orderId: result.order.id,
-          orderNumber: result.order.orderNumber,
-          paymentId: result.payment.id,
-        },
-        "Payment verified and order created successfully"
-      )
-    );
+    // Return immediately — the order is saved; emails continue in background
+    return {
+      orderId: result.order.id,
+      orderNumber: result.order.orderNumber,
+      paymentId: result.payment.id,
+    };
   } catch (error) {
     console.error("Payment Verification Error:", error);
 
+    // Lost a race with the webhook (or a double-submit): both tried to create
+    // the order for the same payment and the unique constraint stopped the
+    // second. That's fine — the order exists, so hand it back.
     if (error.code === "P2002") {
+      const winner = await prisma.razorpayPayment.findUnique({
+        where: { razorpayPaymentId: razorpay_payment_id },
+        include: { order: { select: { id: true, orderNumber: true } } },
+      });
+      if (winner) {
+        return {
+          orderId: winner.order.id,
+          orderNumber: winner.order.orderNumber,
+          paymentId: winner.id,
+          alreadyProcessed: true,
+        };
+      }
       throw new ApiError(400, "Duplicate payment record");
     }
 
@@ -1037,7 +1118,7 @@ export const paymentVerification = asyncHandler(async (req, res) => {
       error.message || "Payment verification failed"
     );
   }
-});
+}
 
 // Get order history
 export const getOrderHistory = asyncHandler(async (req, res) => {
@@ -2221,6 +2302,152 @@ export const createCashOrder = asyncHandler(async (req, res) => {
     );
   }
 });
+
+/**
+ * Razorpay webhook — the safety net for "money was captured but no order exists".
+ *
+ * The normal flow is: Razorpay Checkout succeeds in the browser → browser calls
+ * /payment/verify → order is created. If that browser call never completes
+ * (tab closed, network drop, timeout), Razorpay has the money but the store
+ * never hears about it. Razorpay separately POSTs a server-to-server event to
+ * this endpoint, so we can create the order ourselves from the payment alone.
+ *
+ * Setup (Razorpay Dashboard → Settings → Webhooks):
+ *   URL:    https://api.aashey.com/api/payment/razorpay-webhook
+ *   Events: payment.captured, order.paid
+ *   Secret: any strong string — put the same value in the server env as
+ *           RAZORPAY_WEBHOOK_SECRET
+ *
+ * Responds 200 for anything it deliberately ignores or can't act on (so
+ * Razorpay doesn't retry forever) and 500 only for transient failures, so
+ * Razorpay retries those.
+ */
+export const razorpayWebhook = async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) {
+      console.error("[RZP-WEBHOOK] RAZORPAY_WEBHOOK_SECRET is not set — ignoring webhook");
+      return res.status(503).json({ success: false, message: "Webhook not configured" });
+    }
+
+    // Authenticate: HMAC-SHA256 of the RAW request body, compared in constant time
+    const signature = req.headers["x-razorpay-signature"];
+    const raw = req.rawBody;
+    if (!signature || !raw) {
+      return res.status(400).json({ success: false, message: "Missing signature" });
+    }
+    const expected = crypto.createHmac("sha256", secret).update(raw).digest("hex");
+    const a = Buffer.from(String(signature));
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      console.warn("[RZP-WEBHOOK] Invalid signature — rejected");
+      return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+
+    const event = req.body?.event;
+    if (event !== "payment.captured" && event !== "order.paid") {
+      return res.status(200).json({ success: true, ignored: event });
+    }
+
+    const payment = req.body?.payload?.payment?.entity;
+    const razorpay_payment_id = payment?.id;
+    const razorpay_order_id = payment?.order_id || req.body?.payload?.order?.entity?.id;
+    if (!razorpay_payment_id || !razorpay_order_id) {
+      return res.status(200).json({ success: true, ignored: "no payment/order id" });
+    }
+
+    // Already has an order (browser verify got there first) — nothing to do
+    const existing = await prisma.razorpayPayment.findUnique({
+      where: { razorpayPaymentId: razorpay_payment_id },
+      select: { id: true },
+    });
+    if (existing) {
+      return res.status(200).json({ success: true, alreadyProcessed: true });
+    }
+
+    // Read the checkout context we stored on the Razorpay order at checkout time
+    const cfg = await getPaymentGatewayConfig(null, "RAZORPAY");
+    const rzpOrder = await cfg.razorpayInstance.orders.fetch(razorpay_order_id);
+    const notes = rzpOrder?.notes || {};
+
+    if (!notes.userId || !notes.shippingAddressId) {
+      // Can't rebuild this order automatically (e.g. a payment started before
+      // this safety net existed). Tell the admin loudly so it isn't lost —
+      // they can create the order by hand from Orders → Create Order.
+      console.error(`[RZP-WEBHOOK] Payment ${razorpay_payment_id} captured but cannot be auto-matched to an order`);
+      notifyAdminOrphanPayment({
+        paymentId: razorpay_payment_id,
+        razorpayOrderId: razorpay_order_id,
+        amount: payment?.amount ? payment.amount / 100 : null,
+        email: payment?.email,
+        contact: payment?.contact,
+        reason: "The checkout details were not saved with this payment, so the order could not be created automatically.",
+      }).catch(console.error);
+      return res.status(200).json({ success: true, unmatched: true });
+    }
+
+    try {
+      const data = await processRazorpayOrder({
+        userId: notes.userId,
+        verifySignature: false,
+        body: {
+          razorpay_order_id,
+          razorpay_payment_id,
+          shippingAddressId: notes.shippingAddressId,
+          paymentGateway: notes.paymentGateway || "RAZORPAY",
+        },
+      });
+      console.log(`[RZP-WEBHOOK] Order ${data.orderNumber} ${data.alreadyProcessed ? "already existed" : "created from webhook"} for payment ${razorpay_payment_id}`);
+      return res.status(200).json({ success: true, orderNumber: data.orderNumber });
+    } catch (err) {
+      // 4xx = a business reason we cannot fix by retrying (empty cart, address
+      // gone, stock). Money is still captured, so flag it to the admin.
+      if (err?.statusCode && err.statusCode < 500) {
+        console.error(`[RZP-WEBHOOK] Cannot create order for ${razorpay_payment_id}: ${err.message}`);
+        notifyAdminOrphanPayment({
+          paymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id,
+          amount: payment?.amount ? payment.amount / 100 : null,
+          email: payment?.email,
+          contact: payment?.contact,
+          reason: err.message,
+        }).catch(console.error);
+        return res.status(200).json({ success: true, unmatched: true });
+      }
+      throw err; // transient — let Razorpay retry
+    }
+  } catch (error) {
+    console.error("[RZP-WEBHOOK] Error:", error);
+    return res.status(500).json({ success: false, message: "Webhook processing failed" });
+  }
+};
+
+// Email the admin when a payment was captured but no order could be created,
+// with everything needed to create it manually or refund it.
+async function notifyAdminOrphanPayment({ paymentId, razorpayOrderId, amount, email, contact, reason }) {
+  const storeConfig = getStoreConfig();
+  const adminEmail = process.env.ADMIN_EMAIL || storeConfig.storeEmail;
+  if (!adminEmail) return;
+
+  await sendEmail({
+    email: adminEmail,
+    subject: `⚠️ Payment received but NO ORDER created — ₹${amount ?? "?"}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+        <h2 style="color:#b91c1c">⚠️ Payment received, order missing</h2>
+        <p>A customer's payment was captured by Razorpay, but no order exists for it in the store.
+        Please create the order manually (Admin → Orders → Create Order) or refund the payment.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0">
+          <tr><td style="padding:6px 8px;color:#666">Amount</td><td style="padding:6px 8px"><strong>₹${amount ?? "unknown"}</strong></td></tr>
+          <tr><td style="padding:6px 8px;color:#666">Razorpay Payment ID</td><td style="padding:6px 8px"><code>${paymentId}</code></td></tr>
+          <tr><td style="padding:6px 8px;color:#666">Razorpay Order ID</td><td style="padding:6px 8px"><code>${razorpayOrderId}</code></td></tr>
+          <tr><td style="padding:6px 8px;color:#666">Customer email</td><td style="padding:6px 8px">${email || "—"}</td></tr>
+          <tr><td style="padding:6px 8px;color:#666">Customer phone</td><td style="padding:6px 8px">${contact || "—"}</td></tr>
+          <tr><td style="padding:6px 8px;color:#666">Why</td><td style="padding:6px 8px">${reason}</td></tr>
+        </table>
+      </div>`,
+  });
+}
 
 // Helper function to map Razorpay payment method to our enum
 function mapRazorpayMethod(method) {

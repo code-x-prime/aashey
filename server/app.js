@@ -46,7 +46,16 @@ const app = express();
 
 /* -------------------- BASIC MIDDLEWARE -------------------- */
 
-app.use(express.json());
+// Keep the raw request body alongside the parsed JSON: Razorpay's webhook
+// signature is an HMAC of the exact bytes it sent, which can't be recomputed
+// reliably from the parsed object.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 

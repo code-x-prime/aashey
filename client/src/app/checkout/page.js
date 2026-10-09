@@ -136,10 +136,12 @@ export default function CheckoutPage() {
                         onlinePaymentDiscountPercent: response.data.onlinePaymentDiscountPercent ?? 0,
                         shipping: response.data.shipping ?? { enabled: false, flatCharge: 0, freeShippingThreshold: 0 },
                     });
-                    if (response.data.cashEnabled) {
-                        setPaymentMethod("CASH");
-                    } else if (response.data.razorpayEnabled) {
+                    // Pay Online is the preferred/default method; COD is only the
+                    // default when online payment isn't available.
+                    if (response.data.razorpayEnabled) {
                         setPaymentMethod("RAZORPAY");
+                    } else if (response.data.cashEnabled) {
+                        setPaymentMethod("CASH");
                     }
                 }
             } catch (error) {
@@ -1550,44 +1552,6 @@ export default function CheckoutPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {paymentSettings.cashEnabled && (
-                                        <div
-                                            className={`border rounded-md p-4 transition ${paymentMethod === "CASH"
-                                                ? "border-primary bg-primary/5 cursor-pointer"
-                                                : "hover:border-gray-400 cursor-pointer"
-                                                }`}
-                                            onClick={() => handlePaymentMethodSelect("CASH")}
-                                        >
-                                            <div className="flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    id="cash"
-                                                    name="paymentMethod"
-                                                    checked={paymentMethod === "CASH"}
-                                                    onChange={() => handlePaymentMethodSelect("CASH")}
-                                                    className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                                />
-                                                <label htmlFor="cash" className="ml-2 flex items-center flex-1">
-                                                    <span className="font-medium">Cash on Delivery (COD)</span>
-                                                    {paymentMethod === "CASH" && (
-                                                        <span className="ml-2 text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">
-                                                            Selected
-                                                        </span>
-                                                    )}
-                                                </label>
-                                                <Wallet className="h-4 w-4 text-green-600" />
-                                            </div>
-                                            <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
-                                                Pay with cash when your order is delivered
-                                                {paymentSettings.codCharge > 0 && (
-                                                    <span className="block mt-1 text-primary font-medium">
-                                                        Note: An extra fee of {formatCurrency(paymentSettings.codCharge)} applies for COD orders.
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
-                                    )}
-
                                     {paymentSettings.razorpayEnabled && (
                                         <div
                                             className={`border rounded-md p-4 transition ${paymentMethod === "RAZORPAY"
@@ -1625,6 +1589,44 @@ export default function CheckoutPage() {
                                                 {onlinePaymentDiscountPercent > 0 && (
                                                     <span className="block text-green-700 font-medium mt-0.5">
                                                         Get an extra {onlinePaymentDiscountPercent}% off your order total for paying online!
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {paymentSettings.cashEnabled && (
+                                        <div
+                                            className={`border rounded-md p-4 transition ${paymentMethod === "CASH"
+                                                ? "border-primary bg-primary/5 cursor-pointer"
+                                                : "hover:border-gray-400 cursor-pointer"
+                                                }`}
+                                            onClick={() => handlePaymentMethodSelect("CASH")}
+                                        >
+                                            <div className="flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    id="cash"
+                                                    name="paymentMethod"
+                                                    checked={paymentMethod === "CASH"}
+                                                    onChange={() => handlePaymentMethodSelect("CASH")}
+                                                    className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+                                                />
+                                                <label htmlFor="cash" className="ml-2 flex items-center flex-1">
+                                                    <span className="font-medium">Cash on Delivery (COD)</span>
+                                                    {paymentMethod === "CASH" && (
+                                                        <span className="ml-2 text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded">
+                                                            Selected
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                <Wallet className="h-4 w-4 text-green-600" />
+                                            </div>
+                                            <p className="text-sm mt-2 ml-6 text-[#5C3A1E]">
+                                                Pay with cash when your order is delivered
+                                                {paymentSettings.codCharge > 0 && (
+                                                    <span className="block mt-1 text-primary font-medium">
+                                                        Note: An extra fee of {formatCurrency(paymentSettings.codCharge)} applies for COD orders.
                                                     </span>
                                                 )}
                                             </p>
