@@ -665,8 +665,16 @@ export async function processRazorpayOrder({ userId, body: reqBody, verifySignat
       }
     }
 
+    // True when `discount` below was computed here from the user's coupon row.
+    // False when it was taken from the checkout request / Razorpay order notes,
+    // because the client already folds the online-payment discount into that
+    // figure — adding it again would record a total lower than what the
+    // customer actually paid.
+    let discountComputedServerSide = false;
+
     // Apply coupon discount if available
     if (userCoupon && userCoupon.coupon) {
+      discountComputedServerSide = true;
       couponCode = userCoupon.coupon.code;
       couponId = userCoupon.coupon.id;
 
@@ -765,7 +773,14 @@ export async function processRazorpayOrder({ userId, body: reqBody, verifySignat
     let onlinePaymentDiscount = 0;
     if (onlineDiscountPercent > 0) {
       onlinePaymentDiscount = Math.round((subTotal * onlineDiscountPercent) / 100 * 100) / 100;
-      discount += onlinePaymentDiscount;
+      if (discountComputedServerSide) {
+        discount += onlinePaymentDiscount;
+      } else if (discount < onlinePaymentDiscount) {
+        // Client/notes figure is smaller than the online discount alone, so it
+        // can't already include it (e.g. webhook path with no coupon info) —
+        // top it up so the order matches what was actually charged.
+        discount = onlinePaymentDiscount;
+      }
     }
     // Never let combined discounts exceed the subtotal
     discount = Math.min(discount, subTotal);
@@ -783,6 +798,24 @@ export async function processRazorpayOrder({ userId, body: reqBody, verifySignat
       razorpay_payment_id
     );
     const paymentMethod = mapRazorpayMethod(razorpayPaymentDetails.method);
+
+    // Reconcile with what Razorpay actually captured. The amount the customer
+    // paid is the source of truth: if our recomputed total drifted from it
+    // (stale cart, settings changed mid-checkout, rounding), record what was
+    // really paid rather than a number the customer never saw. Done by
+    // adjusting the discount so subTotal + shipping - discount == captured.
+    const capturedAmount = Number(razorpayPaymentDetails.amount) / 100;
+    if (Number.isFinite(capturedAmount) && capturedAmount > 0) {
+      const ourTotal = Math.round((subTotal + shippingCost - discount) * 100) / 100;
+      if (Math.abs(ourTotal - capturedAmount) > 0.99) {
+        const adjusted = Math.round((subTotal + shippingCost - capturedAmount) * 100) / 100;
+        console.warn(
+          `[PAYMENT] Total mismatch for ${razorpay_payment_id}: computed ₹${ourTotal}, captured ₹${capturedAmount}. ` +
+          `Recording captured amount (discount ${discount} -> ${Math.max(adjusted, 0)}).`
+        );
+        discount = Math.min(Math.max(adjusted, 0), subTotal);
+      }
+    }
 
     // Look up active flash sales for every cart item BEFORE opening the
     // transaction. These were previously queried one-by-one inside it, which

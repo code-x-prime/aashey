@@ -15,7 +15,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../config/db.js";
 import { processOrderForShipping } from "../utils/shiprocket.js";
 import sendEmail from "../utils/sendEmail.js";
-import { getStoreConfig } from "../utils/storeConfig.js";
 import { getOrderConfirmationTemplate } from "../email/temp/EmailTemplate.js";
 import { markPreOrderFlag } from "../utils/preOrder.js";
 
@@ -163,6 +162,12 @@ export const createManualOrder = asyncHandler(async (req, res) => {
   const disc = Math.min(Math.max(num(discount), 0), subTotal);
   const total = Math.round((subTotal + shipping + cod - disc) * 100) / 100;
 
+  // Reject invalid combinations BEFORE touching the database, so a refused
+  // request never leaves behind a half-created customer account or address.
+  if (hasPreOrderItem && paymentMethod === "CASH") {
+    throw new ApiError(400, "Pre-order items can only be sold with online payment, not COD");
+  }
+
   // ── Customer + address ────────────────────────────────────────────────────
   const { user, created: customerCreated } = await findOrCreateCustomer({
     name: customer.name,
@@ -170,33 +175,31 @@ export const createManualOrder = asyncHandler(async (req, res) => {
     phone: customer.phone || address.phone,
   });
 
-  const savedAddress = await prisma.address.create({
-    data: {
-      userId: user.id,
-      name: (address.name || customer.name).trim(),
-      phone: phoneDigits.slice(-10),
-      street: address.street.trim(),
-      city: address.city.trim(),
-      state: address.state.trim(),
-      postalCode: String(address.postalCode).trim(),
-      country: address.country || "India",
-      // Don't displace a default address an existing customer already has
-      isDefault: customerCreated,
-    },
-  });
+  // The address is created inside the order transaction below (not here), so
+  // if the order fails — stock race, DB error — no orphan address is left behind.
+  const addressData = {
+    userId: user.id,
+    name: (address.name || customer.name).trim(),
+    phone: phoneDigits.slice(-10),
+    street: address.street.trim(),
+    city: address.city.trim(),
+    state: address.state.trim(),
+    postalCode: String(address.postalCode).trim(),
+    country: address.country || "India",
+    // Don't displace a default address an existing customer already has
+    isDefault: customerCreated,
+  };
 
   // ── Status: pre-order items are held; paid orders are PAID; unpaid COD is PENDING
   const isPaid = paymentMethod === "RAZORPAY" || markAsPaid;
   const status = hasPreOrderItem && paymentMethod === "RAZORPAY" ? "PRE_ORDERED" : isPaid ? "PAID" : "PENDING";
 
-  if (hasPreOrderItem && paymentMethod === "CASH") {
-    throw new ApiError(400, "Pre-order items can only be sold with online payment, not COD");
-  }
-
   const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   const result = await prisma.$transaction(
     async (tx) => {
+      const savedAddress = await tx.address.create({ data: addressData });
+
       const order = await tx.order.create({
         data: {
           orderNumber,
@@ -267,7 +270,7 @@ export const createManualOrder = asyncHandler(async (req, res) => {
         });
       }
 
-      return { order, payment };
+      return { order, payment, savedAddress };
     },
     { maxWait: 10000, timeout: 30000 }
   );
@@ -322,7 +325,7 @@ export const createManualOrder = asyncHandler(async (req, res) => {
             discount: disc.toFixed(2),
             couponCode: "",
             total: total.toFixed(2),
-            shippingAddress: savedAddress,
+            shippingAddress: result.savedAddress,
           }),
         });
       } catch (e) {
