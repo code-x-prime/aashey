@@ -561,6 +561,13 @@ export const orders = {
       throw error;
     }
   },
+  // Manual order creation
+  createManualOrder: (data: Record<string, unknown>) => {
+    return api.post("/api/admin/orders/manual", data);
+  },
+  lookupCustomerByEmail: (email: string) => {
+    return api.get("/api/admin/orders/lookup-customer", { params: { email } });
+  },
   // Pre-Order management
   getPreOrders: (params: { page?: number; limit?: number } = {}) => {
     return api.get("/api/admin/orders/pre-orders", { params });

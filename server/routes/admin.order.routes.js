@@ -13,6 +13,10 @@ import {
   releasePreOrder,
 } from "../controllers/admin.order.controller.js";
 import {
+  createManualOrder,
+  lookupCustomerByEmail,
+} from "../controllers/admin.manualOrder.controller.js";
+import {
   verifyAdminJWT,
   hasPermission,
 } from "../middlewares/admin.middleware.js";
@@ -34,6 +38,22 @@ router.get(
   verifyAdminJWT,
   hasPermission("orders", "read"),
   getPreOrders
+);
+
+// Manual order creation (payment arrived but no order exists, phone orders…).
+// "/orders/manual" and "/orders/lookup-customer" must sit before "/orders/:orderId".
+router.post(
+  "/orders/manual",
+  verifyAdminJWT,
+  hasPermission("orders", "create"),
+  createManualOrder
+);
+
+router.get(
+  "/orders/lookup-customer",
+  verifyAdminJWT,
+  hasPermission("orders", "read"),
+  lookupCustomerByEmail
 );
 
 router.post(

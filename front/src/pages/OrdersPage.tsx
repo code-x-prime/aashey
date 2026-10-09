@@ -24,6 +24,7 @@ import {
   Truck,
   ExternalLink,
   Package,
+  Plus,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -155,7 +156,12 @@ export default function OrdersPage() {
             {totalOrders} total orders
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-sm flex-wrap">
+          <Button asChild size="sm" className="h-8 bg-[#2E7D32] hover:bg-[#1B5E20] text-white">
+            <Link to="/orders/new">
+              <Plus className="h-3.5 w-3.5 mr-1" /> Create Order
+            </Link>
+          </Button>
           <div className="flex items-center gap-1.5 bg-[#F3F4F6] px-3 py-1.5 rounded-lg">
             <ShoppingCart className="h-3.5 w-3.5 text-[#4B5563]" />
             <span className="font-semibold text-[#1F2937]">{totalOrders}</span>
