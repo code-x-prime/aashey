@@ -63,6 +63,7 @@ export default function CreateOrderPage() {
   const [paymentMethod, setPaymentMethod] = useState<"RAZORPAY" | "CASH">("RAZORPAY");
   const [razorpayPaymentId, setRazorpayPaymentId] = useState("");
   const [markAsPaid, setMarkAsPaid] = useState(false);
+  const [paymentReference, setPaymentReference] = useState("");
   const [shippingCost, setShippingCost] = useState("0");
   const [discount, setDiscount] = useState("0");
   const [codCharge, setCodCharge] = useState("0");
@@ -171,10 +172,10 @@ export default function CreateOrderPage() {
       return s + p * l.quantity;
     }, 0);
     const ship = Math.max(parseFloat(shippingCost) || 0, 0);
-    const cod = paymentMethod === "CASH" ? Math.max(parseFloat(codCharge) || 0, 0) : 0;
+    const cod = paymentMethod === "CASH" && !markAsPaid ? Math.max(parseFloat(codCharge) || 0, 0) : 0;
     const disc = Math.min(Math.max(parseFloat(discount) || 0, 0), subTotal);
     return { subTotal, ship, cod, disc, total: subTotal + ship + cod - disc };
-  }, [lines, shippingCost, discount, codCharge, paymentMethod]);
+  }, [lines, shippingCost, discount, codCharge, paymentMethod, markAsPaid]);
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -202,6 +203,7 @@ export default function CreateOrderPage() {
         paymentMethod,
         razorpayPaymentId: paymentMethod === "RAZORPAY" ? razorpayPaymentId.trim() : undefined,
         markAsPaid: paymentMethod === "CASH" ? markAsPaid : undefined,
+        paymentReference: paymentMethod === "CASH" && markAsPaid ? paymentReference.trim() || undefined : undefined,
         shippingCost: parseFloat(shippingCost) || 0,
         discount: parseFloat(discount) || 0,
         codCharge: parseFloat(codCharge) || 0,
@@ -466,10 +468,18 @@ export default function CreateOrderPage() {
               </p>
             </div>
           ) : (
-            <label className="flex items-center gap-2 text-sm text-[#374151]">
-              <input type="checkbox" checked={markAsPaid} onChange={(e) => setMarkAsPaid(e.target.checked)} />
-              Cash already collected (mark as Paid)
-            </label>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-[#374151]">
+                <input type="checkbox" checked={markAsPaid} onChange={(e) => setMarkAsPaid(e.target.checked)} />
+                Already paid (personal UPI / bank transfer / cash received) — mark as Paid
+              </label>
+              {markAsPaid && (
+                <div className="space-y-1.5">
+                  <Label>Payment reference (UTR / UPI ref / who received it)</Label>
+                  <Input className={field} placeholder="e.g. UTR 4455667788 or paid to Ramesh on PhonePe" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
+                </div>
+              )}
+            </div>
           )}
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -481,7 +491,7 @@ export default function CreateOrderPage() {
               <Label>Discount (₹)</Label>
               <Input className={field} type="number" min="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />
             </div>
-            {paymentMethod === "CASH" && (
+            {paymentMethod === "CASH" && !markAsPaid && (
               <div className="space-y-1.5">
                 <Label>COD charge (₹)</Label>
                 <Input className={field} type="number" min="0" value={codCharge} onChange={(e) => setCodCharge(e.target.value)} />

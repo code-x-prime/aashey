@@ -43,6 +43,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { getImageUrl } from "@/utils/image";
 
 import DelhiveryShipmentCard from "@/components/DelhiveryShipmentCard";
+import RecordPaymentCard from "@/components/RecordPaymentCard";
 import WarehouseSelect, { type WarehouseOption } from "@/components/WarehouseSelect";
 import api from "@/api/api";
 import CourierOptions, { type ShiprocketCourier, type CourierChoices } from "@/components/CourierOptions";
@@ -621,6 +622,11 @@ export default function OrderDetailsPage() {
               </div>
             </div>
           </Card>
+
+          {/* Customer paid outside the website (personal UPI / Razorpay link): record it */}
+          {orderDetails.status === "PENDING" && (
+            <RecordPaymentCard orderId={orderDetails.id} onDone={fetchOrderDetails} />
+          )}
 
           {/* Delhivery (only shown when enabled, or when this order is booked with it) */}
           <DelhiveryShipmentCard

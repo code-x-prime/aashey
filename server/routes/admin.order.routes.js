@@ -15,6 +15,7 @@ import {
 import {
   createManualOrder,
   lookupCustomerByEmail,
+  markOrderPaid,
 } from "../controllers/admin.manualOrder.controller.js";
 import {
   verifyAdminJWT,
@@ -47,6 +48,13 @@ router.post(
   verifyAdminJWT,
   hasPermission("orders", "create"),
   createManualOrder
+);
+
+router.post(
+  "/orders/:orderId/mark-paid",
+  verifyAdminJWT,
+  hasPermission("orders", "update"),
+  markOrderPaid
 );
 
 router.get(

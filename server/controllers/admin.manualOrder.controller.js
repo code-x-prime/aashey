@@ -16,6 +16,7 @@ import { prisma } from "../config/db.js";
 import { processOrderForShipping } from "../utils/shiprocket.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getOrderConfirmationTemplate } from "../email/temp/EmailTemplate.js";
+import { withOrderLock } from "../utils/orderLock.js";
 import { markPreOrderFlag } from "../utils/preOrder.js";
 
 const PAYMENT_METHODS = ["RAZORPAY", "CASH"];
@@ -76,6 +77,7 @@ export const createManualOrder = asyncHandler(async (req, res) => {
     razorpayPaymentId, // required for RAZORPAY
     razorpayOrderId,
     markAsPaid = false, // CASH only: has the money actually been collected?
+    paymentReference, // optional: UTR / UPI ref / note when the customer paid the owner personally
     shippingCost = 0,
     discount = 0,
     codCharge = 0,
@@ -158,7 +160,8 @@ export const createManualOrder = asyncHandler(async (req, res) => {
   }
 
   const shipping = Math.max(num(shippingCost), 0);
-  const cod = paymentMethod === "CASH" ? Math.max(num(codCharge), 0) : 0;
+  // A COD fee only applies when cash is still to be collected on delivery
+  const cod = paymentMethod === "CASH" && !markAsPaid ? Math.max(num(codCharge), 0) : 0;
   const disc = Math.min(Math.max(num(discount), 0), subTotal);
   const total = Math.round((subTotal + shipping + cod - disc) * 100) / 100;
 
@@ -216,7 +219,13 @@ export const createManualOrder = asyncHandler(async (req, res) => {
           shippingAddressId: savedAddress.id,
           billingAddressSameAsShipping: true,
           isPreOrder: hasPreOrderItem,
-          notes: [notes, `Created manually by admin${adminId ? ` (${adminId})` : ""}`]
+          notes: [
+            notes,
+            paymentMethod === "CASH" && markAsPaid
+              ? `Paid personally (UPI / bank / cash)${String(paymentReference || "").trim() ? `: ${String(paymentReference).trim()}` : ""}`
+              : null,
+            `Created manually by admin${adminId ? ` (${adminId})` : ""}`,
+          ]
             .filter(Boolean)
             .join("\n"),
         },
@@ -311,7 +320,7 @@ export const createManualOrder = asyncHandler(async (req, res) => {
             userName: user.name || "Valued Customer",
             orderNumber,
             orderDate: result.order.createdAt,
-            paymentMethod: paymentMethod === "CASH" ? "Cash on Delivery" : "Online Payment",
+            paymentMethod: paymentMethod === "CASH" ? (markAsPaid ? "Paid (UPI / bank / personal)" : "Cash on Delivery") : "Online Payment",
             items: lines.map((l) => ({
               name: l.variant.product.name,
               variant: "",
@@ -380,3 +389,113 @@ export const lookupCustomerByEmail = asyncHandler(async (req, res) => {
     new ApiResponsive(200, { exists: !!user, customer: user || null }, user ? "Customer found" : "No customer with this email")
   );
 });
+
+/**
+ * Record a payment on an order that exists but is still unpaid — e.g. the customer paid
+ * the owner personally / through a Razorpay link / UPI after the order was created.
+ * Needs a Razorpay Payment ID (pay_...) or any reference (UTR, UPI ref, note).
+ */
+export const markOrderPaid = asyncHandler((req, res) => withOrderLock(req.params.orderId, () => markOrderPaidUnlocked(req, res)));
+
+const markOrderPaidUnlocked = async (req, res) => {
+  const { orderId } = req.params;
+  const adminId = req.admin?.id;
+  const razorpayId = String(req.body.razorpayPaymentId || "").trim();
+  const reference = String(req.body.reference || "").trim();
+  const triggerShiprocket = req.body.triggerShiprocket !== false;
+
+  if (!razorpayId && !reference) {
+    throw new ApiError(400, "Enter the Razorpay Payment ID or a payment reference (UTR / UPI ref / note)");
+  }
+  if (razorpayId && !/^pay_[A-Za-z0-9]+$/.test(razorpayId)) {
+    throw new ApiError(400, "Razorpay Payment ID looks like pay_XXXXXXXXXXXXXX");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { razorpayPayment: true },
+  });
+  if (!order) throw new ApiError(404, "Order not found");
+  if (order.status !== "PENDING") {
+    throw new ApiError(
+      400,
+      order.status === "CANCELLED" || order.status === "REFUNDED"
+        ? `This order is ${order.status.toLowerCase()} and cannot be marked paid`
+        : `This order is already ${order.status.replace(/_/g, " ").toLowerCase()} (payment recorded)`
+    );
+  }
+
+  if (razorpayId) {
+    const dup = await prisma.razorpayPayment.findUnique({
+      where: { razorpayPaymentId: razorpayId },
+      include: { order: { select: { orderNumber: true, id: true } } },
+    });
+    if (dup && dup.order.id !== order.id) {
+      throw new ApiError(400, `This Razorpay payment is already linked to order #${dup.order.orderNumber}`);
+    }
+  }
+
+  const nextStatus = order.isPreOrder ? "PRE_ORDERED" : "PAID";
+  const note = razorpayId
+    ? `Payment recorded by admin: Razorpay ${razorpayId}`
+    : `Paid personally (UPI / bank / cash): ${reference}`;
+
+  await prisma.$transaction(async (tx) => {
+    if (razorpayId) {
+      if (order.razorpayPayment) {
+        await tx.razorpayPayment.update({
+          where: { id: order.razorpayPayment.id },
+          data: { razorpayPaymentId: razorpayId, status: "CAPTURED", failureReason: null },
+        });
+      } else {
+        await tx.razorpayPayment.create({
+          data: {
+            orderId: order.id,
+            amount: order.total,
+            razorpayOrderId: `MANUAL-${razorpayId}`,
+            razorpayPaymentId: razorpayId,
+            status: "CAPTURED",
+            paymentMethod: "OTHER",
+            notes: { recordedManuallyByAdmin: true, adminId: adminId || null },
+          },
+        });
+      }
+    }
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        status: nextStatus,
+        ...(razorpayId ? { paymentMethod: "RAZORPAY", paymentGateway: "RAZORPAY" } : {}),
+        notes: [order.notes, note].filter(Boolean).join("\n"),
+      },
+    });
+  });
+
+  await prisma.activityLog
+    .create({
+      data: {
+        entityType: "order",
+        entityId: order.id,
+        action: "update",
+        description: `Order ${order.orderNumber} marked paid by admin (${razorpayId || reference})`,
+        performedBy: adminId,
+        performedByRole: "admin",
+      },
+    })
+    .catch(() => {});
+
+  let shiprocketTriggered = false;
+  if (triggerShiprocket && nextStatus === "PAID") {
+    const sr = await prisma.shiprocketSettings.findFirst();
+    if (sr?.isEnabled && sr.bookingMode !== "MANUAL") {
+      processOrderForShipping(order.id).catch((err) =>
+        console.error("Shiprocket error after marking paid:", err.message)
+      );
+      shiprocketTriggered = true;
+    }
+  }
+
+  res.status(200).json(
+    new ApiResponsive(200, { orderId: order.id, status: nextStatus, shiprocketTriggered }, "Payment recorded")
+  );
+};
