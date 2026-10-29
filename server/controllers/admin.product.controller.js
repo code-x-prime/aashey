@@ -180,16 +180,38 @@ export const getProducts = asyncHandler(async (req, res, next) => {
     order = "desc",
     featured,
     isActive,
+    stock,
   } = req.query;
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
+  // stock=out: every active variant has 0 stock. stock=low: not out, but some
+  // active variant is at or below the low-stock threshold (same rule as the dashboard alert).
+  const LOW_STOCK_THRESHOLD = 5;
+  const stockFilter =
+    stock === "out"
+      ? { variants: { some: { isActive: true }, none: { isActive: true, quantity: { gt: 0 } } } }
+      : stock === "low"
+        ? {
+            AND: [
+              { variants: { some: { isActive: true, quantity: { gt: 0 } } } },
+              { variants: { some: { isActive: true, quantity: { lte: LOW_STOCK_THRESHOLD } } } },
+            ],
+          }
+        : stock === "alert"
+          ? { variants: { some: { isActive: true, quantity: { lte: LOW_STOCK_THRESHOLD } } } }
+          : {};
+
   // Build filter conditions
+  const searchTerm = String(search || "").trim();
   const filterConditions = {
-    ...(search && {
+    ...stockFilter,
+    ...(searchTerm && {
       OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
+        { name: { contains: searchTerm, mode: "insensitive" } },
+        { description: { contains: searchTerm, mode: "insensitive" } },
+        { slug: { contains: searchTerm, mode: "insensitive" } },
+        { variants: { some: { sku: { contains: searchTerm, mode: "insensitive" } } } },
       ],
     }),
     ...(category && {

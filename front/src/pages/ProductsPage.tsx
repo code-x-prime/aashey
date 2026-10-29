@@ -6,7 +6,7 @@ import {
   useRef,
   useMemo,
 } from "react";
-import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
+import { Link, useParams, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   products,
   categories,
@@ -2977,6 +2977,23 @@ function ProductsList() {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  // ?stock=alert|out|low comes from the dashboard's Inventory Alert link
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stockParam = searchParams.get("stock");
+  const stockFilter: "" | "out" | "low" | "alert" =
+    stockParam === "out" || stockParam === "low" || stockParam === "alert" ? stockParam : "";
+  const setStockFilter = (value: string) => {
+    setCurrentPage(1);
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set("stock", value);
+    else next.delete("stock");
+    setSearchParams(next, { replace: true });
+  };
+
+  // A new search term must start from page 1, otherwise results on later pages look "missing"
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, selectedCategory]);
 
   // States for delete dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -2994,6 +3011,7 @@ function ProductsList() {
           limit: 10,
           ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
           ...(selectedCategory && { category: selectedCategory }),
+          ...(stockFilter && { stock: stockFilter }),
         };
 
         const response = await products.getProducts(params);
@@ -3015,7 +3033,7 @@ function ProductsList() {
     };
 
     fetchProducts();
-  }, [currentPage, debouncedSearchQuery, selectedCategory]);
+  }, [currentPage, debouncedSearchQuery, selectedCategory, stockFilter]);
 
   // Fetch categories for filter
   useEffect(() => {
@@ -3395,7 +3413,17 @@ function ProductsList() {
           <option value="active">{t("products.list.status.active")}</option>
           <option value="draft">{t("products.list.status.inactive")}</option>
         </select>
-        {(selectedCategory || searchQuery) && (
+        <select
+          className="rounded-full border border-[#E5E7EB] bg-[#FFFFFF] px-4 py-2 text-sm text-[#4B5563] focus:outline-none focus:border-primary"
+          value={stockFilter}
+          onChange={(e) => setStockFilter(e.target.value)}
+        >
+          <option value="">All stock</option>
+          <option value="alert">Low + out of stock</option>
+          <option value="low">Low stock</option>
+          <option value="out">Out of stock</option>
+        </select>
+        {(selectedCategory || searchQuery || stockFilter) && (
           <Button
             variant="ghost"
             size="sm"
@@ -3403,6 +3431,7 @@ function ProductsList() {
             onClick={() => {
               setSelectedCategory("");
               setSearchQuery("");
+              setStockFilter("");
             }}
           >
             <X className="h-3 w-3 mr-1" />

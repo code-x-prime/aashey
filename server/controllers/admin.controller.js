@@ -508,17 +508,26 @@ export const getLowStockAlerts = asyncHandler(async (req, res) => {
     };
   });
 
+  // Count PRODUCTS, not variants (the dashboard says "products"). A product is
+  // out of stock when every active variant is at 0; low when it is not out but
+  // some variant is at/below the threshold. Same rule as /products?stock=out|low.
+  const byProduct = new Map();
+  for (const v of lowStockVariants) {
+    if (!byProduct.has(v.productId)) {
+      byProduct.set(v.productId, v.product.variants.some((pv) => pv.quantity > 0));
+    }
+  }
+  const productsWithStock = [...byProduct.values()].filter(Boolean).length;
+  const outOfStockProducts = byProduct.size - productsWithStock;
+
   res.status(200).json(
     new ApiResponsive(
       200,
       {
         alerts: formattedAlerts,
-        count: formattedAlerts.length,
-        outOfStockCount: formattedAlerts.filter(
-          (a) => a.status === "OUT_OF_STOCK"
-        ).length,
-        lowStockCount: formattedAlerts.filter((a) => a.status === "LOW_STOCK")
-          .length,
+        count: byProduct.size,
+        outOfStockCount: outOfStockProducts,
+        lowStockCount: productsWithStock,
       },
       "Inventory alerts fetched successfully"
     )

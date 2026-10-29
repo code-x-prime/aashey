@@ -21,6 +21,7 @@ interface ProductQueryParams {
   limit?: number;
   search?: string;
   category?: string;
+  stock?: "out" | "low" | "alert";
   sortBy?: string;
   order?: "asc" | "desc";
 }

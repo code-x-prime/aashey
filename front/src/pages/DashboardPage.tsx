@@ -431,7 +431,7 @@ export default function DashboardPage() {
                 asChild
                 className="border-[#E5E7EB] hover:bg-[#F3F7F6] text-sm"
               >
-                <Link to="/products">
+                <Link to="/products?stock=alert">
                   {t("dashboard.inventory_alert.view_inventory")}
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </Link>
