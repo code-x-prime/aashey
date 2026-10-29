@@ -4,6 +4,7 @@ import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { encrypt } from "../utils/encryption.js";
 import { withOrderLock } from "../utils/orderLock.js";
+import { sendShippingEmailForOrder } from "../utils/shippingEmail.js";
 import { cancelShiprocketOrder } from "../utils/shiprocket.js";
 import {
     getDelhiverySettings,
@@ -43,10 +44,27 @@ const orderWeightKg = (order, defaultWeight) =>
         order.items.reduce((sum, i) => sum + (i.variant?.shippingWeight || defaultWeight) * i.quantity, 0)
     );
 
-async function getOriginPincode() {
-    const pickup = await prisma.shiprocketPickupAddress.findFirst({ orderBy: { isDefault: "desc" } });
-    if (!pickup?.pincode) throw new ApiError(400, "No pickup address found. Add your warehouse pincode in Shiprocket pickup addresses.");
-    return String(pickup.pincode);
+/**
+ * Which Delhivery warehouse ships this order: the one asked for, else the one saved on
+ * the order, else the default. Falls back to the legacy single "pickup location name"
+ * (with the Shiprocket default pincode) so existing setups keep working.
+ */
+async function resolveWarehouse(settings, requestedId, order) {
+    const id = requestedId || order?.warehouseId;
+    if (id) {
+        const w = await prisma.delhiveryWarehouse.findUnique({ where: { id } });
+        if (!w || !w.isActive) throw new ApiError(400, "The selected Delhivery warehouse is missing or inactive");
+        return { id: w.id, name: w.name, pincode: String(w.pincode) };
+    }
+    const w = (await prisma.delhiveryWarehouse.findFirst({ where: { isActive: true, isDefault: true } }))
+        || (await prisma.delhiveryWarehouse.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } }));
+    if (w) return { id: w.id, name: w.name, pincode: String(w.pincode) };
+
+    if (settings.pickupLocation) {
+        const pickup = await prisma.shiprocketPickupAddress.findFirst({ orderBy: { isDefault: "desc" } });
+        if (pickup?.pincode) return { id: null, name: settings.pickupLocation, pincode: String(pickup.pincode) };
+    }
+    throw new ApiError(400, "No Delhivery warehouse found. Add one (exact name from Delhivery One + pincode) in Delhivery settings.");
 }
 
 export const getSettings = asyncHandler(async (req, res) => {
@@ -75,8 +93,11 @@ export const updateSettings = asyncHandler(async (req, res) => {
     }
 
     const next = { ...settings, ...data };
-    if (next.isEnabled && (!next.token || !next.pickupLocation)) {
-        throw new ApiError(400, "Add the API token and the exact pickup location name before enabling Delhivery.");
+    if (next.isEnabled) {
+        const hasWarehouse = next.pickupLocation || (await prisma.delhiveryWarehouse.count({ where: { isActive: true } })) > 0;
+        if (!next.token || !hasWarehouse) {
+            throw new ApiError(400, "Add the API token and at least one pickup warehouse before enabling Delhivery.");
+        }
     }
 
     const updated = await prisma.delhiverySettings.update({ where: { id: settings.id }, data });
@@ -99,7 +120,8 @@ export const getOrderOptions = asyncHandler(async (req, res) => {
     const destPin = String(order.shippingAddress?.postalCode || "");
     if (!destPin) throw new ApiError(400, "Order has no delivery pincode");
 
-    const originPin = await getOriginPincode();
+    const warehouse = await resolveWarehouse(settings, req.query.warehouseId, order);
+    const originPin = warehouse.pincode;
     const weightKg = orderWeightKg(order, settings.defaultWeight);
     const result = await getDeliveryOptions(settings, { weightKg, originPin, destPin });
 
@@ -111,7 +133,7 @@ export const getOrderOptions = asyncHandler(async (req, res) => {
     }
     const couriers = [result.options.slow, result.options.fast].filter(Boolean);
     res.status(200).json(
-        new ApiResponsive(200, { couriers, options: result.options, deliveryPincode: destPin, pickupPincode: originPin, totalWeight: weightKg }, "Delhivery options fetched")
+        new ApiResponsive(200, { couriers, options: result.options, deliveryPincode: destPin, pickupPincode: originPin, warehouse, totalWeight: weightKg }, "Delhivery options fetched")
     );
 });
 
@@ -128,7 +150,8 @@ async function bookShipmentUnlocked(req, res) {
     if (order.awbCode) throw new ApiError(400, `Shipment already booked. Waybill: ${order.awbCode}. Cancel it first to re-book.`);
     if (order.status === "PRE_ORDERED") throw new ApiError(400, "This is a pre-order that has not reached its launch date yet.");
 
-    const originPin = await getOriginPincode();
+    const warehouse = await resolveWarehouse(settings, req.body.warehouseId, order);
+    const originPin = warehouse.pincode;
     const weightKg = orderWeightKg(order, settings.defaultWeight);
     const destPin = String(order.shippingAddress?.postalCode || "");
 
@@ -152,7 +175,7 @@ async function bookShipmentUnlocked(req, res) {
 
     let created;
     try {
-        created = await createShipment(settings, buildShipment(order, { settings, weightKg, mode: speed }));
+        created = await createShipment(settings, buildShipment(order, { settings, weightKg, mode: speed }), warehouse.name);
     } catch (e) {
         throw new ApiError(400, e.message);
     }
@@ -162,6 +185,7 @@ async function bookShipmentUnlocked(req, res) {
         data: {
             ...clearShiprocket,
             shippingProvider: "DELHIVERY",
+            warehouseId: warehouse.id,
             awbCode: created.waybill,
             courierName: chosen.name,
             selectedCourierName: chosen.name,
@@ -179,10 +203,13 @@ async function bookShipmentUnlocked(req, res) {
     try {
         const d = new Date();
         d.setDate(d.getDate() + (d.getHours() >= 15 ? 1 : 0));
-        pickup = await requestPickup(settings, { date: d.toISOString().slice(0, 10), count: 1 });
+        pickup = await requestPickup(settings, { date: d.toISOString().slice(0, 10), count: 1, pickupLocation: warehouse.name });
     } catch (e) {
         pickupError = e.message;
     }
+
+    // Customer gets the Delhivery tracking link by email (once per booking)
+    await sendShippingEmailForOrder(order.id);
 
     res.status(200).json(
         new ApiResponsive(200, { order: updated, waybill: created.waybill, pickup, pickupError }, pickupError ? "Shipment booked, but pickup request failed — request pickup again." : "Shipment booked successfully")
@@ -223,7 +250,79 @@ export const cancelShipment = asyncHandler(async (req, res) => {
     }
     await prisma.order.update({
         where: { id: order.id },
-        data: { awbCode: null, courierName: null, shiprocketStatus: "DELHIVERY_CANCELLED", shippingProvider: null, selectedDeliverySpeed: null, selectedCourierRate: null, selectedCourierName: null },
+        data: { awbCode: null, courierName: null, shiprocketStatus: "DELHIVERY_CANCELLED", shippingProvider: null, shippingEmailSentAt: null, selectedDeliverySpeed: null, selectedCourierRate: null, selectedCourierName: null },
     });
     res.status(200).json(new ApiResponsive(200, {}, "Shipment cancelled"));
+});
+
+// ── Warehouses ───────────────────────────────────────────────────────────────
+const cleanWarehouse = (b) => ({
+    name: String(b.name || "").trim(),
+    label: b.label ? String(b.label).trim() : null,
+    pincode: String(b.pincode || "").trim(),
+    city: b.city ? String(b.city).trim() : null,
+    state: b.state ? String(b.state).trim() : null,
+    address: b.address ? String(b.address).trim() : null,
+    phone: b.phone ? String(b.phone).trim() : null,
+});
+
+function validateWarehouse(w) {
+    if (!w.name) throw new ApiError(400, "Warehouse name is required (exactly as in Delhivery One)");
+    if (!/^[1-9][0-9]{5}$/.test(w.pincode)) throw new ApiError(400, "Enter a valid 6-digit pincode");
+}
+
+export const listWarehouses = asyncHandler(async (req, res) => {
+    const warehouses = await prisma.delhiveryWarehouse.findMany({ orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] });
+    res.status(200).json(new ApiResponsive(200, { warehouses }, "Warehouses fetched"));
+});
+
+export const createWarehouse = asyncHandler(async (req, res) => {
+    const data = cleanWarehouse(req.body);
+    validateWarehouse(data);
+    if (await prisma.delhiveryWarehouse.findUnique({ where: { name: data.name } })) {
+        throw new ApiError(409, `A warehouse named "${data.name}" already exists`);
+    }
+    const isFirst = (await prisma.delhiveryWarehouse.count()) === 0;
+    const makeDefault = isFirst || req.body.isDefault === true;
+    const warehouse = await prisma.$transaction(async (tx) => {
+        if (makeDefault) await tx.delhiveryWarehouse.updateMany({ data: { isDefault: false } });
+        return tx.delhiveryWarehouse.create({ data: { ...data, isDefault: makeDefault } });
+    });
+    res.status(201).json(new ApiResponsive(201, { warehouse }, "Warehouse added"));
+});
+
+export const updateWarehouse = asyncHandler(async (req, res) => {
+    const existing = await prisma.delhiveryWarehouse.findUnique({ where: { id: req.params.id } });
+    if (!existing) throw new ApiError(404, "Warehouse not found");
+    const data = cleanWarehouse({ ...existing, ...req.body });
+    validateWarehouse(data);
+    const clash = await prisma.delhiveryWarehouse.findUnique({ where: { name: data.name } });
+    if (clash && clash.id !== existing.id) throw new ApiError(409, `A warehouse named "${data.name}" already exists`);
+
+    const extra = {};
+    if (typeof req.body.isActive === "boolean") extra.isActive = req.body.isActive;
+    if (req.body.isDefault === true) extra.isDefault = true;
+    if (req.body.isDefault === false && existing.isDefault) throw new ApiError(400, "Pick another warehouse as default instead");
+    if (extra.isActive === false && existing.isDefault) throw new ApiError(400, "The default warehouse cannot be deactivated. Make another one default first.");
+
+    const warehouse = await prisma.$transaction(async (tx) => {
+        if (extra.isDefault) await tx.delhiveryWarehouse.updateMany({ where: { id: { not: existing.id } }, data: { isDefault: false } });
+        return tx.delhiveryWarehouse.update({ where: { id: existing.id }, data: { ...data, ...extra } });
+    });
+    res.status(200).json(new ApiResponsive(200, { warehouse }, "Warehouse updated"));
+});
+
+export const deleteWarehouse = asyncHandler(async (req, res) => {
+    const existing = await prisma.delhiveryWarehouse.findUnique({ where: { id: req.params.id } });
+    if (!existing) throw new ApiError(404, "Warehouse not found");
+    const inUse = await prisma.order.count({ where: { warehouseId: existing.id, shippingProvider: "DELHIVERY", awbCode: { not: null } } });
+    if (inUse > 0) throw new ApiError(400, `${inUse} active shipment(s) use this warehouse. Deactivate it instead of deleting.`);
+    await prisma.$transaction(async (tx) => {
+        await tx.delhiveryWarehouse.delete({ where: { id: existing.id } });
+        if (existing.isDefault) {
+            const next = await tx.delhiveryWarehouse.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } });
+            if (next) await tx.delhiveryWarehouse.update({ where: { id: next.id }, data: { isDefault: true } });
+        }
+    });
+    res.status(200).json(new ApiResponsive(200, {}, "Warehouse deleted"));
 });

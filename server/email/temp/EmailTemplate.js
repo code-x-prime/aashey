@@ -189,7 +189,7 @@ export const getEmailOtpTemplate = (
 
 export const getShippingNotificationTemplate = (data, storeConfig = null) => {
     const store = storeConfig || getStoreConfig();
-    const trackingUrl = `https://shiprocket.co/tracking/${data.awbCode}`;
+    const trackingUrl = data.trackingUrl || `https://shiprocket.co/tracking/${data.awbCode}`;
 
     return `
 <!DOCTYPE html>

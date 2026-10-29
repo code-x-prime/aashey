@@ -426,6 +426,8 @@ model Order {
   selectedCourierEtd           String?
   selectedDeliverySpeed        String? // SLOW (surface) | FAST (air), as chosen by the admin when booking
   shippingProvider             String? // SHIPROCKET | DELHIVERY (null = legacy Shiprocket)
+  warehouseId                  String? // pickup warehouse chosen for this order (ShiprocketPickupAddress.id or DelhiveryWarehouse.id, by provider)
+  shippingEmailSentAt          DateTime? // set once the tracking email has gone to the customer for the current booking
   shippingAddress              Address?             @relation(fields: [shippingAddressId], references: [id])
   user                         User                 @relation(fields: [userId], references: [id])
   items                        OrderItem[]
@@ -1251,4 +1253,20 @@ model DelhiverySettings {
   defaultWeight  Float    @default(0.5) // kg
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+// Pickup warehouses for Delhivery (separate from Shiprocket's pickup addresses)
+model DelhiveryWarehouse {
+  id        String   @id @default(uuid())
+  name      String   @unique // exact, case-sensitive name registered in Delhivery One
+  label     String? // friendly name shown in the admin
+  pincode   String
+  city      String?
+  state     String?
+  address   String?
+  phone     String?
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

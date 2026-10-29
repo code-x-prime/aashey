@@ -9,7 +9,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../config/db.js";
 import { encrypt, decrypt } from "../utils/encryption.js";
 import sendEmail from "../utils/sendEmail.js";
-import { getShippingNotificationTemplate } from "../email/temp/EmailTemplate.js";
+import { sendShippingEmailForOrder } from "../utils/shippingEmail.js";
 import {
     authenticate,
     getShiprocketSettings,
@@ -384,6 +384,7 @@ export const cancelShipment = asyncHandler(async (req, res) => {
                 shiprocketStatus: "CANCELLED",
                 awbCode: null,
                 courierName: null,
+                shippingEmailSentAt: null,
             },
         });
 
@@ -620,7 +621,7 @@ const classifyCourierSpeed = (c) => {
     return null;
 };
 
-const getOrderCourierOptions = async (order) => {
+const getOrderCourierOptions = async (order, pickupAddressId = null) => {
     const settings = await getShiprocketSettings();
     if (!settings.isEnabled) {
         throw new ApiError(400, "Shiprocket integration is disabled. Enable it in Shiprocket settings to fetch courier rates or book a shipment.");
@@ -631,9 +632,12 @@ const getOrderCourierOptions = async (order) => {
         throw new ApiError(400, "Order has no delivery pincode");
     }
 
-    const pickupAddress = await prisma.shiprocketPickupAddress.findFirst({
-        where: { isDefault: true },
-    });
+    const pickupAddress = pickupAddressId
+        ? await prisma.shiprocketPickupAddress.findUnique({ where: { id: pickupAddressId } })
+        : await prisma.shiprocketPickupAddress.findFirst({ where: { isDefault: true } });
+    if (pickupAddressId && !pickupAddress) {
+        throw new ApiError(400, "The selected pickup warehouse no longer exists");
+    }
 
     const pickupPincode = pickupAddress?.pincode;
     if (!pickupPincode) {
@@ -707,17 +711,17 @@ export const getOrderCouriers = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Order not found");
     }
 
-    const { couriers, options, deliveryPincode, totalWeight } = await getOrderCourierOptions(order);
+    const { couriers, options, deliveryPincode, totalWeight, pickupPincode } = await getOrderCourierOptions(order, req.query.warehouseId || order.warehouseId || null);
 
     res.status(200).json(
-        new ApiResponsive(200, { couriers, options, deliveryPincode, totalWeight }, "Couriers fetched successfully")
+        new ApiResponsive(200, { couriers, options, deliveryPincode, pickupPincode, totalWeight }, "Couriers fetched successfully")
     );
 });
 
 // Book shipment with selected courier
 export const bookShipment = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
-    const { courierId } = req.body;
+    const { courierId, warehouseId } = req.body;
 
     const parsedCourierId = Number(courierId);
     if (!Number.isInteger(parsedCourierId) || parsedCourierId <= 0) {
@@ -746,7 +750,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
 
     // Rates can change between display and booking; verify the selected courier
     // against current serviceability, using COD rules for cash-on-delivery orders.
-    const { couriers, deliveryPincode, pickupPincode } = await getOrderCourierOptions(order);
+    const { couriers, deliveryPincode, pickupPincode } = await getOrderCourierOptions(order, warehouseId || order.warehouseId || null);
     const selectedCourier = couriers.find((courier) => Number(courier.id) === parsedCourierId);
     if (!selectedCourier) {
         throw new ApiError(
@@ -764,8 +768,11 @@ export const bookShipment = asyncHandler(async (req, res) => {
             selectedCourierRate: selectedCourier.rate,
             selectedCourierEtd: selectedCourier.etd,
             selectedDeliverySpeed: selectedCourier.speed,
+            shippingProvider: "SHIPROCKET",
+            warehouseId: warehouseId || order.warehouseId || null,
         },
     });
+    order = { ...order, warehouseId: warehouseId || order.warehouseId || null };
 
     // ── STEP 4: Reset if Shiprocket shipment was previously cancelled ────────
     if (order.shiprocketStatus === "CANCELLED") {
@@ -1017,47 +1024,8 @@ export const bookShipment = asyncHandler(async (req, res) => {
         },
     });
 
-    // ── STEP 10: Send shipping email (non-critical) ──────────────────────────
-    if (finalOrder?.awbCode && finalOrder?.user?.email) {
-        try {
-            // Fetch order items for email
-            const orderItems = await prisma.orderItem.findMany({
-                where: { orderId: finalOrder.id },
-                include: {
-                    product: { select: { name: true } },
-                    variant: {
-                        include: {
-                            attributes: { include: { attributeValue: { include: { attribute: true } } } },
-                        },
-                    },
-                },
-            });
-
-            const emailHtml = getShippingNotificationTemplate({
-                userName: finalOrder.user.name,
-                orderNumber: finalOrder.orderNumber,
-                awbCode: finalOrder.awbCode,
-                courierName: finalOrder.courierName,
-                shippingAddress: finalOrder.shippingAddress,
-                orderDate: new Date().toLocaleDateString("en-IN"),
-                items: orderItems.map(item => ({
-                    name: item.product?.name || "Product",
-                    variant: item.variant?.attributes?.map(a => `${a.attributeValue.attribute.name}: ${a.attributeValue.value}`).join(", ") || "",
-                    quantity: item.quantity,
-                    price: parseFloat(item.price).toFixed(2),
-                })),
-                total: finalOrder.total,
-            });
-            await sendEmail({
-                email: finalOrder.user.email,
-                subject: `Your Order #${finalOrder.orderNumber} Has Been Shipped! - Tracking: ${finalOrder.awbCode}`,
-                html: emailHtml,
-            });
-            console.log(`[BOOK] Shipping email sent to ${finalOrder.user.email}`);
-        } catch (emailError) {
-            console.error(`[BOOK] Failed to send shipping email (non-critical):`, emailError.message);
-        }
-    }
+    // ── STEP 10: Email the customer their tracking details (once; non-critical) ──
+    if (finalOrder?.awbCode) await sendShippingEmailForOrder(orderId);
 
     console.log(`[BOOK] SUCCESS: AWB=${awbCode}, courier=${courierName}`);
     res.status(200).json(

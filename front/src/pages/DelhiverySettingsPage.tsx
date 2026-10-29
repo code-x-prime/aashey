@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Truck, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/api/api";
+import DelhiveryWarehouses from "@/components/DelhiveryWarehouses";
 
 interface Settings {
   isEnabled: boolean;
@@ -123,17 +124,16 @@ export default function DelhiverySettingsPage() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Pickup location name</Label>
-            <Input
-              placeholder="Exactly as registered in Delhivery One"
-              value={settings.pickupLocation ?? ""}
-              onChange={(e) => set("pickupLocation", e.target.value)}
-            />
-            <p className="text-xs text-slate-500">Case-sensitive. A wrong name makes every booking fail.</p>
-          </div>
+          {settings.pickupLocation && (
+            <div className="space-y-1.5">
+              <Label>Old single pickup name (used only if no warehouse below)</Label>
+              <Input value={settings.pickupLocation} onChange={(e) => set("pickupLocation", e.target.value)} />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      <DelhiveryWarehouses />
 
       <Card>
         <CardHeader>

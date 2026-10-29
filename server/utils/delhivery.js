@@ -150,11 +150,11 @@ export function buildShipment(order, { settings, weightKg, mode }) {
 }
 
 /** Create the shipment -> waybill. */
-export async function createShipment(settings, shipment) {
-    if (!settings.pickupLocation) throw new Error("Delhivery pickup location name is not set in settings");
+export async function createShipment(settings, shipment, pickupName = settings.pickupLocation) {
+    if (!pickupName) throw new Error("No Delhivery pickup warehouse is set. Add one in Delhivery settings.");
     const data = await request(settings, "/api/cmu/create.json", {
         method: "POST",
-        form: { format: "json", data: JSON.stringify({ shipments: [shipment], pickup_location: { name: settings.pickupLocation } }) },
+        form: { format: "json", data: JSON.stringify({ shipments: [shipment], pickup_location: { name: pickupName } }) },
     });
 
     if (data?.error === true || data?.rmk) throw new Error(data.rmk || "Delhivery rejected the shipment");
@@ -199,10 +199,10 @@ export async function cancelShipment(settings, waybill) {
     return data;
 }
 
-export async function requestPickup(settings, { date, time = "14:00:00", count = 1 }) {
-    if (!settings.pickupLocation) throw new Error("Delhivery pickup location name is not set in settings");
+export async function requestPickup(settings, { date, time = "14:00:00", count = 1, pickupLocation = settings.pickupLocation }) {
+    if (!pickupLocation) throw new Error("No Delhivery pickup warehouse is set. Add one in Delhivery settings.");
     return request(settings, "/fm/request/new/", {
         method: "POST",
-        body: { pickup_time: time, pickup_date: date, pickup_location: settings.pickupLocation, expected_package_count: count },
+        body: { pickup_time: time, pickup_date: date, pickup_location: pickupLocation, expected_package_count: count },
     });
 }

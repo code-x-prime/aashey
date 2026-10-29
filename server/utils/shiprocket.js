@@ -8,6 +8,7 @@
 
 import { prisma } from "../config/db.js";
 import { withOrderLock } from "./orderLock.js";
+import { sendShippingEmailForOrder } from "./shippingEmail.js";
 import { decrypt } from "./encryption.js";
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
@@ -408,7 +409,12 @@ export async function addPickupLocation(locationData) {
 /**
  * Get default pickup address from database
  */
-export async function getDefaultPickupAddress() {
+export async function getDefaultPickupAddress(preferredId = null) {
+    if (preferredId) {
+        const chosen = await prisma.shiprocketPickupAddress.findUnique({ where: { id: preferredId } });
+        if (chosen) return chosen;
+        console.warn(`[SR] warehouse ${preferredId} not found, using the default pickup address`);
+    }
     return prisma.shiprocketPickupAddress.findFirst({
         where: { isDefault: true },
     });
@@ -519,7 +525,7 @@ async function ensurePickupAddressSynced(pickupAddress) {
  */
 export async function buildShiprocketOrderPayload(order) {
     const settings = await getShiprocketSettings();
-    const pickupAddress = await getDefaultPickupAddress();
+    const pickupAddress = await getDefaultPickupAddress(order.warehouseId);
 
     if (!pickupAddress) {
         throw new Error("No pickup address configured");
@@ -725,6 +731,9 @@ async function assignAWBToOrder(order, shipmentId) {
             },
         });
         console.log(`AWB assigned: ${awbCode} (${courierName || "courier not returned"})`);
+
+        // Tell the customer (once) — this covers AUTO booking, which used to send nothing
+        await sendShippingEmailForOrder(order.id);
 
         try {
             await schedulePickup(shipmentId);

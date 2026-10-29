@@ -13,6 +13,10 @@ import {
     getLabel,
     getTracking,
     cancelShipment,
+    listWarehouses,
+    createWarehouse,
+    updateWarehouse,
+    deleteWarehouse,
 } from "../controllers/admin.delhivery.controller.js";
 
 const router = express.Router();
@@ -20,6 +24,11 @@ const router = express.Router();
 router.get("/settings", isAdmin, getSettings);
 router.put("/settings", isAdmin, updateSettings);
 router.post("/test-connection", isAdmin, testConnection);
+
+router.get("/warehouses", isAdmin, listWarehouses);
+router.post("/warehouses", isAdmin, createWarehouse);
+router.put("/warehouses/:id", isAdmin, updateWarehouse);
+router.delete("/warehouses/:id", isAdmin, deleteWarehouse);
 
 router.get("/orders/:orderId/options", isAdmin, getOrderOptions);
 router.post("/orders/:orderId/book", isAdmin, bookShipment);

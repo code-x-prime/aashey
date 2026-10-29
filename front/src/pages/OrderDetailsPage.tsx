@@ -43,6 +43,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { getImageUrl } from "@/utils/image";
 
 import DelhiveryShipmentCard from "@/components/DelhiveryShipmentCard";
+import WarehouseSelect, { type WarehouseOption } from "@/components/WarehouseSelect";
+import api from "@/api/api";
 import CourierOptions, { type ShiprocketCourier, type CourierChoices } from "@/components/CourierOptions";
 interface OrderUpdate { id: string; status: string; timestamp: string; note?: string; location?: string; description?: string; }
 interface OrderItem {
@@ -78,6 +80,8 @@ export default function OrderDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [couriers, setCouriers] = useState<ShiprocketCourier[]>([]);
   const [courierChoices, setCourierChoices] = useState<CourierChoices | null>(null);
+  const [srWarehouses, setSrWarehouses] = useState<WarehouseOption[]>([]);
+  const [srWarehouseId, setSrWarehouseId] = useState("");
   const [loadingCouriers, setLoadingCouriers] = useState(false);
   const [courierError, setCourierError] = useState<string | null>(null);
   const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
@@ -112,7 +116,7 @@ export default function OrderDetailsPage() {
     setCourierError(null);
     setSelectedCourierId(null);
     try {
-      const response = await orders.getOrderCouriers(id);
+      const response = await orders.getOrderCouriers(id, srWarehouseId || undefined);
       if (response?.data?.success) {
         setCouriers(response.data.data.couriers || []);
         setCourierChoices(response.data.data.options || null);
@@ -131,7 +135,16 @@ export default function OrderDetailsPage() {
     } finally {
       setLoadingCouriers(false);
     }
-  }, [id]);
+  }, [id, srWarehouseId]);
+
+  // Shiprocket pickup addresses = the warehouses an order can ship from
+  useEffect(() => {
+    api.get("/api/admin/shiprocket/pickup-addresses")
+      .then((r) => setSrWarehouses((r.data.data.addresses || []).map((a: { id: string; nickname?: string; name?: string; pincode: string; isDefault?: boolean }) => ({
+        id: a.id, label: a.nickname || a.name || "Warehouse", pincode: a.pincode, isDefault: a.isDefault,
+      }))))
+      .catch(() => setSrWarehouses([]));
+  }, []);
 
   useEffect(() => { fetchOrderDetails(); }, [fetchOrderDetails]);
 
@@ -151,7 +164,7 @@ export default function OrderDetailsPage() {
     if (!id || !selectedCourierId) return;
     setBookingShipment(true);
     try {
-      const response = await orders.bookShipment(id, selectedCourierId);
+      const response = await orders.bookShipment(id, selectedCourierId, srWarehouseId || undefined);
       if (response?.data?.success) {
         toast.success("Shipment booked! AWB: " + (response.data.data.order.awbCode || "assigned"));
         await fetchOrderDetails();
@@ -715,7 +728,10 @@ export default function OrderDetailsPage() {
                         </div>
                       ) : couriers.length > 0 ? (
                         <div className="space-y-2.5">
-                          <CourierOptions couriers={couriers} options={courierChoices} selectedId={selectedCourierId} onSelect={setSelectedCourierId} />
+                          <div className="space-y-3">
+                            <WarehouseSelect warehouses={srWarehouses} value={srWarehouseId} onChange={setSrWarehouseId} disabled={loadingCouriers || bookingShipment} />
+                            <CourierOptions couriers={couriers} options={courierChoices} selectedId={selectedCourierId} onSelect={setSelectedCourierId} />
+                          </div>
                           <Button onClick={handleBookShipment} disabled={!selectedCourierId || bookingShipment}
                             className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white h-11 text-sm font-bold rounded-xl shadow-xs border-0 gap-2">
                             {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin" />Booking shipment...</>) : (<><Truck className="h-4 w-4" />Re-Book Shipment</>)}
@@ -877,7 +893,10 @@ export default function OrderDetailsPage() {
                       </div>
                     ) : couriers.length > 0 ? (
                       <div className="space-y-2.5">
-                        <CourierOptions couriers={couriers} options={courierChoices} selectedId={selectedCourierId} onSelect={setSelectedCourierId} />
+                        <div className="space-y-3">
+                            <WarehouseSelect warehouses={srWarehouses} value={srWarehouseId} onChange={setSrWarehouseId} disabled={loadingCouriers || bookingShipment} />
+                            <CourierOptions couriers={couriers} options={courierChoices} selectedId={selectedCourierId} onSelect={setSelectedCourierId} />
+                          </div>
                         <Button onClick={handleBookShipment} disabled={!selectedCourierId || bookingShipment}
                           className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white h-11 text-sm font-bold rounded-xl shadow-xs border-0 gap-2">
                           {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin" />Booking shipment...</>) : (<><Truck className="h-4 w-4" />Confirm & Book Shipment</>)}

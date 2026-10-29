@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import api from "@/api/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import WarehouseSelect, { type WarehouseOption } from "@/components/WarehouseSelect";
 import CourierOptions, { type ShiprocketCourier, type CourierChoices } from "@/components/CourierOptions";
 
 interface Props {
@@ -45,6 +46,8 @@ function printSlip(waybill: string, slip: Record<string, unknown>) {
 /** Delhivery booking / label / tracking / cancel for one order. Hidden when Delhivery is off and unused. */
 export default function DelhiveryShipmentCard({ orderId, orderStatus, provider, awbCode, courierName, deliverySpeed, courierRate, shipmentStatus, bookedElsewhere, onChanged }: Props) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+  const [warehouseId, setWarehouseId] = useState("");
   const [couriers, setCouriers] = useState<ShiprocketCourier[]>([]);
   const [choices, setChoices] = useState<CourierChoices | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -61,16 +64,21 @@ export default function DelhiveryShipmentCard({ orderId, orderStatus, provider, 
       .get("/api/admin/delhivery/settings")
       .then((r) => setEnabled(!!r.data.data.settings.isEnabled))
       .catch(() => setEnabled(false));
+    api
+      .get("/api/admin/delhivery/warehouses")
+      .then((r) => setWarehouses((r.data.data.warehouses || []).filter((w: { isActive: boolean }) => w.isActive).map((w: { id: string; label?: string; name: string; pincode: string; isDefault: boolean }) => ({ id: w.id, label: w.label || w.name, pincode: w.pincode, isDefault: w.isDefault }))))
+      .catch(() => setWarehouses([]));
   }, []);
 
   const loadOptions = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const r = await api.get(`/api/admin/delhivery/orders/${orderId}/options`);
+      const r = await api.get(`/api/admin/delhivery/orders/${orderId}/options`, { params: warehouseId ? { warehouseId } : {} });
       const d = r.data.data;
       // Delhivery option ids are "S"/"E"; the shared card works with numbers, so map to 1/2
       const map = (c: ShiprocketCourier | null) => (c ? { ...c, id: c.speed === "FAST" ? 2 : 1 } : null);
+      setSelected(null);
       const slow = map(d.options.slow);
       const fast = map(d.options.fast);
       setChoices({ slow, fast });
@@ -82,7 +90,7 @@ export default function DelhiveryShipmentCard({ orderId, orderStatus, provider, 
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, warehouseId]);
 
   useEffect(() => {
     if (enabled && canBook) loadOptions();
@@ -106,7 +114,7 @@ export default function DelhiveryShipmentCard({ orderId, orderStatus, provider, 
   const book = () =>
     run("book", async () => {
       const speed = selected === "2" ? "FAST" : "SLOW";
-      const r = await api.post(`/api/admin/delhivery/orders/${orderId}/book`, { speed });
+      const r = await api.post(`/api/admin/delhivery/orders/${orderId}/book`, { speed, ...(warehouseId ? { warehouseId } : {}) });
       toast[r.data.data.pickupError ? "warning" : "success"](r.data.message);
       onChanged();
     });
@@ -191,6 +199,7 @@ export default function DelhiveryShipmentCard({ orderId, orderStatus, provider, 
                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh rates
               </Button>
             </div>
+            <WarehouseSelect warehouses={warehouses} value={warehouseId} onChange={setWarehouseId} disabled={loading || busy === "book"} />
             {loading ? (
               <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
             ) : error ? (

@@ -18,7 +18,7 @@ export async function cancelDelhiveryForOrder(order) {
             attempted: true,
             cancelled: true,
             error: null,
-            dbData: { shiprocketStatus: "DELHIVERY_CANCELLED", awbCode: null, courierName: null, shippingProvider: null },
+            dbData: { shiprocketStatus: "DELHIVERY_CANCELLED", awbCode: null, courierName: null, shippingProvider: null, shippingEmailSentAt: null },
         };
     } catch (e) {
         console.error(`[delhivery] cancel failed for waybill ${order.awbCode}:`, e.message);

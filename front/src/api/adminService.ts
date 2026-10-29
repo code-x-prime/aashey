@@ -517,11 +517,11 @@ export const orders = {
   updateOrderStatus: (orderId: string, data: { status: string }) => {
     return api.patch(`/api/admin/orders/${orderId}/status`, data);
   },
-  getOrderCouriers: (orderId: string) => {
-    return api.get(`/api/admin/shiprocket/orders/${orderId}/couriers`);
+  getOrderCouriers: (orderId: string, warehouseId?: string) => {
+    return api.get(`/api/admin/shiprocket/orders/${orderId}/couriers`, { params: warehouseId ? { warehouseId } : {} });
   },
-  bookShipment: (orderId: string, courierId: number) => {
-    return api.post(`/api/admin/shiprocket/orders/${orderId}/book-shipment`, { courierId });
+  bookShipment: (orderId: string, courierId: number, warehouseId?: string) => {
+    return api.post(`/api/admin/shiprocket/orders/${orderId}/book-shipment`, { courierId, ...(warehouseId ? { warehouseId } : {}) });
   },
   cancelShipment: (orderId: string) => {
     return api.post(`/api/admin/shiprocket/orders/${orderId}/cancel`);
