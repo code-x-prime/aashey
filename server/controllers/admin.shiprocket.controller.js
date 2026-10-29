@@ -610,9 +610,10 @@ const getOrderCourierOptions = async (order) => {
         throw new ApiError(400, "No default pickup address configured in Shiprocket settings");
     }
 
+    const defaultWeight = Number(settings.defaultWeight) || 0.5;
     const totalWeight = Math.max(
         order.items.reduce((sum, item) => {
-            const weight = item.variant?.shippingWeight || 0.5;
+            const weight = item.variant?.shippingWeight || defaultWeight;
             return sum + weight * item.quantity;
         }, 0),
         0.5
@@ -625,13 +626,23 @@ const getOrderCourierOptions = async (order) => {
         cod: order.paymentMethod === "CASH",
     });
 
-    const couriers = (result?.data?.available_courier_companies || []).map((c) => ({
-        id: c.courier_company_id,
-        name: c.courier_name,
-        rate: parseFloat(c.rate),
-        etd: c.etd || "2-3 days",
-        codAvailable: Number(c.cod) === 1,
-    }));
+    const availableCouriers = Array.isArray(result?.data?.available_courier_companies)
+        ? result.data.available_courier_companies
+        : [];
+    const couriers = availableCouriers
+        .filter((courier) =>
+            Number.isInteger(Number(courier.courier_company_id)) &&
+            Number(courier.courier_company_id) > 0 &&
+            Number.isFinite(Number(courier.rate)) &&
+            (order.paymentMethod !== "CASH" || Number(courier.cod) === 1)
+        )
+        .map((c) => ({
+            id: Number(c.courier_company_id),
+            name: c.courier_name,
+            rate: parseFloat(c.rate),
+            etd: c.etd || "2-3 days",
+            codAvailable: Number(c.cod) === 1,
+        }));
 
     couriers.sort((a, b) => a.rate - b.rate);
 
@@ -878,20 +889,24 @@ export const bookShipment = asyncHandler(async (req, res) => {
     // Parse AWB — Shiprocket uses multiple response shapes
     const responseData = awbResponse?.response?.data || awbResponse;
     const assignedItem = responseData?.awb_assign_status?.[0] || responseData;
-    const awbCode =
-        assignedItem?.awb_code || assignedItem?.awb ||
-        awbResponse?.awb_code || null;
-    const courierName =
-        assignedItem?.courier_name || assignedItem?.courier ||
-        awbResponse?.courier_name || null;
+    const responseSources = [
+        assignedItem,
+        responseData,
+        responseData?.response?.data,
+        awbResponse?.response?.data?.response?.data,
+        awbResponse,
+    ];
+    const awbCode = responseSources
+        .map((source) => source?.awb_code || source?.awb)
+        .find(Boolean) || null;
+    const courierName = responseSources
+        .map((source) => source?.courier_name || source?.courier)
+        .find(Boolean) || null;
 
     if (!awbCode) {
-        const errMsg =
-            assignedItem?.awb_assign_error ||
-            responseData?.awb_assign_error ||
-            responseData?.message ||
-            awbResponse?.response?.message ||
-            awbResponse?.message ||
+        const errMsg = responseSources
+            .map((source) => source?.awb_assign_error || source?.message)
+            .find(Boolean) ||
             "AWB assignment failed — no AWB code in response";
         const availabilityHint = /not available|unavailable/i.test(errMsg)
             ? " Refresh courier rates and choose another available courier."

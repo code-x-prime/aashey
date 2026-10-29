@@ -209,11 +209,13 @@ export default function CheckoutPage() {
         // Free shipping wins — no need to call Shiprocket
         if (qualifiesFreeShipping) {
             setLiveShipping({ free: true, rate: 0, name: "Free Shipping", id: null, etd: "3-5 business days" });
+            setLoadingLiveShipping(false);
             return;
         }
 
         if (pin.length !== 6) {
             setLiveShipping(null);
+            setLoadingLiveShipping(false);
             return;
         }
 
@@ -235,6 +237,7 @@ export default function CheckoutPage() {
                     body: JSON.stringify({
                         deliveryPincode: pin,
                         cartItems: guestCartItems,
+                        cod: paymentMethod === "CASH",
                     }),
                     signal: controller.signal,
                 });
@@ -270,7 +273,27 @@ export default function CheckoutPage() {
             controller.abort();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deliveryPincode, qualifiesFreeShipping, cart.items]);
+    }, [deliveryPincode, qualifiesFreeShipping, cart.items, paymentMethod]);
+
+    useEffect(() => {
+        if (currentStep !== 3 || !liveShipping) return;
+
+        if (typeof liveShipping.rate === "number") {
+            setSelectedShippingOption({
+                id: liveShipping.id ?? null,
+                name: liveShipping.name || "Standard Shipping",
+                rate: liveShipping.rate,
+                etd: liveShipping.etd || "3-5 business days",
+            });
+        } else {
+            setSelectedShippingOption({
+                id: null,
+                name: "Standard Shipping",
+                rate: totals.shipping,
+                etd: "3-5 business days",
+            });
+        }
+    }, [currentStep, liveShipping, totals.shipping]);
 
     // Fetch Razorpay key for authenticated users
     useEffect(() => {
@@ -293,7 +316,12 @@ export default function CheckoutPage() {
     }, [isAuthenticated]);
 
     const handleAddressSelect = (id) => setSelectedAddressId(id);
-    const handlePaymentMethodSelect = (method) => setPaymentMethod(method);
+    const handlePaymentMethodSelect = (method) => {
+        if (method === paymentMethod) return;
+        setPaymentMethod(method);
+        setLiveShipping(null);
+        setSelectedShippingOption(null);
+    };
 
     const handleAddressFormSuccess = () => {
         setShowAddressForm(false);
@@ -1004,6 +1032,7 @@ export default function CheckoutPage() {
     // Is checkout button disabled?
     const isCheckoutDisabled = () => {
         if (processing) return true;
+        if (loadingLiveShipping) return true;
         if (!paymentMethod) return true;
         if (currentStep !== 3) return true;
         if (!selectedShippingOption) return true;
@@ -1799,4 +1828,3 @@ export default function CheckoutPage() {
         </div>
     );
 }
-

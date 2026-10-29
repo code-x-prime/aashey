@@ -662,6 +662,72 @@ export async function buildShiprocketOrderPayload(order) {
 /**
  * Process order for Shiprocket (create order + assign AWB)
  */
+async function assignAWBToOrder(order, shipmentId) {
+    try {
+        const awbResponse = await assignAWB(
+            shipmentId,
+            order.selectedCourierId || null
+        );
+        const responseData = awbResponse?.response?.data || awbResponse;
+        const assignmentStatus = responseData?.awb_assign_status;
+        const assignedItem = Array.isArray(assignmentStatus)
+            ? assignmentStatus[0]
+            : assignmentStatus && typeof assignmentStatus === "object"
+                ? assignmentStatus
+                : responseData;
+        const responseSources = [
+            assignedItem,
+            responseData,
+            responseData?.response?.data,
+            awbResponse?.response?.data?.response?.data,
+            awbResponse,
+        ];
+        const awbCode = responseSources
+            .map((source) => source?.awb_code || source?.awb)
+            .find(Boolean) || null;
+        const courierName = responseSources
+            .map((source) => source?.courier_name || source?.courier)
+            .find(Boolean) || null;
+
+        if (!awbCode) {
+            const errorMessage = responseSources
+                .map((source) => source?.awb_assign_error || source?.message)
+                .find(Boolean) ||
+                "AWB assignment returned no AWB code";
+            console.warn(`Failed to assign AWB for order ${order.orderNumber}: ${errorMessage}`);
+            return null;
+        }
+
+        await prisma.order.update({
+            where: { id: order.id },
+            data: {
+                awbCode,
+                courierName,
+                shiprocketStatus: "AWB_ASSIGNED",
+                selectedCourierName: courierName,
+                status: "SHIPPED",
+            },
+        });
+        console.log(`AWB assigned: ${awbCode} (${courierName || "courier not returned"})`);
+
+        try {
+            await schedulePickup(shipmentId);
+            await prisma.order.update({
+                where: { id: order.id },
+                data: { shiprocketStatus: "PICKUP_SCHEDULED" },
+            });
+            console.log(`Pickup scheduled for shipment ${shipmentId}`);
+        } catch (pickupError) {
+            console.error("Failed to schedule pickup:", pickupError.message);
+        }
+
+        return { awbCode, courierName };
+    } catch (awbError) {
+        console.error(`Failed to assign AWB for order ${order.orderNumber}:`, awbError.message);
+        return null;
+    }
+}
+
 export async function processOrderForShipping(orderId) {
     const settings = await getShiprocketSettings();
 
@@ -760,6 +826,9 @@ export async function processOrderForShipping(orderId) {
     // ── If order already exists on Shiprocket with a shipment ID, skip creation ──
     if (order.shiprocketOrderId && order.shiprocketShipmentId) {
         console.log(`Order ${order.orderNumber} already on Shiprocket (order_id=${order.shiprocketOrderId}, shipment_id=${order.shiprocketShipmentId}). Skipping creation.`);
+        if (!order.awbCode && order.shiprocketStatus !== "CANCELLED") {
+            await assignAWBToOrder(order, order.shiprocketShipmentId);
+        }
         return { order_id: order.shiprocketOrderId, shipment_id: order.shiprocketShipmentId };
     }
 
@@ -799,6 +868,9 @@ export async function processOrderForShipping(orderId) {
                     },
                 });
                 console.log(`Recovered shipment_id=${parsedShipmentId} for order ${order.orderNumber}`);
+                if (!awbCode && order.shiprocketStatus !== "CANCELLED") {
+                    await assignAWBToOrder(order, parsedShipmentId);
+                }
                 return { order_id: order.shiprocketOrderId, shipment_id: parsedShipmentId };
             } else {
                 // STOP HERE — do NOT fall through to createShiprocketOrder.
@@ -831,7 +903,12 @@ export async function processOrderForShipping(orderId) {
 
         // Shiprocket sometimes returns HTTP 200 even for errors (e.g., "Wrong Pickup location")
         // Detect this by checking if order_id is missing
-        if (!shiprocketResponse.order_id && !shiprocketResponse.shipment_id) {
+        const shiprocketOrderId = Number(shiprocketResponse.order_id);
+        const shipmentId = Number(shiprocketResponse.shipment_id);
+        if (
+            !Number.isInteger(shiprocketOrderId) || shiprocketOrderId <= 0 ||
+            !Number.isInteger(shipmentId) || shipmentId <= 0
+        ) {
             const srErrMsg = shiprocketResponse.message || "Unknown error from Shiprocket";
 
             // Extract valid pickup locations from error response if available
@@ -847,54 +924,13 @@ export async function processOrderForShipping(orderId) {
         await prisma.order.update({
             where: { id: orderId },
             data: {
-                shiprocketOrderId: parseInt(shiprocketResponse.order_id, 10),
-                shiprocketShipmentId: parseInt(shiprocketResponse.shipment_id, 10),
+                shiprocketOrderId,
+                shiprocketShipmentId: shipmentId,
                 shiprocketStatus: "CREATED",
             },
         });
 
-
-        // Now try to assign AWB with the selected courier (if any)
-        try {
-            const awbResponse = await assignAWB(
-                shiprocketResponse.shipment_id,
-                order.selectedCourierId || null
-            );
-
-            const awbCode = awbResponse?.response?.data?.awb_code || awbResponse?.awb_code || null;
-            const courierName = awbResponse?.response?.data?.courier_name || awbResponse?.courier_name || null;
-
-            if (awbCode) {
-                await prisma.order.update({
-                    where: { id: orderId },
-                    data: {
-                        awbCode,
-                        courierName,
-                        shiprocketStatus: "AWB_ASSIGNED",
-                        selectedCourierName: courierName,
-                    },
-                });
-                console.log(`AWB assigned: ${awbCode} (${courierName})`);
-
-                // Try to schedule pickup
-                try {
-                    await schedulePickup(shiprocketResponse.shipment_id);
-                    await prisma.order.update({
-                        where: { id: orderId },
-                        data: {
-                            shiprocketStatus: "PICKUP_SCHEDULED",
-                        },
-                    });
-                    console.log(`Pickup scheduled for shipment ${shiprocketResponse.shipment_id}`);
-                } catch (pickupError) {
-                    console.error("Failed to schedule pickup:", pickupError.message);
-                }
-            } else {
-                console.warn("AWB assignment returned no code:", JSON.stringify(awbResponse?.response || awbResponse));
-            }
-        } catch (awbError) {
-            console.error("Failed to assign AWB:", awbError.message);
-        }
+        await assignAWBToOrder(order, shipmentId);
 
         return shiprocketResponse;
     } catch (error) {
@@ -924,10 +960,10 @@ export async function syncOrderFromShiprocket(orderId) {
 
     try {
         const response = await getShiprocketOrder(order.shiprocketOrderId);
-        const srOrder = response?.data;
+        const srOrder = response?.data || response;
 
         if (srOrder) {
-            const shipments = srOrder.shipments || [];
+            const shipments = Array.isArray(srOrder.shipments) ? srOrder.shipments : [];
             // Find shipment with AWB code or use the first one
             const shipment = shipments.find(s => s.awb_code || s.awb) || shipments[0];
 
@@ -973,5 +1009,3 @@ export async function findShiprocketOrderByNumber(orderNumber) {
         return null;
     }
 }
-
-

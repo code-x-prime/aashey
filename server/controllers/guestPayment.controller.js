@@ -196,7 +196,7 @@ function calcCartWeight(processedItems, defaultWeight) {
     const perUnit = parseFloat(variant?.shippingWeight) || fallback;
     weight += perUnit * quantity;
   }
-  return Math.max(weight, fallback);
+  return Math.max(weight, 0.5);
 }
 
 /**
@@ -248,10 +248,13 @@ async function calculateShipping(subTotal, processedItems = [], guestAddress = n
           cod,
         });
 
-        const couriers = result?.data?.available_courier_companies || [];
+        const couriers = Array.isArray(result?.data?.available_courier_companies)
+          ? result.data.available_courier_companies
+          : [];
         const rates = couriers
+          .filter((courier) => !cod || Number(courier.cod) === 1)
           .map((c) => parseFloat(c.rate))
-          .filter((r) => !isNaN(r) && r > 0);
+          .filter((r) => Number.isFinite(r) && r > 0);
 
         if (rates.length > 0) {
           // cheapest serviceable courier — round up to the nearest rupee

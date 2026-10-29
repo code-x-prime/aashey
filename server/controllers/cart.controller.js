@@ -305,7 +305,7 @@ export const getUserCart = asyncHandler(async (req, res) => {
 
 // Get shipping options for cart (public endpoint for checkout)
 export const getShippingOptions = asyncHandler(async (req, res) => {
-  const { deliveryPincode, pickupPincode, cartItems: guestCartItems } = req.body;
+  const { deliveryPincode, pickupPincode, cartItems: guestCartItems, cod = false } = req.body;
 
   if (!deliveryPincode) {
     throw new ApiError(400, "Delivery pincode is required");
@@ -363,18 +363,19 @@ export const getShippingOptions = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No items in cart");
   }
 
-  // Calculate total weight
-  let totalWeight = 0;
-  for (const item of cartItems) {
-    const variant = item.productVariant;
-    const weight = variant.shippingWeight || 0.5; // Default 0.5kg if not set
-    totalWeight += weight * item.quantity;
-  }
-
   // Shiprocket must be enabled and configured
   const shiprocketSettings = await prisma.shiprocketSettings.findFirst();
   if (!shiprocketSettings?.isEnabled) {
     throw new ApiError(400, "Shipping options are not available. Please contact support.");
+  }
+
+  // Calculate total weight using the same fallback as shipment creation
+  const defaultWeight = Number(shiprocketSettings.defaultWeight) || 0.5;
+  let totalWeight = 0;
+  for (const item of cartItems) {
+    const variant = item.productVariant;
+    const weight = variant.shippingWeight || defaultWeight;
+    totalWeight += weight * item.quantity;
   }
 
   // Get pickup pincode from default warehouse
@@ -398,7 +399,7 @@ export const getShippingOptions = asyncHandler(async (req, res) => {
       pickupPincode: finalPickupPincode,
       deliveryPincode,
       weight: Math.max(totalWeight, 0.5), // Minimum 0.5kg
-      cod: false, // We'll handle COD separately
+      cod: cod === true,
     });
 
     // Format the response
@@ -406,6 +407,7 @@ export const getShippingOptions = asyncHandler(async (req, res) => {
 
     if (serviceabilityData && serviceabilityData.data && Array.isArray(serviceabilityData.data.available_courier_companies)) {
       for (const courier of serviceabilityData.data.available_courier_companies) {
+        if (cod === true && Number(courier.cod) !== 1) continue;
         shippingOptions.push({
           id: courier.courier_company_id,
           name: courier.courier_name,
