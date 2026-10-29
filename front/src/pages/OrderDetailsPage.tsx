@@ -77,6 +77,7 @@ export default function OrderDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [couriers, setCouriers] = useState<ShiprocketCourier[]>([]);
   const [loadingCouriers, setLoadingCouriers] = useState(false);
+  const [courierError, setCourierError] = useState<string | null>(null);
   const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
   const [bookingShipment, setBookingShipment] = useState(false);
   const [fixingItemId, setFixingItemId] = useState<string | null>(null);
@@ -106,10 +107,25 @@ export default function OrderDetailsPage() {
   const fetchCouriers = useCallback(async () => {
     if (!id) return;
     setLoadingCouriers(true);
+    setCourierError(null);
+    setSelectedCourierId(null);
     try {
       const response = await orders.getOrderCouriers(id);
-      if (response?.data?.success) setCouriers(response.data.data.couriers || []);
-    } catch { /* silent */ } finally { setLoadingCouriers(false); }
+      if (response?.data?.success) {
+        setCouriers(response.data.data.couriers || []);
+      } else {
+        setCouriers([]);
+        setCourierError(response?.data?.message || "Failed to fetch available couriers.");
+      }
+    } catch (err: unknown) {
+      setCouriers([]);
+      const message = err && typeof err === "object" && "response" in err
+        ? (err as { response: { data?: { message?: string } } }).response?.data?.message
+        : null;
+      setCourierError(message || "Could not fetch courier rates. Please try again.");
+    } finally {
+      setLoadingCouriers(false);
+    }
   }, [id]);
 
   useEffect(() => { fetchOrderDetails(); }, [fetchOrderDetails]);
@@ -141,6 +157,9 @@ export default function OrderDetailsPage() {
       const msg = err && typeof err === "object" && "response" in err
         ? (err as { response: { data?: { message?: string } } }).response?.data?.message : null;
       toast.error(msg || "Failed to book shipment");
+      if (msg && /courier.*(?:not available|unavailable)|(?:not available|unavailable).*courier/i.test(msg)) {
+        await fetchCouriers();
+      }
     } finally { setBookingShipment(false); }
   };
 
@@ -654,6 +673,9 @@ export default function OrderDetailsPage() {
                           <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} /> Refresh rates
                         </Button>
                       </div>
+                      {courierError && (
+                        <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{courierError}</p>
+                      )}
                       {loadingCouriers ? (
                         <div className="flex items-center justify-center gap-2 py-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                           <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
@@ -814,6 +836,9 @@ export default function OrderDetailsPage() {
                         <RefreshCw className={cn("h-3 w-3", loadingCouriers && "animate-spin")} /> Refresh rates
                       </Button>
                     </div>
+                    {courierError && (
+                      <p className="text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">{courierError}</p>
+                    )}
 
                     {loadingCouriers ? (
                       <div className="flex flex-col items-center justify-center gap-2 py-10 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
@@ -1035,4 +1060,3 @@ export default function OrderDetailsPage() {
     </div>
   );
 }
-

@@ -584,30 +584,12 @@ export const handleWebhook = asyncHandler(async (req, res) => {
     res.status(200).json({ status: "ok" });
 });
 
-// Get available couriers for a specific order
-export const getOrderCouriers = asyncHandler(async (req, res) => {
-    const { orderId } = req.params;
-
-    const order = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: {
-            shippingAddress: true,
-            items: {
-                include: { variant: true },
-            },
-        },
-    });
-
-    if (!order) {
-        throw new ApiError(404, "Order not found");
-    }
-
+const getOrderCourierOptions = async (order) => {
     const deliveryPincode = order.shippingAddress?.postalCode;
     if (!deliveryPincode) {
         throw new ApiError(400, "Order has no delivery pincode");
     }
 
-    const settings = await getShiprocketSettings();
     const pickupAddress = await prisma.shiprocketPickupAddress.findFirst({
         where: { isDefault: true },
     });
@@ -629,7 +611,7 @@ export const getOrderCouriers = asyncHandler(async (req, res) => {
         pickupPincode,
         deliveryPincode,
         weight: totalWeight,
-        cod: false,
+        cod: order.paymentMethod === "CASH",
     });
 
     const couriers = (result?.data?.available_courier_companies || []).map((c) => ({
@@ -637,10 +619,33 @@ export const getOrderCouriers = asyncHandler(async (req, res) => {
         name: c.courier_name,
         rate: parseFloat(c.rate),
         etd: c.etd || "2-3 days",
-        codAvailable: c.cod === 1,
+        codAvailable: Number(c.cod) === 1,
     }));
 
     couriers.sort((a, b) => a.rate - b.rate);
+
+    return { couriers, deliveryPincode, pickupPincode, totalWeight };
+};
+
+// Get available couriers for a specific order
+export const getOrderCouriers = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+            shippingAddress: true,
+            items: {
+                include: { variant: true },
+            },
+        },
+    });
+
+    if (!order) {
+        throw new ApiError(404, "Order not found");
+    }
+
+    const { couriers, deliveryPincode, totalWeight } = await getOrderCourierOptions(order);
 
     res.status(200).json(
         new ApiResponsive(200, { couriers, deliveryPincode, totalWeight }, "Couriers fetched successfully")
@@ -652,10 +657,19 @@ export const bookShipment = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
     const { courierId } = req.body;
 
-    if (!courierId) throw new ApiError(400, "courierId is required");
+    const parsedCourierId = Number(courierId);
+    if (!Number.isInteger(parsedCourierId) || parsedCourierId <= 0) {
+        throw new ApiError(400, "A valid courierId is required");
+    }
 
     // ── STEP 1: Fetch order ──────────────────────────────────────────────────
-    let order = await prisma.order.findUnique({ where: { id: orderId } });
+    let order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+            shippingAddress: true,
+            items: { include: { variant: true } },
+        },
+    });
     if (!order) throw new ApiError(404, "Order not found");
     if (order.status === "CANCELLED") {
         throw new ApiError(400, "Cannot book shipment for a cancelled order.");
@@ -663,16 +677,27 @@ export const bookShipment = asyncHandler(async (req, res) => {
 
     console.log(`[BOOK] START order=${order.orderNumber} | srOrderId=${order.shiprocketOrderId} | srShipmentId=${order.shiprocketShipmentId} | awb=${order.awbCode} | srStatus=${order.shiprocketStatus}`);
 
-    // ── STEP 2: Save courier preference ─────────────────────────────────────
-    await prisma.order.update({
-        where: { id: orderId },
-        data: { selectedCourierId: parseInt(courierId, 10), selectedCourierName: null },
-    });
-
-    // ── STEP 3: Already booked check ────────────────────────────────────────
+    // ── STEP 2: Already booked check ────────────────────────────────────────
     if (order.awbCode) {
         throw new ApiError(400, `Shipment already booked. AWB: ${order.awbCode}. Cancel it first to re-book.`);
     }
+
+    // Rates can change between display and booking; verify the selected courier
+    // against current serviceability, using COD rules for cash-on-delivery orders.
+    const { couriers, deliveryPincode, pickupPincode } = await getOrderCourierOptions(order);
+    const selectedCourier = couriers.find((courier) => Number(courier.id) === parsedCourierId);
+    if (!selectedCourier) {
+        throw new ApiError(
+            409,
+            `Selected courier is not available between ${pickupPincode} and ${deliveryPincode}. Refresh rates and choose an available courier.`
+        );
+    }
+
+    // ── STEP 3: Save courier preference ─────────────────────────────────────
+    await prisma.order.update({
+        where: { id: orderId },
+        data: { selectedCourierId: parsedCourierId, selectedCourierName: null },
+    });
 
     // ── STEP 4: Reset if Shiprocket shipment was previously cancelled ────────
     if (order.shiprocketStatus === "CANCELLED") {
@@ -836,7 +861,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
 
     // ── STEP 6: Assign AWB ───────────────────────────────────────────────────
     console.log(`[BOOK] Assigning AWB: shipmentId=${shipmentId}, courierId=${courierId}`);
-    const awbResponse = await assignAWB(shipmentId, parseInt(courierId, 10));
+    const awbResponse = await assignAWB(shipmentId, parsedCourierId);
     console.log(`[BOOK] AWB full response:`, JSON.stringify(awbResponse));
 
     // Parse AWB — Shiprocket uses multiple response shapes
@@ -851,11 +876,16 @@ export const bookShipment = asyncHandler(async (req, res) => {
 
     if (!awbCode) {
         const errMsg =
+            assignedItem?.awb_assign_error ||
+            responseData?.awb_assign_error ||
             responseData?.message ||
             awbResponse?.response?.message ||
             awbResponse?.message ||
             "AWB assignment failed — no AWB code in response";
-        throw new ApiError(400, `${errMsg}. Full response: ${JSON.stringify(awbResponse)}`);
+        const availabilityHint = /not available|unavailable/i.test(errMsg)
+            ? " Refresh courier rates and choose another available courier."
+            : "";
+        throw new ApiError(400, `${errMsg}.${availabilityHint}`);
     }
 
     // ── STEP 7: Save AWB to DB ───────────────────────────────────────────────
