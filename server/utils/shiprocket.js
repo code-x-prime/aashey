@@ -426,10 +426,22 @@ async function ensurePickupAddressSynced(pickupAddress) {
         console.log(`[SR] Found ${srLocations.length} locations in Shiprocket:`, JSON.stringify(srLocations.map(l => l.pickup_location)));
 
         if (srLocations.length > 0) {
-            // Try to find a match by pincode first, then fallback to first active location
-            let matched = srLocations.find(l => String(l.pin_code) === String(pickupAddress.pincode));
+            // Match the Shiprocket warehouse by PINCODE. We deliberately do NOT fall
+            // back to "the first registered location": the courier list shown to the
+            // admin is built from this address' pincode, so booking from a different
+            // warehouse makes every courier fail with "Selected courier not available
+            // between <customer pincode> and <warehouse pincode>" — and the wrong
+            // nickname used to be saved over the correct one, so it kept recurring.
+            const matched = srLocations.find(l => String(l.pin_code) === String(pickupAddress.pincode));
             if (!matched) {
-                matched = srLocations[0]; // fallback to first registered location
+                const registered = srLocations.map(l => `${l.pickup_location} (${l.pin_code})`).join(", ");
+                const err = new Error(
+                    `Your default pickup address (${pickupAddress.pincode}) is not registered in Shiprocket. ` +
+                    `Registered pickup locations: ${registered || "none"}. ` +
+                    `Add ${pickupAddress.pincode} in Shiprocket → Settings → Pickup Addresses, or change the default pickup address here.`
+                );
+                err.isPickupMismatch = true;
+                throw err;
             }
 
             if (matched && matched.pickup_location) {
@@ -450,6 +462,9 @@ async function ensurePickupAddressSynced(pickupAddress) {
             }
         }
     } catch (err) {
+        // A pickup-address mismatch is a configuration problem the admin must fix —
+        // surface it instead of silently booking from the wrong warehouse.
+        if (err.isPickupMismatch) throw err;
         console.error(`[SR] Auto-matching pickup locations failed:`, err.message);
     }
 

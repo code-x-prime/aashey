@@ -428,7 +428,17 @@ export const getShippingLabel = asyncHandler(async (req, res) => {
         // Shiprocket returns { response: { data: { label_url: "..." } } }
         const labelUrl = result?.response?.data?.label_url || result?.label_url || null;
 
-        console.log(`Label generated for order ${order.orderNumber}: ${labelUrl || "no URL"}`);
+        // Shiprocket answers 200 even when it could not make the label (e.g. AWB not
+        // ready yet) and lists the reason in not_created. Report that instead of
+        // telling the admin a label was generated when there is nothing to download.
+        if (!labelUrl) {
+            const reason = Array.isArray(result?.not_created) && result.not_created.length
+                ? JSON.stringify(result.not_created)
+                : result?.response || result?.message || "Shiprocket did not return a label URL";
+            throw new Error(typeof reason === "string" ? reason : JSON.stringify(reason));
+        }
+
+        console.log(`Label generated for order ${order.orderNumber}: ${labelUrl}`);
 
         res.status(200).json(
             new ApiResponsive(200, {
@@ -469,7 +479,14 @@ export const getOrderInvoice = asyncHandler(async (req, res) => {
         // Shiprocket returns { response: { data: { invoice_url: "..." } } }
         const invoiceUrl = result?.response?.data?.invoice_url || result?.invoice_url || null;
 
-        console.log(`Invoice generated for order ${order.orderNumber}: ${invoiceUrl || "no URL"}`);
+        if (!invoiceUrl) {
+            const reason = Array.isArray(result?.not_created) && result.not_created.length
+                ? JSON.stringify(result.not_created)
+                : result?.message || "Shiprocket did not return an invoice URL";
+            throw new Error(typeof reason === "string" ? reason : JSON.stringify(reason));
+        }
+
+        console.log(`Invoice generated for order ${order.orderNumber}: ${invoiceUrl}`);
 
         res.status(200).json(
             new ApiResponsive(200, {
@@ -590,6 +607,19 @@ export const handleWebhook = asyncHandler(async (req, res) => {
     res.status(200).json({ status: "ok" });
 });
 
+// Shiprocket flags each courier as surface (slower, cheaper) or air (faster, pricier)
+// with is_surface. If a response ever omits it, fall back to the courier's name
+// ("... Surface 500g", "Dart Air"); anything we can't tell is left unclassified
+// so it still shows under "More couriers" instead of being mislabelled.
+const classifyCourierSpeed = (c) => {
+    if (c.is_surface === true || c.is_surface === 1 || c.is_surface === "1") return "SLOW";
+    if (c.is_surface === false || c.is_surface === 0 || c.is_surface === "0") return "FAST";
+    const name = String(c.courier_name || "");
+    if (/surface/i.test(name)) return "SLOW";
+    if (/\bair\b|express|priority/i.test(name)) return "FAST";
+    return null;
+};
+
 const getOrderCourierOptions = async (order) => {
     const settings = await getShiprocketSettings();
     if (!settings.isEnabled) {
@@ -641,12 +671,22 @@ const getOrderCourierOptions = async (order) => {
             name: c.courier_name,
             rate: parseFloat(c.rate),
             etd: c.etd || "2-3 days",
+            etdDays: Number.isFinite(Number(c.estimated_delivery_days)) ? Number(c.estimated_delivery_days) : null,
             codAvailable: Number(c.cod) === 1,
+            speed: classifyCourierSpeed(c),
         }));
 
     couriers.sort((a, b) => a.rate - b.rate);
 
-    return { couriers, deliveryPincode, pickupPincode, totalWeight };
+    // The two headline choices the admin sees: the cheapest Slow (surface) and the
+    // cheapest Fast (air) courier. Every other courier stays available underneath.
+    const cheapest = (speed) =>
+        couriers
+            .filter((c) => c.speed === speed)
+            .sort((a, b) => a.rate - b.rate || (a.etdDays ?? 99) - (b.etdDays ?? 99))[0] || null;
+    const options = { slow: cheapest("SLOW"), fast: cheapest("FAST") };
+
+    return { couriers, options, deliveryPincode, pickupPincode, totalWeight };
 };
 
 // Get available couriers for a specific order
@@ -667,10 +707,10 @@ export const getOrderCouriers = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Order not found");
     }
 
-    const { couriers, deliveryPincode, totalWeight } = await getOrderCourierOptions(order);
+    const { couriers, options, deliveryPincode, totalWeight } = await getOrderCourierOptions(order);
 
     res.status(200).json(
-        new ApiResponsive(200, { couriers, deliveryPincode, totalWeight }, "Couriers fetched successfully")
+        new ApiResponsive(200, { couriers, options, deliveryPincode, totalWeight }, "Couriers fetched successfully")
     );
 });
 
@@ -718,7 +758,13 @@ export const bookShipment = asyncHandler(async (req, res) => {
     // ── STEP 3: Save courier preference ─────────────────────────────────────
     await prisma.order.update({
         where: { id: orderId },
-        data: { selectedCourierId: parsedCourierId, selectedCourierName: null },
+        data: {
+            selectedCourierId: parsedCourierId,
+            selectedCourierName: selectedCourier.name,
+            selectedCourierRate: selectedCourier.rate,
+            selectedCourierEtd: selectedCourier.etd,
+            selectedDeliverySpeed: selectedCourier.speed,
+        },
     });
 
     // ── STEP 4: Reset if Shiprocket shipment was previously cancelled ────────
@@ -911,6 +957,32 @@ export const bookShipment = asyncHandler(async (req, res) => {
         const availabilityHint = /not available|unavailable/i.test(errMsg)
             ? " Refresh courier rates and choose another available courier."
             : "";
+
+        // The Shiprocket shipment we just created/reused has no AWB. If we leave it
+        // saved on the order, the NEXT booking attempt reuses this same shipment
+        // ("Skipping creation") and every courier keeps failing with the same error
+        // — that is why it worked once and then failed repeatedly. Cancel it on
+        // Shiprocket and clear our copy so the next attempt starts a fresh shipment.
+        if (order.shiprocketOrderId && !order.awbCode) {
+            try {
+                await cancelShiprocketOrder(order.shiprocketOrderId);
+                console.log(`[BOOK] AWB failed; cancelled stuck Shiprocket order ${order.shiprocketOrderId} so a re-book starts clean.`);
+            } catch (cleanupErr) {
+                // Non-fatal: still clear our copy below; admin can cancel on the dashboard.
+                console.error(`[BOOK] Could not cancel stuck Shiprocket order ${order.shiprocketOrderId}:`, cleanupErr.message);
+            }
+            await prisma.order.update({
+                where: { id: orderId },
+                data: {
+                    shiprocketOrderId: null,
+                    shiprocketShipmentId: null,
+                    shiprocketStatus: null,
+                    awbCode: null,
+                    courierName: null,
+                },
+            });
+        }
+
         throw new ApiError(400, `${errMsg}.${availabilityHint}`);
     }
 
@@ -938,7 +1010,8 @@ export const bookShipment = asyncHandler(async (req, res) => {
         select: {
             shiprocketOrderId: true, shiprocketShipmentId: true, awbCode: true,
             courierName: true, shiprocketStatus: true, selectedCourierId: true,
-            selectedCourierName: true, orderNumber: true,
+            selectedCourierName: true, selectedCourierRate: true, selectedCourierEtd: true,
+            selectedDeliverySpeed: true, orderNumber: true,
             user: { select: { name: true, email: true } },
             shippingAddress: { select: { name: true, street: true, city: true, state: true, postalCode: true, country: true, phone: true } },
         },

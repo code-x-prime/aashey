@@ -42,7 +42,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { getImageUrl } from "@/utils/image";
 
-interface ShiprocketCourier { id: number; name: string; rate: number; etd: string; codAvailable: boolean; }
+import CourierOptions, { type ShiprocketCourier, type CourierChoices } from "@/components/CourierOptions";
 interface OrderUpdate { id: string; status: string; timestamp: string; note?: string; location?: string; description?: string; }
 interface OrderItem {
   id: string; productId: string; quantity: number; price: number; subtotal: number;
@@ -64,7 +64,7 @@ interface OrderDetails {
   razorpayPayment?: { paymentMethod: string; status: string; razorpayPaymentId?: string; razorpayOrderId?: string; };
   coupon?: { discountType: string; discountValue: number; description?: string; };
   tracking?: { carrier?: string; trackingNumber?: string; status?: string; estimatedDelivery?: string; updates?: OrderUpdate[]; };
-  shiprocket?: { orderId?: number; shipmentId?: number; awbCode?: string; courierName?: string; status?: string; };
+  shiprocket?: { orderId?: number; shipmentId?: number; awbCode?: string; courierName?: string; status?: string; deliverySpeed?: "SLOW" | "FAST" | null; courierRate?: number | null; etd?: string | null; };
   shippingCost?: string | number; total?: string | number;
 }
 
@@ -76,6 +76,7 @@ export default function OrderDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [couriers, setCouriers] = useState<ShiprocketCourier[]>([]);
+  const [courierChoices, setCourierChoices] = useState<CourierChoices | null>(null);
   const [loadingCouriers, setLoadingCouriers] = useState(false);
   const [courierError, setCourierError] = useState<string | null>(null);
   const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
@@ -113,12 +114,15 @@ export default function OrderDetailsPage() {
       const response = await orders.getOrderCouriers(id);
       if (response?.data?.success) {
         setCouriers(response.data.data.couriers || []);
+        setCourierChoices(response.data.data.options || null);
       } else {
         setCouriers([]);
+        setCourierChoices(null);
         setCourierError(response?.data?.message || "Failed to fetch available couriers.");
       }
     } catch (err: unknown) {
       setCouriers([]);
+      setCourierChoices(null);
       const message = err && typeof err === "object" && "response" in err
         ? (err as { response: { data?: { message?: string } } }).response?.data?.message
         : null;
@@ -203,6 +207,18 @@ export default function OrderDetailsPage() {
     } finally { setResyncing(false); }
   };
 
+  // Browsers often block window.open() after an awaited request; when that
+  // happens, offer a one-click button instead of silently doing nothing.
+  const openDocument = (url: string, kind: "label" | "invoice") => {
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    if (!w) {
+      toast.info(`Your ${kind} is ready`, {
+        duration: 15000,
+        action: { label: "Open", onClick: () => window.open(url, "_blank", "noopener,noreferrer") },
+      });
+    }
+  };
+
   const handleDownloadLabel = async () => {
     if (!id) return;
     try {
@@ -210,7 +226,7 @@ export default function OrderDetailsPage() {
       if (response?.data?.success) {
         const labelUrl = response.data.data?.label_url;
         if (labelUrl) {
-          window.open(labelUrl, "_blank");
+          openDocument(labelUrl, "label");
         } else {
           toast.info("Label generated. Check Shiprocket dashboard for download.");
         }
@@ -229,7 +245,7 @@ export default function OrderDetailsPage() {
       if (response?.data?.success) {
         const invoiceUrl = response.data.data?.invoice_url;
         if (invoiceUrl) {
-          window.open(invoiceUrl, "_blank");
+          openDocument(invoiceUrl, "invoice");
         } else {
           toast.info("Invoice generated. Check Shiprocket dashboard for download.");
         }
@@ -683,28 +699,7 @@ export default function OrderDetailsPage() {
                         </div>
                       ) : couriers.length > 0 ? (
                         <div className="space-y-2.5">
-                          {couriers.map((c) => (
-                            <label key={String(c.id)} className={cn(
-                              "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all hover:border-amber-300",
-                              selectedCourierId === c.id ? "border-amber-500 bg-amber-50/40 ring-1 ring-amber-500/20" : "border-slate-200 bg-white"
-                            )}>
-                              <div className="flex items-center gap-3">
-                                <input type="radio" name="courier" value={String(c.id)} checked={selectedCourierId === c.id}
-                                  onChange={() => setSelectedCourierId(c.id)} className="h-4 w-4 accent-amber-600" />
-                                <div className="space-y-0.5">
-                                  <p className="text-sm font-bold text-slate-800">{c.name}</p>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-slate-400 font-medium">Delivery ETD: {c.etd}</span>
-                                    {c.codAvailable && <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-md font-bold">COD</span>}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-base font-black text-slate-800">₹{c.rate}</p>
-                                <p className="text-[10px] text-slate-400 font-medium">est. shipping</p>
-                              </div>
-                            </label>
-                          ))}
+                          <CourierOptions couriers={couriers} options={courierChoices} selectedId={selectedCourierId} onSelect={setSelectedCourierId} />
                           <Button onClick={handleBookShipment} disabled={!selectedCourierId || bookingShipment}
                             className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white h-11 text-sm font-bold rounded-xl shadow-xs border-0 gap-2">
                             {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin" />Booking shipment...</>) : (<><Truck className="h-4 w-4" />Re-Book Shipment</>)}
@@ -757,6 +752,25 @@ export default function OrderDetailsPage() {
                       </div>
                     )}
                   </div>
+
+                  {orderDetails.shiprocket.deliverySpeed && (
+                    <div className="flex items-center gap-3 flex-wrap bg-slate-50/60 border border-slate-100 rounded-xl px-4 py-3">
+                      <span className={cn(
+                        "text-[11px] font-black px-2.5 py-1 rounded-full border",
+                        orderDetails.shiprocket.deliverySpeed === "FAST"
+                          ? "bg-sky-50 text-sky-700 border-sky-200"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      )}>
+                        {orderDetails.shiprocket.deliverySpeed === "FAST" ? "Fast Delivery (Air)" : "Slow Delivery (Surface)"}
+                      </span>
+                      {orderDetails.shiprocket.courierRate != null && (
+                        <span className="text-xs text-slate-600">Shiprocket rate <b>₹{orderDetails.shiprocket.courierRate}</b></span>
+                      )}
+                      {orderDetails.shiprocket.etd && (
+                        <span className="text-xs text-slate-600">Delivery by <b>{orderDetails.shiprocket.etd}</b></span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Action buttons: Label, Invoice, Cancel */}
                   <div className="flex items-center gap-2 flex-wrap pt-1">
@@ -847,28 +861,7 @@ export default function OrderDetailsPage() {
                       </div>
                     ) : couriers.length > 0 ? (
                       <div className="space-y-2.5">
-                        {couriers.map((c) => (
-                          <label key={String(c.id)} className={cn(
-                            "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all hover:border-amber-300",
-                            selectedCourierId === c.id ? "border-amber-500 bg-amber-50/40 ring-1 ring-amber-500/20" : "border-slate-200 bg-white"
-                          )}>
-                            <div className="flex items-center gap-3">
-                              <input type="radio" name="courier" value={String(c.id)} checked={selectedCourierId === c.id}
-                                onChange={() => setSelectedCourierId(c.id)} className="h-4 w-4 accent-amber-600" />
-                              <div className="space-y-0.5">
-                                <p className="text-sm font-bold text-slate-800">{c.name}</p>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-slate-400 font-medium">Delivery ETD: {c.etd}</span>
-                                  {c.codAvailable && <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-md font-bold">COD</span>}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="text-base font-black text-slate-800">₹{c.rate}</p>
-                              <p className="text-[10px] text-slate-400 font-medium">est. shipping</p>
-                            </div>
-                          </label>
-                        ))}
+                        <CourierOptions couriers={couriers} options={courierChoices} selectedId={selectedCourierId} onSelect={setSelectedCourierId} />
                         <Button onClick={handleBookShipment} disabled={!selectedCourierId || bookingShipment}
                           className="w-full mt-3 bg-amber-600 hover:bg-amber-700 text-white h-11 text-sm font-bold rounded-xl shadow-xs border-0 gap-2">
                           {bookingShipment ? (<><Loader2 className="h-4 w-4 animate-spin" />Booking shipment...</>) : (<><Truck className="h-4 w-4" />Confirm & Book Shipment</>)}

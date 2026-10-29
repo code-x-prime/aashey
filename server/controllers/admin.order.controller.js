@@ -350,6 +350,10 @@ export const getOrderById = asyncHandler(async (req, res, next) => {
       awbCode: order.awbCode,
       courierName: order.courierName,
       status: order.shiprocketStatus,
+      // The delivery option the admin picked when booking (saved in the database)
+      deliverySpeed: order.selectedDeliverySpeed,
+      courierRate: order.selectedCourierRate != null ? parseFloat(order.selectedCourierRate) : null,
+      etd: order.selectedCourierEtd,
     },
   };
 

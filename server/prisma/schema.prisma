@@ -424,6 +424,7 @@ model Order {
   selectedCourierName          String?
   selectedCourierRate          Decimal?             @db.Decimal(10, 2)
   selectedCourierEtd           String?
+  selectedDeliverySpeed        String? // SLOW (surface) | FAST (air), as chosen by the admin when booking
   shippingAddress              Address?             @relation(fields: [shippingAddressId], references: [id])
   user                         User                 @relation(fields: [userId], references: [id])
   items                        OrderItem[]
