@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { cancelDelhiveryForOrder } from "../utils/delhiveryCancel.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -1469,8 +1470,13 @@ export const cancelOrder = asyncHandler(async (req, res, next) => {
     }
   });
 
+  // 4a. Delhivery-booked orders: cancel the waybill (never blocks the cancellation)
+  cancelDelhiveryForOrder(order).then((dl) => {
+    if (dl.attempted) return prisma.order.update({ where: { id: orderId }, data: dl.dbData });
+  }).catch((err) => console.error("Delhivery cancel error (non-critical):", err.message));
+
   // 4. Cancel Shiprocket order if Shiprocket is enabled and order was synced (non-blocking)
-  if (order.shiprocketOrderId) {
+  if (order.shiprocketOrderId && order.shippingProvider !== "DELHIVERY") {
     import("../utils/shiprocket.js")
       .then(async ({ cancelShiprocketOrder, getShiprocketSettings }) => {
         try {

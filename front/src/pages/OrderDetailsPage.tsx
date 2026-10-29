@@ -42,6 +42,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { getImageUrl } from "@/utils/image";
 
+import DelhiveryShipmentCard from "@/components/DelhiveryShipmentCard";
 import CourierOptions, { type ShiprocketCourier, type CourierChoices } from "@/components/CourierOptions";
 interface OrderUpdate { id: string; status: string; timestamp: string; note?: string; location?: string; description?: string; }
 interface OrderItem {
@@ -64,7 +65,7 @@ interface OrderDetails {
   razorpayPayment?: { paymentMethod: string; status: string; razorpayPaymentId?: string; razorpayOrderId?: string; };
   coupon?: { discountType: string; discountValue: number; description?: string; };
   tracking?: { carrier?: string; trackingNumber?: string; status?: string; estimatedDelivery?: string; updates?: OrderUpdate[]; };
-  shiprocket?: { orderId?: number; shipmentId?: number; awbCode?: string; courierName?: string; status?: string; deliverySpeed?: "SLOW" | "FAST" | null; courierRate?: number | null; etd?: string | null; };
+  shiprocket?: { orderId?: number; shipmentId?: number; awbCode?: string; courierName?: string; status?: string; provider?: string | null; deliverySpeed?: "SLOW" | "FAST" | null; courierRate?: number | null; etd?: string | null; };
   shippingCost?: string | number; total?: string | number;
 }
 
@@ -608,7 +609,22 @@ export default function OrderDetailsPage() {
             </div>
           </Card>
 
-          {/* Shiprocket Card */}
+          {/* Delhivery (only shown when enabled, or when this order is booked with it) */}
+          <DelhiveryShipmentCard
+            orderId={orderDetails.id}
+            orderStatus={orderDetails.status}
+            provider={orderDetails.shiprocket?.provider}
+            awbCode={orderDetails.shiprocket?.awbCode}
+            courierName={orderDetails.shiprocket?.courierName}
+            deliverySpeed={orderDetails.shiprocket?.deliverySpeed}
+            courierRate={orderDetails.shiprocket?.courierRate}
+            shipmentStatus={orderDetails.shiprocket?.status}
+            bookedElsewhere={orderDetails.shiprocket?.provider !== "DELHIVERY" && !!orderDetails.shiprocket?.awbCode}
+            onChanged={fetchOrderDetails}
+          />
+
+          {/* Shiprocket Card (hidden once the order is booked with Delhivery) */}
+          {orderDetails.shiprocket?.provider !== "DELHIVERY" && (
           <Card className="border-slate-100 rounded-2xl shadow-sm overflow-hidden bg-white">
             <div className="px-6 py-5 bg-linear-to-r from-amber-50/40 to-white border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -879,6 +895,7 @@ export default function OrderDetailsPage() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Tracking Updates */}
           {orderDetails.tracking?.updates && orderDetails.tracking.updates.length > 0 && (

@@ -10,6 +10,7 @@ import { getFileUrl } from "../utils/deleteFromS3.js";
 import { processReferralReward } from "./referral.controller.js";
 import { decrypt } from "../utils/encryption.js";
 import { processOrderForShipping } from "../utils/shiprocket.js";
+import { cancelDelhiveryForOrder } from "../utils/delhiveryCancel.js";
 import { getStoreConfig } from "../utils/storeConfig.js";
 import { markPreOrderFlag } from "../utils/preOrder.js";
 
@@ -1640,7 +1641,13 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   // Cancel Shiprocket order if it exists (non-blocking)
   let shiprocketCancelled = false;
   let shiprocketCancelError = null;
-  if (order.shiprocketOrderId) {
+  const delhiveryCancel = await cancelDelhiveryForOrder(order);
+  if (delhiveryCancel.attempted) {
+    await prisma.order.update({ where: { id: orderId }, data: delhiveryCancel.dbData }).catch(() => {});
+    shiprocketCancelled = delhiveryCancel.cancelled;
+    shiprocketCancelError = delhiveryCancel.error;
+  }
+  if (order.shiprocketOrderId && order.shippingProvider !== "DELHIVERY") {
     try {
       const { cancelShiprocketOrder, getShiprocketSettings } = await import("../utils/shiprocket.js");
       const settings = await getShiprocketSettings();

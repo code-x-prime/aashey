@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../config/db.js";
 import { razorpay } from "../app.js";
 import { cancelShiprocketOrder, getShiprocketSettings, processOrderForShipping } from "../utils/shiprocket.js";
+import { cancelDelhiveryForOrder } from "../utils/delhiveryCancel.js";
 import sendEmail from "../utils/sendEmail.js";
 import { getStoreConfig } from "../utils/storeConfig.js";
 import { getOrderCancellationTemplate, getOrderStatusUpdateTemplate } from "../email/temp/EmailTemplate.js";
@@ -351,6 +352,7 @@ export const getOrderById = asyncHandler(async (req, res, next) => {
       courierName: order.courierName,
       status: order.shiprocketStatus,
       // The delivery option the admin picked when booking (saved in the database)
+      provider: order.shippingProvider || (order.shiprocketOrderId ? "SHIPROCKET" : null),
       deliverySpeed: order.selectedDeliverySpeed,
       courierRate: order.selectedCourierRate != null ? parseFloat(order.selectedCourierRate) : null,
       etd: order.selectedCourierEtd,
@@ -422,8 +424,16 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
       // Return items to inventory
       await handleInventoryReturn(tx, orderId, req.admin.id);
 
+      // Cancel the Delhivery waybill too, if this order was booked there
+      const dl = await cancelDelhiveryForOrder(order);
+      if (dl.attempted) {
+        Object.assign(orderData, dl.dbData);
+        if (dl.error) shiprocketCancelError = `Delhivery: ${dl.error}`;
+        else shiprocketCancelled = true;
+      }
+
       // Cancel Shiprocket order if it exists
-      if (order.shiprocketOrderId) {
+      if (order.shiprocketOrderId && order.shippingProvider !== "DELHIVERY") {
         try {
           const settings = await getShiprocketSettings();
           if (settings.isEnabled) {

@@ -102,7 +102,7 @@ export default function CourierOptions({ couriers, options, selectedId, onSelect
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xl font-black text-slate-800">₹{courier.rate}</p>
-                  <p className="text-[10px] text-slate-400 font-medium">Shiprocket rate</p>
+                  <p className="text-[10px] text-slate-400 font-medium">Delivery rate</p>
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-slate-100 space-y-1">

@@ -3,6 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponsive } from "../utils/ApiResponsive.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { encrypt } from "../utils/encryption.js";
+import { withOrderLock } from "../utils/orderLock.js";
+import { cancelShiprocketOrder } from "../utils/shiprocket.js";
 import {
     getDelhiverySettings,
     checkPincode,
@@ -113,7 +115,10 @@ export const getOrderOptions = asyncHandler(async (req, res) => {
     );
 });
 
-export const bookShipment = asyncHandler(async (req, res) => {
+// One booking per order at a time: a double-click or retry can't create two waybills
+export const bookShipment = asyncHandler((req, res) => withOrderLock(req.params.orderId, () => bookShipmentUnlocked(req, res)));
+
+async function bookShipmentUnlocked(req, res) {
     const { speed } = req.body;
     if (!["SLOW", "FAST"].includes(speed)) throw new ApiError(400, "speed must be SLOW or FAST");
 
@@ -134,6 +139,17 @@ export const bookShipment = asyncHandler(async (req, res) => {
     const chosen = speed === "FAST" ? result.options.fast : result.options.slow;
     if (!chosen) throw new ApiError(409, `Delhivery ${speed === "FAST" ? "Express" : "Surface"} is not available from ${originPin} to ${destPin}.`);
 
+    // A Shiprocket order created earlier but never given an AWB would stay stuck there; clear it
+    const clearShiprocket = {};
+    if (order.shiprocketOrderId && !order.awbCode) {
+        try {
+            await cancelShiprocketOrder(order.shiprocketOrderId);
+        } catch (e) {
+            console.error("[delhivery] could not cancel stuck Shiprocket order:", e.message);
+        }
+        Object.assign(clearShiprocket, { shiprocketOrderId: null, shiprocketShipmentId: null });
+    }
+
     let created;
     try {
         created = await createShipment(settings, buildShipment(order, { settings, weightKg, mode: speed }));
@@ -144,6 +160,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
     const updated = await prisma.order.update({
         where: { id: order.id },
         data: {
+            ...clearShiprocket,
             shippingProvider: "DELHIVERY",
             awbCode: created.waybill,
             courierName: chosen.name,
@@ -170,7 +187,7 @@ export const bookShipment = asyncHandler(async (req, res) => {
     res.status(200).json(
         new ApiResponsive(200, { order: updated, waybill: created.waybill, pickup, pickupError }, pickupError ? "Shipment booked, but pickup request failed — request pickup again." : "Shipment booked successfully")
     );
-});
+}
 
 export const getLabel = asyncHandler(async (req, res) => {
     const settings = await requireEnabled();

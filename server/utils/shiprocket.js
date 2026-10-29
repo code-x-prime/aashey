@@ -7,6 +7,7 @@
  */
 
 import { prisma } from "../config/db.js";
+import { withOrderLock } from "./orderLock.js";
 import { decrypt } from "./encryption.js";
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
@@ -743,7 +744,11 @@ async function assignAWBToOrder(order, shipmentId) {
     }
 }
 
-export async function processOrderForShipping(orderId) {
+export function processOrderForShipping(orderId) {
+    return withOrderLock(orderId, () => processOrderForShippingUnlocked(orderId));
+}
+
+async function processOrderForShippingUnlocked(orderId) {
     const settings = await getShiprocketSettings();
 
     if (!settings.isEnabled) {
@@ -767,6 +772,11 @@ export async function processOrderForShipping(orderId) {
 
     if (!order) {
         throw new Error("Order not found");
+    }
+
+    if (order.shippingProvider === "DELHIVERY" && order.awbCode) {
+        console.log(`Order ${order.orderNumber} is already booked with Delhivery, skipping Shiprocket`);
+        return null;
     }
 
     // Validate required data before calling Shiprocket
