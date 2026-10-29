@@ -425,6 +425,7 @@ model Order {
   selectedCourierRate          Decimal?             @db.Decimal(10, 2)
   selectedCourierEtd           String?
   selectedDeliverySpeed        String? // SLOW (surface) | FAST (air), as chosen by the admin when booking
+  shippingProvider             String? // SHIPROCKET | DELHIVERY (null = legacy Shiprocket)
   shippingAddress              Address?             @relation(fields: [shippingAddressId], references: [id])
   user                         User                 @relation(fields: [userId], references: [id])
   items                        OrderItem[]
@@ -1237,4 +1238,17 @@ model VideoSection {
 model VideoSectionSettings {
   id         String  @id @default(uuid())
   autoScroll Boolean @default(true)
+}
+
+model DelhiverySettings {
+  id             String   @id @default(uuid())
+  isEnabled      Boolean  @default(false)
+  token          String? // Encrypted API token
+  mode           String   @default("STAGING") // STAGING | PRODUCTION
+  pickupLocation String? // Exact (case-sensitive) warehouse name registered in Delhivery
+  sellerName     String?
+  hsnCode        String?
+  defaultWeight  Float    @default(0.5) // kg
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
