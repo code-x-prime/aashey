@@ -1763,7 +1763,7 @@ export default function CheckoutPage() {
                                 )}
 
                                 <div className="flex justify-between">
-                                    <span className="text-[#5C3A1E]">Shipping{selectedShippingOption ? ` (${selectedShippingOption.name})` : ""}</span>
+                                    <span className="text-[#5C3A1E]">Shipping</span>
                                     {loadingLiveShipping && !selectedShippingOption ? (
                                         <span className="text-[#5C3A1E] text-sm flex items-center gap-1">
                                             <Loader2 className="h-3 w-3 animate-spin" /> Calculating…

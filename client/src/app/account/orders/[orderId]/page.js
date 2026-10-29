@@ -369,14 +369,8 @@ export default function OrderDetailPage() {
                                     </span>
                                 )}
                             </div>
-                            {(order.awbCode || order.courierName || order.shiprocketStatus) ? (
+                            {(order.awbCode || order.shiprocketStatus) ? (
                                 <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {order.courierName && (
-                                        <div>
-                                            <p className="text-xs text-[#9CA3AF] uppercase tracking-wide mb-1">Courier Partner</p>
-                                            <p className="font-semibold text-[#1A0A00]">{order.courierName}</p>
-                                        </div>
-                                    )}
                                     {order.awbCode && (
                                         <div>
                                             <p className="text-xs text-[#9CA3AF] uppercase tracking-wide mb-1">AWB / Tracking Number</p>
@@ -418,7 +412,6 @@ export default function OrderDetailPage() {
                                 <div className="flex items-center gap-4 mb-4">
                                     <DynamicIcon name="Truck" className="h-8 w-8 text-primary" />
                                     <div>
-                                        <p className="font-medium">{order.tracking.carrier || "Carrier"}</p>
                                         <p className="text-sm text-[#6B4423]">Tracking #: {order.tracking.trackingNumber}</p>
                                     </div>
                                 </div>
