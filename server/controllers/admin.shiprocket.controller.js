@@ -74,7 +74,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
         updateData.email = email.trim();
     }
 
-    if (password && password !== "********") {
+    if (typeof password === "string" && password.trim() && password !== "********") {
         // Encrypt password before storing
         updateData.password = "enc:" + encrypt(password.trim());
         // Clear token to force re-authentication
@@ -101,6 +101,12 @@ export const updateSettings = asyncHandler(async (req, res) => {
 
     if (freeShippingThreshold !== undefined) {
         updateData.freeShippingThreshold = parseFloat(freeShippingThreshold);
+    }
+
+    const effectiveEmail = updateData.email ?? settings.email;
+    const effectivePassword = updateData.password ?? settings.password;
+    if (updateData.isEnabled === true && (!effectiveEmail?.trim() || !effectivePassword)) {
+        throw new ApiError(400, "Configure Shiprocket email and password before enabling the integration.");
     }
 
     updateData.updatedBy = req.admin?.id;
@@ -585,6 +591,11 @@ export const handleWebhook = asyncHandler(async (req, res) => {
 });
 
 const getOrderCourierOptions = async (order) => {
+    const settings = await getShiprocketSettings();
+    if (!settings.isEnabled) {
+        throw new ApiError(400, "Shiprocket integration is disabled. Enable it in Shiprocket settings to fetch courier rates or book a shipment.");
+    }
+
     const deliveryPincode = order.shippingAddress?.postalCode;
     if (!deliveryPincode) {
         throw new ApiError(400, "Order has no delivery pincode");

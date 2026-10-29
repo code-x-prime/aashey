@@ -150,7 +150,7 @@ export default function ShiprocketSettingsPage() {
     };
 
     // Save credentials only (used by Test Connection and Toggle)
-    const handleSaveSettings = async () => {
+    const handleSaveSettings = async (): Promise<boolean> => {
         try {
             setIsSaving(true);
             const response = await api.put("/api/admin/shiprocket/settings", {
@@ -162,10 +162,13 @@ export default function ShiprocketSettingsPage() {
             if (response.data.success) {
                 toast.success(t("shiprocket_settings.messages.save_success"));
                 setSettings(response.data.data.settings);
+                return true;
             }
+            return false;
         } catch (error: any) {
             console.error("Error saving settings:", error);
             toast.error(error.response?.data?.message || t("shiprocket_settings.messages.save_error"));
+            return false;
         } finally {
             setIsSaving(false);
         }
@@ -226,7 +229,8 @@ export default function ShiprocketSettingsPage() {
         }
 
         // Save settings first
-        await handleSaveSettings();
+        const settingsSaved = await handleSaveSettings();
+        if (!settingsSaved) return;
 
         try {
             setIsTesting(true);
